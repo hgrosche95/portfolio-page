@@ -5,15 +5,15 @@ techStack: ["TypeScript", "React", "Node.js", "WebSocket", "SQLite"]
 order: 3
 ---
 
-Eine Bestell-App für die eigene Hausbar, übers lokale WLAN: Gäste öffnen die Seite auf dem Handy, loggen sich nur mit Namen ein, bestellen aus einer filterbaren Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann — betroffene Cocktails verschwinden dann automatisch aus der Gästekarte.
+Eine Bestell-App für die eigene Cocktail-Party, übers lokale WLAN: Gäste öffnen die Seite auf dem Handy, loggen sich nur mit Namen ein, bestellen aus einer filterbaren Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann. Dann verschwinden betroffene Cocktails automatisch aus der Gästekarte.
 
 <div class="screenshot-grid">
   <img src="/projects/cocktail-orders/menu.webp" alt="Cocktail-Karte aus Gastsicht" />
   <img src="/projects/cocktail-orders/barkeeper.webp" alt="Barkeeper-Dashboard mit offenen Bestellungen" />
 </div>
 
-**Warum so gebaut:** Zwei unabhängige Node-Projekte statt eines Monolithen: ein React/Vite-Frontend und ein schlanker Express-Server. Für die Datenhaltung nutze ich bewusst Nodes eingebautes, natives `node:sqlite` statt eines Treibers wie `better-sqlite3` oder eines ORMs — für diesen Umfang reicht das, ohne zusätzliche Abhängigkeit. Das Frontend erkennt selbstständig, von welchem Host es geladen wurde, wodurch es ohne Konfiguration auf jedem Gerät im selben WLAN funktioniert.
+**Warum so gebaut:** Zwei unabhängige Node-Projekte statt eines Monolithen. Ein React/Vite-Frontend und ein schlanker Express-Server. Für die Datenhaltung nutze ich bewusst Nodes eingebautes, natives `node:sqlite` statt eines Treibers wie `better-sqlite3` oder eines ORMs. Das reduziert die Abhängigkeit. Das Frontend erkennt selbstständig, von welchem Host es geladen wurde, wodurch es ohne Konfiguration auf jedem Gerät im selben WLAN funktioniert.
 
-**Technisch interessant:** Die Echtzeit-Synchronisierung ist bewusst einfach gehalten — der WebSocket-Server sendet bei jeder Änderung nur ein kurzes `'orders-changed'`-Signal, keine Nutzdaten. Clients holen sich den aktuellen Stand dann per normalem REST-Call. Das kostet einen zusätzlichen Roundtrip, macht die Synchronisierung dafür aber deutlich einfacher und weniger fehleranfällig als vollen State über den Socket zu schicken. Welche Cocktails bestellbar sind, wird nicht gespeichert, sondern aus den als "nicht vorrätig" markierten Zutaten und den Rezepten live berechnet. Das Barkeeper-Passwort liegt ausschließlich in einer nicht versionierten `.env`-Datei.
+**Technisch interessant:** Die Echtzeit-Synchronisierung ist bewusst einfach gehalten. Der WebSocket-Server sendet bei jeder Änderung nur ein kurzes `'orders-changed'`-Signal, keine Nutzdaten. Clients holen sich den aktuellen Stand dann per normalem REST-Call. Das kostet einen zusätzlichen Roundtrip, macht die Synchronisierung dafür aber deutlich einfacher und weniger fehleranfällig als vollen State über den Socket zu schicken. Welche Cocktails bestellbar sind, wird nicht gespeichert, sondern aus den als "nicht vorrätig" markierten Zutaten und den Rezepten live berechnet. Das Barkeeper-Passwort liegt ausschließlich in einer nicht versionierten `.env`-Datei.
 
 **Aktueller Stand:** Fertig nutzbar, mit CI-Pipeline (Lint/Test/Build für beide Teile parallel), geschütztem `main`-Branch und Tests gegen eine In-Memory-SQLite-Datenbank via Supertest.
