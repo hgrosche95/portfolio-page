@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import NodeGraph from '../components/NodeGraph';
 ---
 
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
@@ -8,5 +9,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 		<p class="mt-2 font-mono text-sm text-[var(--color-text-muted)]">
 			Full-Stack-Entwickler — Inhalte folgen in den nächsten Phasen.
 		</p>
+	</section>
+	<section id="projects" class="mx-auto max-w-5xl px-4 pb-16">
+		<h2 class="font-mono text-lg text-[var(--color-text)]">Wie ich Systeme verbinde</h2>
+		<p class="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
+			Auf einen Knoten klicken, um zum Projekt zu springen.
+		</p>
+		<div class="mt-4">
+			<NodeGraph client:visible />
+		</div>
 	</section>
 </BaseLayout>
