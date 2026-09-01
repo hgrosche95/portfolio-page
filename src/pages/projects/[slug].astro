@@ -25,7 +25,11 @@ const lastPushed = stats
 	: null;
 ---
 
-<BaseLayout title={`${entry.data.title} — Henrik Grosche`}>
+<BaseLayout
+	title={`${entry.data.title} — Henrik Grosche`}
+	description={entry.data.summary}
+	image={`/og/${entry.id}.png`}
+>
 	<article class="mx-auto max-w-3xl px-4 pt-12 pb-20">
 		<a
 			href="/#projects"

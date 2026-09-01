@@ -13,7 +13,10 @@ interface Props {
 const {
 	title,
 	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit Node-Graph-Navigation, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
-	image = '/profile.webp',
+	// Generated at build time by scripts/generate-og-images.ts. The portrait is
+	// deliberately not used here: it is 800x1067 portrait, which social cards
+	// crop to a ~1.91:1 landscape strip.
+	image = '/og/default.png',
 } = Astro.props;
 
 const absoluteImageUrl = new URL(image, Astro.site ?? Astro.url).toString();
@@ -42,6 +45,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:image" content={absoluteImageUrl} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
 		<meta property="og:url" content={canonicalUrl} />
 		<meta property="og:locale" content="de_DE" />
 		<meta name="twitter:card" content="summary_large_image" />
@@ -64,14 +69,16 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				class="max-w-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-xs leading-relaxed text-[var(--color-text-muted)] shadow-lg"
 			>
 				<p>
-					<span class="font-mono text-[var(--color-accent)]">durchgezogen</span> = React-Island,
-					lädt JavaScript. <span class="font-mono">gestrichelt</span> = statisches HTML aus dem
-					Astro-Build, kein JS-Bundle.
+					<span class="font-mono text-[var(--color-accent)]">durchgezogen</span> = React-Island, lädt
+					JavaScript
+				</p>
+				<p class="mt-1">
+					<span class="font-mono">gestrichelt</span> = statisches HTML aus dem Astro-Build, kein
+					JS-Bundle
 				</p>
 				<p class="mt-2">
-					Diese Seite lädt React nur für die zwei markierten Inseln — und dank{' '}
-					<span class="font-mono">client:visible</span> erst beim Hineinscrollen. Die Projektseiten
-					laden gar keins.
+					Diese Seite lädt React nur für die zwei markierten Elemente und die erst beim
+					Hineinscrollen (<span class="font-mono">client:visible</span>)
 				</p>
 			</div>
 			<button

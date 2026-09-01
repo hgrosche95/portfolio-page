@@ -155,6 +155,15 @@ body::after {
 }
 
 /*
+ * The first section's top edge sits flush under the sticky header, where a
+ * straddling label would be half hidden behind it. It opts into sitting fully
+ * inside instead, which reads fine because that section opens with padding.
+ */
+.xray [data-xray][data-xray-pos='inside']::after {
+  translate: 0 0;
+}
+
+/*
  * Project write-ups are prose with bold lead-ins ("Warum so gebaut:"). The body
  * sits at muted weight so those lead-ins carry the scanning structure.
  */

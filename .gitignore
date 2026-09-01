@@ -27,3 +27,6 @@ src/data/github-stats.json
 
 # jetbrains setting folder
 .idea/
+
+# Generated at build time by scripts/generate-og-images.ts
+public/og/
