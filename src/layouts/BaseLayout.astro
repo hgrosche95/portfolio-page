@@ -23,7 +23,7 @@ const { title, description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche
 		</script>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
@@ -34,5 +34,45 @@ const { title, description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche
 			<slot />
 		</main>
 		<Footer />
+		<script is:inline>
+			(function () {
+				const targets = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'));
+				if (!targets.length) return;
+				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+				// Opt in to the hiding CSS only now that the revealing code below is
+				// guaranteed to run. A plain scroll check is used instead of
+				// IntersectionObserver because it cannot silently no-op: if it ever
+				// failed, content would stay invisible.
+				document.documentElement.classList.add('js-reveal');
+
+				let pending = targets;
+				let queued = false;
+
+				function reveal() {
+					queued = false;
+					const limit = window.innerHeight * 0.9;
+					pending = pending.filter(function (el) {
+						if (el.getBoundingClientRect().top > limit) return true;
+						el.setAttribute('data-revealed', '');
+						return false;
+					});
+					if (!pending.length) {
+						window.removeEventListener('scroll', schedule);
+						window.removeEventListener('resize', schedule);
+					}
+				}
+
+				function schedule() {
+					if (queued) return;
+					queued = true;
+					window.requestAnimationFrame(reveal);
+				}
+
+				window.addEventListener('scroll', schedule, { passive: true });
+				window.addEventListener('resize', schedule);
+				reveal();
+			})();
+		</script>
 	</body>
 </html>

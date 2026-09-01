@@ -1,0 +1,24 @@
+---
+interface Props {
+	/** Monospace eyebrow above the title, e.g. a section number or file-path label. */
+	eyebrow: string;
+	title: string;
+	subtitle?: string;
+}
+
+const { eyebrow, title, subtitle } = Astro.props;
+---
+
+<div data-reveal>
+	<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
+		{eyebrow}
+	</p>
+	<h2 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
+		{title}
+	</h2>
+	{
+		subtitle && (
+			<p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">{subtitle}</p>
+		)
+	}
+</div>

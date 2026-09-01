@@ -4,14 +4,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import githubStats from '../../data/github-stats.json';
 
 export async function getStaticPaths() {
-	const projectEntries = await getCollection('projects');
-	return projectEntries.map((entry) => ({
+	const projectEntries = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+	return projectEntries.map((entry, index) => ({
 		params: { slug: entry.id },
-		props: { entry },
+		props: {
+			entry,
+			// Wrap around, so every project page offers a way onward.
+			next: projectEntries[(index + 1) % projectEntries.length],
+		},
 	}));
 }
 
-const { entry } = Astro.props;
+const { entry, next } = Astro.props;
 const { Content } = await render(entry);
 const stats = (githubStats as Record<string, { stars: number; language: string | null; lastPushedAt: string; description: string | null }>)[
 	entry.data.githubRepo
@@ -22,36 +26,66 @@ const lastPushed = stats
 ---
 
 <BaseLayout title={`${entry.data.title} — Henrik Grosche`}>
-	<section class="mx-auto max-w-3xl px-4 py-16 font-mono text-sm text-[var(--color-text)]">
-		<a href="/#projects" class="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)]">
-			&larr; zurück
+	<article class="mx-auto max-w-3xl px-4 pt-12 pb-20">
+		<a
+			href="/#projects"
+			class="font-mono text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
+		>
+			&larr; zurück zur Übersicht
 		</a>
-		<h1 class="mt-2 text-xl">{entry.data.title}</h1>
-		<div class="mt-2 flex flex-wrap gap-2 text-xs text-[var(--color-text-muted)]">
-			{entry.data.techStack.map((tech: string) => (
-				<span class="rounded border border-[var(--color-border)] px-2 py-0.5">{tech}</span>
-			))}
+
+		<h1 class="mt-4 text-3xl font-semibold tracking-tight text-[var(--color-text)] sm:text-4xl">
+			{entry.data.title}
+		</h1>
+
+		<div class="mt-4 flex flex-wrap gap-1.5">
+			{
+				entry.data.techStack.map((tech: string) => (
+					<span class="rounded border border-[var(--color-border)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-muted)]">
+						{tech}
+					</span>
+				))
+			}
 		</div>
 
-		{
-			stats && (
-				<div class="mt-4 flex flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
-					<span>&#9733; {stats.stars}</span>
-					{stats.language && <span>{stats.language}</span>}
-					{lastPushed && <span>zuletzt aktualisiert: {lastPushed} (Stand: letztes Deployment)</span>}
-				</div>
-			)
-		}
-
-		<a
-			href={`https://github.com/hgrosche95/${entry.data.githubRepo}`}
-			class="mt-4 inline-block text-xs text-[var(--color-accent)] hover:underline"
+		<div
+			class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-[var(--color-border)] py-3 font-mono text-xs text-[var(--color-text-muted)]"
 		>
-			auf GitHub ansehen &rarr;
-		</a>
+			{stats && <span>&#9733; {stats.stars}</span>}
+			{stats?.language && <span>{stats.language}</span>}
+			{lastPushed && <span>zuletzt aktualisiert: {lastPushed} (Stand: letztes Deployment)</span>}
+			<a
+				href={`https://github.com/hgrosche95/${entry.data.githubRepo}`}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="ml-auto text-[var(--color-accent)] hover:underline"
+			>
+				auf GitHub ansehen &rarr;
+			</a>
+		</div>
 
-		<div class="project-content mt-8 max-w-none space-y-4 text-[var(--color-text)] leading-relaxed">
+		<div class="project-content mt-8 max-w-none space-y-5 text-base leading-relaxed text-[var(--color-text-muted)]">
 			<Content />
 		</div>
-	</section>
+
+		<a
+			href={`/projects/${next.id}`}
+			class="group mt-14 flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]"
+		>
+			<span>
+				<span class="font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase">
+					Nächstes Projekt
+				</span>
+				<span
+					class="mt-1 block font-medium text-[var(--color-text)] transition-colors group-hover:text-[var(--color-accent)]"
+				>
+					{next.data.title}
+				</span>
+			</span>
+			<span
+				class="font-mono text-[var(--color-text-muted)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--color-accent)]"
+				aria-hidden="true">&rarr;</span
+			>
+		</a>
+	</article>
 </BaseLayout>

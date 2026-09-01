@@ -1,29 +1,81 @@
 ---
 const links = [
-	{ label: 'E-Mail', href: 'mailto:h.grosche95@gmail.com', text: 'h.grosche95@gmail.com' },
-	{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/henrik-grosche-6559a51b5/', text: 'linkedin.com/in/henrik-grosche' },
-	{ label: 'GitHub', href: 'https://github.com/hgrosche95', text: 'github.com/hgrosche95' },
+	{
+		label: 'E-Mail',
+		href: 'mailto:h.grosche95@gmail.com',
+		text: 'h.grosche95@gmail.com',
+		icon: '<rect x="2" y="4" width="20" height="16" rx="2" /><path d="m2 7 10 6 10-6" />',
+	},
+	{
+		label: 'LinkedIn',
+		href: 'https://www.linkedin.com/in/henrik-grosche-6559a51b5/',
+		text: 'linkedin.com/in/henrik-grosche',
+		icon:
+			'<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />' +
+			'<rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />',
+	},
+	{
+		label: 'GitHub',
+		href: 'https://github.com/hgrosche95',
+		text: 'github.com/hgrosche95',
+		icon:
+			'<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 ' +
+			'5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 ' +
+			'5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 ' +
+			'18.13V22" />',
+	},
 ];
 ---
 
-<div class="mt-4 space-y-3 font-mono text-sm">
+<div class="mt-6 grid gap-3 sm:grid-cols-3">
 	{
 		links.map((link) => (
-			<div>
-				<span class="text-[var(--color-text-muted)]">{link.label}: </span>
-				<a href={link.href} class="text-[var(--color-accent)] hover:underline">
+			<a
+				data-reveal
+				href={link.href}
+				target={link.href.startsWith('http') ? '_blank' : undefined}
+				rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+				class="group rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]"
+			>
+				<span class="flex items-center gap-2 font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase">
+					<svg
+						class="size-3.5 shrink-0"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+						set:html={link.icon}
+					/>
+					{link.label}
+				</span>
+				<span class="mt-2 block truncate font-mono text-sm text-[var(--color-text)] transition-colors group-hover:text-[var(--color-accent)]">
 					{link.text}
-				</a>
-			</div>
+				</span>
+			</a>
 		))
 	}
-	<div>
-		<a
-			href="/cv-henrik-grosche.pdf"
-			download
-			class="mt-2 inline-block rounded border border-[var(--color-border)] px-3 py-1 text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-		>
-			Lebenslauf (PDF) herunterladen
-		</a>
-	</div>
 </div>
+
+<a
+	data-reveal
+	href="/cv-henrik-grosche.pdf"
+	download
+	class="mt-4 inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-4 py-2 font-mono text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+>
+	<svg
+		class="size-4"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		<path d="M12 4v11m0 0 4-4m-4 4-4-4M4 19h16"></path>
+	</svg>
+	Lebenslauf (PDF) herunterladen
+</a>

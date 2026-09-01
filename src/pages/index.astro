@@ -1,6 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
 import NodeGraph, { type GraphProject } from '../components/NodeGraph';
 import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
@@ -14,90 +16,44 @@ const graphProjects: GraphProject[] = projectEntries
 		label: entry.data.title,
 		sublabel: entry.data.techStack.slice(0, 2).join(', '),
 	}));
-
-const skills = [
-	'JavaScript',
-	'TypeScript',
-	'Node.js',
-	'React',
-	'Next.js',
-	'NestJS',
-	'Java',
-	'PHP',
-	'Python',
-	'SQL',
-	'HTML',
-	'CSS',
-	'TYPO3',
-	'WordPress',
-	'Git',
-	'CI/CD',
-	'Docker',
-	'Linux',
-	'Claude',
-	'Copilot',
-];
 ---
 
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
-	<section class="mx-auto max-w-5xl px-4 py-16">
-		<div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-			<img
-				src="/profile.webp"
-				alt="Porträtfoto von Henrik Grosche"
-				width="120"
-				height="120"
-				class="rounded border border-[var(--color-border)] object-cover"
-			/>
-			<div>
-				<h1 class="font-mono text-2xl text-[var(--color-text)]">Henrik Grosche</h1>
-				<p class="font-mono text-sm text-[var(--color-text-muted)]">Full-Stack-Entwickler, Düsseldorf</p>
-			</div>
-		</div>
-		<p class="mt-6 max-w-2xl font-mono text-sm leading-relaxed text-[var(--color-text)]">
-			Ich verbinde bestehende Systeme zu effizienten, automatisierten Workflows — von
-			React/TypeScript-Frontends über Node.js-Backends bis zur Integration verschiedenster APIs und
-			Drittsysteme. Technische Herausforderungen reizen mich; neue Technologien und
-			Cloud-Umgebungen eigne ich mir schnell und eigenständig an.
-		</p>
-		<div class="mt-6 flex flex-wrap gap-2">
-			{
-				skills.map((skill) => (
-					<span class="rounded border border-[var(--color-border)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-muted)]">
-						{skill}
-					</span>
-				))
-			}
-		</div>
-	</section>
+	<Hero />
 
-	<section id="projects" class="mx-auto max-w-5xl px-4 pb-16">
-		<h2 class="font-mono text-lg text-[var(--color-text)]">Wie ich Systeme verbinde</h2>
-		<p class="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
-			Auf einen Knoten klicken, um zum Projekt zu springen.
-		</p>
-		<div class="mt-4">
+	<section id="projects" class="mx-auto max-w-5xl px-4 pb-20">
+		<SectionHeading
+			eyebrow="01 — Projekte"
+			title="Wie ich Systeme verbinde"
+			subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
+		/>
+		<div data-reveal class="mt-6">
 			<NodeGraph projects={graphProjects} client:visible />
 		</div>
 	</section>
 
-	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-16">
-		<h2 class="font-mono text-lg text-[var(--color-text)]">Diese Seite deployt sich selbst</h2>
-		<p class="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
-			Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker).
-		</p>
-		<div class="mt-4">
+	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-20">
+		<SectionHeading
+			eyebrow="02 — Deployment"
+			title="Diese Seite deployt sich selbst"
+			subtitle="Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker)."
+		/>
+		<div data-reveal class="mt-6">
 			<DeployPipeline client:visible />
 		</div>
 	</section>
 
-	<section id="erfahrung" class="mx-auto max-w-5xl px-4 pb-16">
-		<h2 class="font-mono text-lg text-[var(--color-text)]">Werdegang</h2>
+	<section id="erfahrung" class="mx-auto max-w-5xl px-4 pb-20">
+		<SectionHeading eyebrow="03 — Werdegang" title="Stationen" />
 		<Timeline />
 	</section>
 
-	<section id="kontakt" class="mx-auto max-w-5xl px-4 pb-16">
-		<h2 class="font-mono text-lg text-[var(--color-text)]">Kontakt</h2>
+	<section id="kontakt" class="mx-auto max-w-5xl px-4 pb-24">
+		<SectionHeading
+			eyebrow="04 — Kontakt"
+			title="Lass uns sprechen"
+			subtitle="Offen für Anfragen — am schnellsten per E-Mail."
+		/>
 		<Contact />
 	</section>
 </BaseLayout>

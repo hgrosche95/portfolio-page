@@ -1,37 +1,142 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-bg: #f7f8fa;
   --color-surface: #ffffff;
+  /* Raised surface for cards that sit on top of --color-surface. */
+  --color-surface-raised: #f1f3f6;
   --color-border: #d8dbe0;
+  --color-border-strong: #b9bec7;
   --color-text: #1a1d23;
   --color-text-muted: #5a616b;
   --color-accent: #1f8f5f;
   --color-accent-soft: #e3f5ec;
+  /* Accent at low alpha, for glows and hover washes in either theme. */
+  --color-accent-glow: rgb(31 143 95 / 0.12);
+  /* Backdrop for the sticky header, so content blurs through it. */
+  --color-bg-translucent: rgb(247 248 250 / 0.8);
 }
 
 .dark {
   --color-bg: #0d1117;
   --color-surface: #12181f;
+  --color-surface-raised: #171e27;
   --color-border: #262d38;
+  --color-border-strong: #3a4452;
   --color-text: #e6edf3;
   --color-text-muted: #8b98a5;
   --color-accent: #4ade80;
   --color-accent-soft: #14251c;
+  --color-accent-glow: rgb(74 222 128 / 0.1);
+  --color-bg-translucent: rgb(13 17 23 / 0.8);
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Depth layer: a faint blueprint grid that fades out toward the bottom, plus a
+ * soft accent glow behind the hero. Purely decorative and non-interactive — it
+ * exists so the page reads as built rather than as a blank document.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.14;
+  mask-image: radial-gradient(ellipse 75% 40% at 50% 0%, #000 5%, transparent 70%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: -1;
+  height: 420px;
+  width: min(1100px, 100vw);
+  translate: -50% 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, var(--color-accent-glow), transparent 70%);
+}
+
+/* Consistent keyboard focus treatment across links, buttons and summaries. */
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/*
+ * Scroll reveal — deliberately fail-safe. Visible is the default state; the
+ * hiding rule only applies once BaseLayout's script has added .js-reveal to
+ * <html>, which it does only after confirming it can also reveal again. So no
+ * JS, an error, or reduced-motion all mean "show everything" rather than a
+ * blank page. Never hide content behind an effect that might not run.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .js-reveal [data-reveal] {
+    opacity: 0;
+    translate: 0 12px;
+    transition:
+      opacity 0.5s ease-out,
+      translate 0.5s ease-out;
+  }
+
+  .js-reveal [data-reveal][data-revealed] {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/*
+ * Project write-ups are prose with bold lead-ins ("Warum so gebaut:"). The body
+ * sits at muted weight so those lead-ins carry the scanning structure.
+ */
+.project-content strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.project-content a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .project-content img {
   width: 100%;
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.project-content code {
+  border-radius: 0.25rem;
+  background-color: var(--color-surface-raised);
+  padding: 0.1rem 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
 }

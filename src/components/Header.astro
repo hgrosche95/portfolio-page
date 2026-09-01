@@ -1,22 +1,35 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 
+// Logo + every link + the theme toggle does not fit on a 375px viewport, so the
+// least essential link is dropped there rather than letting the bar overflow.
 const navLinks = [
-	{ href: '/', label: 'home' },
-	{ href: '/#projects', label: 'projekte' },
-	{ href: '/#kontakt', label: 'kontakt' },
+	{ href: '/#projects', label: 'projekte', mobile: true },
+	{ href: '/#erfahrung', label: 'werdegang', mobile: false },
+	{ href: '/#kontakt', label: 'kontakt', mobile: true },
 ];
 ---
 
-<header class="border-b border-[var(--color-border)]">
-	<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-		<a href="/" class="font-mono text-sm text-[var(--color-text)]">
+<header
+	class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg-translucent)] backdrop-blur"
+>
+	<div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3.5">
+		<a
+			href="/"
+			class="shrink-0 font-mono text-sm font-medium tracking-tight text-[var(--color-text)] transition-colors hover:text-[var(--color-accent)]"
+		>
 			henrik<span class="text-[var(--color-accent)]">.</span>grosche
 		</a>
-		<nav class="flex items-center gap-4 font-mono text-sm">
+		<nav class="flex items-center gap-1 font-mono text-xs sm:gap-2 sm:text-sm">
 			{
 				navLinks.map((link) => (
-					<a href={link.href} class="text-[var(--color-text-muted)] hover:text-[var(--color-accent)]">
+					<a
+						href={link.href}
+						class:list={[
+							'rounded px-1.5 py-1 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
+							link.mobile ? '' : 'hidden sm:inline-block',
+						]}
+					>
 						{link.label}
 					</a>
 				))
