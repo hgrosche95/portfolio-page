@@ -1,4 +1,4 @@
-import { ReactFlow, type Node, type Edge, type NodeMouseHandler } from '@xyflow/react';
+import { ReactFlow, type Node, type Edge, type OnSelectionChangeFunc } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ProjectNode, { type GraphNodeData } from './graph/ProjectNode';
 
@@ -25,6 +25,8 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
       position: { x: 340, y: index * 100 },
       data: { label: project.label, sublabel: project.sublabel, kind: 'project' as const },
       draggable: false,
+      ariaLabel: `Projekt ${project.label} öffnen`,
+      ariaRole: 'button',
     })),
   ];
 
@@ -35,18 +37,23 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     animated: true,
   }));
 
-  const handleNodeClick: NodeMouseHandler = (_event, node) => {
-    if (node.id === 'hub') return;
-    window.location.href = `/projects/${node.id}`;
+  // Selection (not a raw click handler) is what fires for both mouse clicks
+  // and keyboard activation (Enter/Space on a focused node), so this is the
+  // one place that needs to handle navigation for it to work for both.
+  const handleSelectionChange: OnSelectionChangeFunc = ({ nodes: selected }) => {
+    const project = selected.find((node) => node.id !== 'hub');
+    if (project) {
+      window.location.href = `/projects/${project.id}`;
+    }
   };
 
   return (
-    <div style={{ height: 420 }} className="rounded border border-[var(--color-border)]">
+    <div className="h-72 rounded border border-[var(--color-border)] sm:h-[420px]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        onNodeClick={handleNodeClick}
+        onSelectionChange={handleSelectionChange}
         nodesDraggable={false}
         nodesConnectable={false}
         panOnDrag={false}

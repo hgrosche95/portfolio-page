@@ -43,7 +43,7 @@ export default function DeployPipeline() {
   }));
 
   return (
-    <div style={{ height: 200 }} className="rounded border border-[var(--color-border)]">
+    <div className="h-40 rounded border border-[var(--color-border)] sm:h-[200px]">
       <ReactFlow
         nodes={nodes}
         edges={edges}

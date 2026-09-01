@@ -6,9 +6,18 @@ import Footer from '../components/Footer.astro';
 interface Props {
 	title: string;
 	description?: string;
+	/** Relative path to the social-preview image; resolved to an absolute URL. */
+	image?: string;
 }
 
-const { title, description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche.' } = Astro.props;
+const {
+	title,
+	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit Node-Graph-Navigation, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
+	image = '/profile.webp',
+} = Astro.props;
+
+const absoluteImageUrl = new URL(image, Astro.site ?? Astro.url).toString();
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
 ---
 
 <!doctype html>
@@ -26,7 +35,19 @@ const { title, description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
 		<meta name="generator" content={Astro.generator} />
+		<link rel="canonical" href={canonicalUrl} />
 		<title>{title}</title>
+
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={absoluteImageUrl} />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:locale" content="de_DE" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={absoluteImageUrl} />
 	</head>
 	<body class="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
 		<Header />
