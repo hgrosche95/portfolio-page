@@ -1,5 +1,12 @@
-import { useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { ReactFlow, type Node, type Edge, type NodeMouseHandler } from '@xyflow/react';
+import { useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
+  type Node,
+  type Edge,
+  type NodeMouseHandler,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ProjectNode, { type ArchitectureKind, type GraphNodeData } from './graph/ProjectNode';
 
@@ -18,7 +25,8 @@ export type GraphProject = {
 const NODE_SPACING = 80;
 /** Vertical distance between architecture nodes sharing a column. */
 const ARCH_ROW = 52;
-/** x of the project column, the first architecture column, and the column gap. */
+/** x of the project column, the first architecture column, and the column gap
+ *  (desktop's left-to-right layout only — mobile lays out top-to-bottom). */
 const PROJECT_X = 300;
 const ARCH_X = 610;
 const ARCH_COLUMN = 185;
@@ -26,15 +34,29 @@ const ARCH_COLUMN = 185;
 /** Roughly a project node's rendered height, for the content extent below. */
 const NODE_HEIGHT = 56;
 
+/** Matches Tailwind's `sm` breakpoint, i.e. where the expand button appears. */
+const DESKTOP_QUERY = '(min-width: 640px)';
+
 /**
- * The container is sized from the nodes actually on screen rather than from a
- * fixed value, so adding a project MDX file stays the only step needed and an
- * unfolded architecture gets the room it needs without leaving dead space.
+ * Below `sm`, the expand-architecture button is hidden (an unfolded
+ * architecture would be far too wide for a phone — see ProjectNode), so
+ * mobile only ever needs the plain hub-and-projects view. Rather than
+ * squeeze the desktop's left-to-right layout into a narrow column, mobile
+ * gets its own top-to-bottom stack, which is what a linear list actually
+ * wants on a narrow screen.
  */
-function graphHeight(nodes: { position: { y: number } }[]): number {
-  const ys = nodes.map((node) => node.position.y);
-  const extent = Math.max(...ys) - Math.min(...ys) + NODE_HEIGHT;
-  return Math.max(360, extent + 100);
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_QUERY);
+    setIsDesktop(mql.matches);
+    const onChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  return isDesktop;
 }
 
 /**
@@ -64,21 +86,22 @@ function goToProject(slug: string) {
   window.location.href = `/projects/${slug}`;
 }
 
-interface NodeGraphProps {
-  projects: GraphProject[];
-}
-
-export default function NodeGraph({ projects }: NodeGraphProps) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-
-  const toggle = (slug: string) => setExpanded((current) => (current === slug ? null : slug));
-
-  const expandedProject = projects.find((project) => project.slug === expanded);
+/**
+ * Builds the full node/edge set for one graph state (a given expanded
+ * project, on a given layout). Used both for the state actually on screen
+ * and, in NodeGraph, to measure every reachable state up front so the
+ * container can be sized once instead of resizing (and shoving the rest of
+ * the page around) on every toggle.
+ */
+function buildGraph(
+  projects: GraphProject[],
+  expanded: string | null,
+  isDesktop: boolean,
+  toggle: (slug: string) => void,
+): { nodes: Node<GraphNodeData>[]; edges: Edge[] } {
+  const expandedProject = isDesktop ? projects.find((project) => project.slug === expanded) : undefined;
   const architecture = expandedProject?.architecture;
 
-  // Architecture nodes live in their own columns to the right of the project
-  // column, so they can never collide with a project and the project rows stay
-  // put when one unfolds.
   const depths = architecture ? computeDepths(architecture) : null;
   const rowsByColumn = new Map<number, number>();
   if (architecture && depths) {
@@ -89,26 +112,27 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   }
 
   const expandedIndex = projects.findIndex((project) => project.slug === expanded);
-  const projectY = (index: number) => index * NODE_SPACING;
-
-  const lastY = projectY(projects.length - 1);
+  const lastY = (projects.length - 1) * NODE_SPACING;
 
   const nodes: Node<GraphNodeData>[] = [
     {
       id: 'hub',
       type: 'project',
-      position: { x: 0, y: lastY / 2 },
-      data: { label: 'Henrik', sublabel: 'verbindet Systeme', kind: 'hub' },
+      position: isDesktop ? { x: 0, y: lastY / 2 } : { x: 0, y: 0 },
+      data: { label: 'Henrik', sublabel: 'verbindet Systeme', kind: 'hub', vertical: !isDesktop },
       draggable: false,
     },
     ...projects.map((project, index) => ({
       id: project.slug,
       type: 'project',
-      position: { x: PROJECT_X, y: projectY(index) },
+      position: isDesktop
+        ? { x: PROJECT_X, y: index * NODE_SPACING }
+        : { x: 0, y: (index + 1) * NODE_SPACING },
       data: {
         label: project.label,
         sublabel: project.sublabel,
         kind: 'project' as const,
+        vertical: !isDesktop,
         ...(project.architecture
           ? { expanded: expanded === project.slug, onToggle: () => toggle(project.slug) }
           : {}),
@@ -127,7 +151,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   }));
 
   if (architecture && depths && expandedProject) {
-    const baseY = projectY(expandedIndex);
+    const baseY = expandedIndex * NODE_SPACING;
     const placed = new Map<number, number>();
 
     for (const node of architecture.nodes) {
@@ -168,6 +192,80 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     }
   }
 
+  return { nodes, edges };
+}
+
+function graphHeight(nodes: { position: { y: number } }[]): number {
+  const ys = nodes.map((node) => node.position.y);
+  const extent = Math.max(...ys) - Math.min(...ys) + NODE_HEIGHT;
+  return Math.max(360, extent + 100);
+}
+
+interface NodeGraphProps {
+  projects: GraphProject[];
+}
+
+interface GraphCanvasProps {
+  nodes: Node<GraphNodeData>[];
+  edges: Edge[];
+  onNodeClick: NodeMouseHandler;
+}
+
+/**
+ * Split out so it can reach `useReactFlow` (only available inside a
+ * ReactFlowProvider). Re-fitting imperatively on state change, instead of
+ * remounting the whole <ReactFlow> via a `key`, is what makes the camera
+ * move fit the new layout instead of hard-cutting to it.
+ */
+function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
+  const { fitView } = useReactFlow();
+
+  useEffect(() => {
+    fitView({ padding: 0.12, duration: 300 });
+    // Re-fit on every node/edge change, i.e. whenever the visible layout
+    // actually changes (toggle, or a desktop/mobile switch) - not on every
+    // render, since `nodes`/`edges` are rebuilt fresh each time regardless.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      onNodeClick={onNodeClick}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      panOnDrag={false}
+      zoomOnScroll={false}
+      zoomOnPinch={false}
+      zoomOnDoubleClick={false}
+      proOptions={{ hideAttribution: true }}
+    />
+  );
+}
+
+export default function NodeGraph({ projects }: NodeGraphProps) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const isDesktop = useIsDesktop();
+
+  const toggle = (slug: string) => setExpanded((current) => (current === slug ? null : slug));
+
+  const { nodes, edges } = buildGraph(projects, expanded, isDesktop, toggle);
+
+  // Sized from the tallest of every reachable state (collapsed, plus each
+  // project's own expansion) rather than just the current one, so the
+  // container never resizes - and shoves the rest of the page around - when
+  // toggling. A borderless canvas with spare room just reads as page
+  // whitespace, not a mis-sized box, so this costs nothing visually.
+  const desktopHeight = Math.max(
+    graphHeight(buildGraph(projects, null, true, toggle).nodes),
+    ...projects
+      .filter((project) => project.architecture)
+      .map((project) => graphHeight(buildGraph(projects, project.slug, true, toggle).nodes)),
+  );
+  const mobileHeight = graphHeight(buildGraph(projects, null, false, toggle).nodes);
+
   // Mouse: a direct click handler, fires exactly once per click.
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
     if (node.id === 'hub' || node.id.includes('--')) return;
@@ -196,28 +294,18 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
 
   return (
     <div
-      className="h-72 sm:h-(--graph-height)"
-      style={{ '--graph-height': `${graphHeight(nodes)}px` } as CSSProperties}
+      className="h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
+      style={
+        {
+          '--graph-height-mobile': `${mobileHeight}px`,
+          '--graph-height-desktop': `${desktopHeight}px`,
+        } as CSSProperties
+      }
       onKeyDown={handleContainerKeyDown}
     >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodeClick={handleNodeClick}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        panOnDrag={false}
-        zoomOnScroll={false}
-        zoomOnPinch={false}
-        zoomOnDoubleClick={false}
-        proOptions={{ hideAttribution: true }}
-        fitView
-        fitViewOptions={{ padding: 0.12 }}
-        // Refit whenever the expanded project changes, so the architecture that
-        // just appeared is brought into view instead of overflowing.
-        key={expanded ?? 'collapsed'}
-      />
+      <ReactFlowProvider>
+        <GraphCanvas nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
+      </ReactFlowProvider>
     </div>
   );
 }

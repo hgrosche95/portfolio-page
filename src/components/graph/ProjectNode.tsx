@@ -12,6 +12,9 @@ export type GraphNodeData = {
   /** Project nodes only: absent when the project declares no architecture. */
   expanded?: boolean;
   onToggle?: () => void;
+  /** Hub/project nodes only: true on the mobile top-to-bottom layout, so
+   *  edges connect via top/bottom handles instead of left/right ones. */
+  vertical?: boolean;
 };
 
 /**
@@ -53,6 +56,9 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
     data.onToggle?.();
   };
 
+  const targetPosition = data.vertical ? Position.Top : Position.Left;
+  const sourcePosition = data.vertical ? Position.Bottom : Position.Right;
+
   return (
     <div
       className={[
@@ -63,7 +69,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
           : 'group hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] cursor-pointer',
       ].join(' ')}
     >
-      <Handle type="target" position={Position.Left} style={{ visibility: 'hidden' }} />
+      <Handle type="target" position={targetPosition} style={{ visibility: 'hidden' }} />
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate" title={data.label}>
@@ -105,7 +111,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
           </button>
         )}
       </div>
-      <Handle type="source" position={Position.Right} style={{ visibility: 'hidden' }} />
+      <Handle type="source" position={sourcePosition} style={{ visibility: 'hidden' }} />
     </div>
   );
 }
