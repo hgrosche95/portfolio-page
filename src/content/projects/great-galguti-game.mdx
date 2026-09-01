@@ -3,6 +3,16 @@ title: "Great Galguti Game"
 githubRepo: "great_galguti_game"
 techStack: ["TypeScript", "React", "Node.js", "WebSocket", "PostgreSQL", "Prisma", "Docker", "Azure"]
 order: 1
+architecture:
+  nodes:
+    - { id: web, label: "React 19", kind: frontend }
+    - { id: server, label: "Express + WebSocket", kind: backend }
+    - { id: logic, label: "Spiellogik (src/)", kind: backend }
+    - { id: db, label: "PostgreSQL · Prisma", kind: data }
+  edges:
+    - [web, server]
+    - [server, logic]
+    - [server, db]
 ---
 
 Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Zahlenkarten und Jokern), gebaut, um mein TypeScript- und Full-Stack-Wissen an einem Projekt zu vertiefen, das größer ist als ein Tutorial — mit echten Nutzerkonten, Live-Zustand über mehrere Clients hinweg und den Problemen, die daraus entstehen.

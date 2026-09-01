@@ -3,6 +3,16 @@ title: "Cocktail Orders"
 githubRepo: "Cocktail-Orders"
 techStack: ["TypeScript", "React", "Node.js", "WebSocket", "SQLite"]
 order: 3
+architecture:
+  nodes:
+    - { id: web, label: "React · Vite", kind: frontend }
+    - { id: api, label: "Express (REST)", kind: backend }
+    - { id: ws, label: "WebSocket → Clients", kind: backend }
+    - { id: db, label: "node:sqlite", kind: data }
+  edges:
+    - [web, api]
+    - [api, db]
+    - [api, ws]
 ---
 
 Eine Bestell-App für die eigene Cocktail-Party, übers lokale WLAN: Gäste öffnen die Seite auf dem Handy, loggen sich nur mit Namen ein, bestellen aus einer filterbaren Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann. Dann verschwinden betroffene Cocktails automatisch aus der Gästekarte.

@@ -4,9 +4,11 @@ interface Props {
 	eyebrow: string;
 	title: string;
 	subtitle?: string;
+	/** Appended to the subtitle, but only from the `sm` breakpoint up. */
+	desktopHint?: string;
 }
 
-const { eyebrow, title, subtitle } = Astro.props;
+const { eyebrow, title, subtitle, desktopHint } = Astro.props;
 ---
 
 <div data-reveal>
@@ -18,7 +20,10 @@ const { eyebrow, title, subtitle } = Astro.props;
 	</h2>
 	{
 		subtitle && (
-			<p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">{subtitle}</p>
+			<p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
+				{subtitle}
+				{desktopHint && <span class="hidden sm:inline"> {desktopHint}</span>}
+			</p>
 		)
 	}
 </div>

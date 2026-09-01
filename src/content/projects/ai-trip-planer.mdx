@@ -3,6 +3,16 @@ title: "AI Trip Planner"
 githubRepo: "ai-trip-planer"
 techStack: ["TypeScript", "Next.js", "NestJS", "Prisma", "PostgreSQL", "Claude API", "Azure", "Bicep", "Playwright"]
 order: 2
+architecture:
+  nodes:
+    - { id: web, label: "Next.js", kind: frontend }
+    - { id: api, label: "NestJS", kind: backend }
+    - { id: claude, label: "Anthropic API", kind: external }
+    - { id: db, label: "PostgreSQL · Prisma", kind: data }
+  edges:
+    - [web, api]
+    - [api, claude]
+    - [api, db]
 ---
 
 Eine Chat-App, die Reisen plant: Man beschreibt Ziel, Zeitraum, Budget und Vorlieben. Daraufhin stellt die KI bei Bedarf die nötigen Rückfragen, sucht (simulierte) Flüge und Hotels, und speichert am Ende einen strukturierten Reiseplan für jeden Tag in der Datenbank. Gebaut, um Next.js, NestJS, Prisma/Postgres und vor allem echte LLM-Tool-Use-Workflows und End-to-End-Tests praktisch zu lernen.

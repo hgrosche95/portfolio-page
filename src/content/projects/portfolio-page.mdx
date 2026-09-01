@@ -3,11 +3,21 @@ title: "Diese Portfolio-Seite"
 githubRepo: "portfolio-page"
 techStack: ["Astro", "TypeScript", "React", "Tailwind CSS", "MDX", "Azure", "GitHub Actions"]
 order: 5
+architecture:
+  nodes:
+    - { id: build, label: "Astro Build (static)", kind: backend }
+    - { id: islands, label: "React Islands", kind: frontend }
+    - { id: scripts, label: "Build-Skripte", kind: backend }
+    - { id: gh, label: "GitHub API", kind: external }
+    - { id: swa, label: "Azure Static Web Apps", kind: external }
+  edges:
+    - [build, islands]
+    - [build, scripts]
+    - [scripts, gh]
+    - [build, swa]
 ---
 
-Die Seite, auf der Sie gerade sind. Sie ist dazu da um einen Teil meiner Skills zu präsentieren.
-
-Die Seite, die Sie gerade lesen. Sie ist als Bewerbungsseite gebaut, sollte die Fähigkeiten aus dem Lebenslauf aber nicht nur behaupten, sondern vorführen: Der Node-Graph auf der Startseite ist die Navigation und gleichzeitig ein Beispiel für eine Systemintegrationen. Die Deployment-Grafik zeigt echte Daten aus dem letzten Deployment des Repos in der sich der Code dieser Seite befindet.
+Die Seite, auf der Sie gerade sind. Sie ist dazu da um einen Teil meiner Skills zu präsentieren. Sie ist als Bewerbungsseite gebaut, sollte die Fähigkeiten aus dem Lebenslauf aber nicht nur behaupten, sondern vorführen: Der Node-Graph auf der Startseite ist die Navigation und gleichzeitig ein Beispiel für eine Systemintegrationen. Die Deployment-Grafik zeigt echte Daten aus dem letzten Deployment des Repos in der sich der Code dieser Seite befindet.
 
 **Warum so gebaut:** Ursprünglich hatte ich reines Next.js geplant. Dann kam der Einfall, dass ja nicht alles durch React laufen muss und somit die Webseite performativer sein kann. Der Informationsteil ist ein reiner statischer Inhalt, nichts soll ablenken. Mit Next.js hätte ich den React-Runtime auch für Seiten ausgeliefert, die ihn nie brauchen. Deshalb Astro mit React-Islands. Die Projektseiten und das Impressum laden **kein einziges JavaScript-Bundle** — nur wenige Zeilen Inline-Skript für Theme-Umschalter und Scroll-Animation. React wird ausschließlich auf der Startseite für den Node-Graph und die Deployment-Grafik geladen, und dank `client:visible` auch dort erst, wenn die Komponenten tatsächlich ins Sichtfeld scrollen. React also nur da, wo es benötigt wird.
 

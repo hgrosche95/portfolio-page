@@ -15,6 +15,7 @@ const graphProjects: GraphProject[] = projectEntries
 		slug: entry.id,
 		label: entry.data.title,
 		sublabel: entry.data.techStack.slice(0, 2).join(', '),
+		architecture: entry.data.architecture,
 	}));
 ---
 
@@ -26,6 +27,7 @@ const graphProjects: GraphProject[] = projectEntries
 			eyebrow="01 — Projekte"
 			title="Wie ich Systeme verbinde"
 			subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
+			desktopHint="Über den Pfeil klappt die Architektur des Projekts auf."
 		/>
 		<div data-reveal class="mt-6">
 			<NodeGraph projects={graphProjects} client:visible />

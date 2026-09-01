@@ -3,6 +3,14 @@ title: "Bewerbungshelfer (Claude Code Skill)"
 githubRepo: "job-application-skill"
 techStack: ["Python", "Claude Code Skills", "ReportLab"]
 order: 4
+architecture:
+  nodes:
+    - { id: claude, label: "Claude Code", kind: external }
+    - { id: skill, label: "SKILL.md · 7-Schritt-Ablauf", kind: backend }
+    - { id: scripts, label: "Python-CLI → PDF & Ordner", kind: data }
+  edges:
+    - [claude, skill]
+    - [skill, scripts]
 ---
 
 Eine "Claude Code Skill" ist kein eigenständiges Programm, sondern ein Ordner mit Anweisungen, den Claude Code automatisch lädt, sobald eine passende Aufgabe auftaucht — bei dieser hier, sobald jemand eine Stellenanzeige teilt oder um Hilfe bei einer Bewerbung bittet. Die `SKILL.md` beschreibt einen 7-stufigen Ablauf: Lebenslauf und Stellenanzeige einsammeln (notfalls per Interview strukturiert erfragen), 3–5 Anforderungen ehrlich gegen die eigene Erfahrung abgleichen (inklusive offenem Benennen von Lücken statt sie zu erfinden), ein Anschreiben nach festem Stilguide entwerfen, mit Rückmeldung verfeinern, und am Ende automatisch einen Bewerbungsordner samt PDF anlegen.
