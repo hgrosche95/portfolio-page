@@ -1,18 +1,57 @@
 ---
+import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import githubStats from '../../data/github-stats.json';
 
-export function getStaticPaths() {
-	// Placeholder path — replaced by real project slugs from the content
-	// collection in Phase 5.
-	return [{ params: { slug: 'beispiel-projekt' } }];
+export async function getStaticPaths() {
+	const projectEntries = await getCollection('projects');
+	return projectEntries.map((entry) => ({
+		params: { slug: entry.id },
+		props: { entry },
+	}));
 }
 
-const { slug } = Astro.params;
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const stats = (githubStats as Record<string, { stars: number; language: string | null; lastPushedAt: string; description: string | null }>)[
+	entry.data.githubRepo
+];
+const lastPushed = stats
+	? new Date(stats.lastPushedAt).toLocaleDateString('de-DE', { dateStyle: 'medium' })
+	: null;
 ---
 
-<BaseLayout title={`${slug} — Henrik Grosche`}>
+<BaseLayout title={`${entry.data.title} — Henrik Grosche`}>
 	<section class="mx-auto max-w-3xl px-4 py-16 font-mono text-sm text-[var(--color-text)]">
-		<h1 class="text-xl">{slug}</h1>
-		<p class="mt-4 text-[var(--color-text-muted)]">Wird in Phase 5/6 mit echten Projektdaten befüllt.</p>
+		<a href="/#projects" class="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)]">
+			&larr; zurück
+		</a>
+		<h1 class="mt-2 text-xl">{entry.data.title}</h1>
+		<div class="mt-2 flex flex-wrap gap-2 text-xs text-[var(--color-text-muted)]">
+			{entry.data.techStack.map((tech: string) => (
+				<span class="rounded border border-[var(--color-border)] px-2 py-0.5">{tech}</span>
+			))}
+		</div>
+
+		{
+			stats && (
+				<div class="mt-4 flex flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
+					<span>&#9733; {stats.stars}</span>
+					{stats.language && <span>{stats.language}</span>}
+					{lastPushed && <span>zuletzt aktualisiert: {lastPushed} (Stand: letztes Deployment)</span>}
+				</div>
+			)
+		}
+
+		<a
+			href={`https://github.com/hgrosche95/${entry.data.githubRepo}`}
+			class="mt-4 inline-block text-xs text-[var(--color-accent)] hover:underline"
+		>
+			auf GitHub ansehen &rarr;
+		</a>
+
+		<div class="mt-8 max-w-none space-y-4 text-[var(--color-text)] leading-relaxed">
+			<Content />
+		</div>
 	</section>
 </BaseLayout>

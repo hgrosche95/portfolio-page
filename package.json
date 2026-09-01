@@ -6,20 +6,23 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "predev": "node scripts/generate-deploy-info.ts",
+    "predev": "node scripts/generate-deploy-info.ts && node scripts/fetch-github-stats.ts",
     "dev": "astro dev",
-    "prebuild": "node scripts/generate-deploy-info.ts",
+    "prebuild": "node scripts/generate-deploy-info.ts && node scripts/fetch-github-stats.ts",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "^0.4.0",
+    "@astrojs/mdx": "^8.0.0",
     "@astrojs/react": "^6.0.5",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@xyflow/react": "^12.11.5",
     "astro": "^7.2.10",
+    "gray-matter": "^4.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3"
