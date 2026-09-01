@@ -17,6 +17,11 @@ pnpm-debug.log*
 .env
 .env.production
 
+# generated at build/dev time by scripts/generate-deploy-info.ts and
+# scripts/fetch-github-stats.ts — always regenerated via npm pre-scripts
+src/data/deploy-info.json
+src/data/github-stats.json
+
 # macOS-specific files
 .DS_Store
 

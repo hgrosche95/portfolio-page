@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import NodeGraph from '../components/NodeGraph';
+import DeployPipeline from '../components/DeployPipeline';
 ---
 
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
@@ -17,6 +18,15 @@ import NodeGraph from '../components/NodeGraph';
 		</p>
 		<div class="mt-4">
 			<NodeGraph client:visible />
+		</div>
+	</section>
+	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-16">
+		<h2 class="font-mono text-lg text-[var(--color-text)]">Diese Seite deployt sich selbst</h2>
+		<p class="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
+			Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker).
+		</p>
+		<div class="mt-4">
+			<DeployPipeline client:visible />
 		</div>
 	</section>
 </BaseLayout>
