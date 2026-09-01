@@ -36,12 +36,17 @@ const cardProjects: CardProject[] = projectEntries.map((entry) => ({
 		<div class="max-w-3xl">
 			<SectionHeading
 				eyebrow="01 — Projekte"
-				title="Wie ich Systeme verbinde"
+				title="Was ich gebaut habe"
 				subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
 				desktopHint="Über den Pfeil klappt die Architektur des Projekts auf."
 			/>
 		</div>
-		<div data-reveal class="mt-6">
+		<div
+			data-reveal
+			class="mt-6"
+			data-xray="NodeGraph.tsx · React-Island, client:visible"
+			data-xray-kind="island"
+		>
 			<NodeGraph projects={graphProjects} client:visible />
 		</div>
 
@@ -54,7 +59,12 @@ const cardProjects: CardProject[] = projectEntries.map((entry) => ({
 			title="Diese Seite deployt sich selbst"
 			subtitle="Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker)."
 		/>
-		<div data-reveal class="mt-6">
+		<div
+			data-reveal
+			class="mt-6"
+			data-xray="DeployPipeline.tsx · React-Island, client:visible"
+			data-xray-kind="island"
+		>
 			<DeployPipeline client:visible />
 		</div>
 	</section>

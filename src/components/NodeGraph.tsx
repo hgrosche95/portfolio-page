@@ -119,7 +119,12 @@ function buildGraph(
       id: 'hub',
       type: 'project',
       position: isDesktop ? { x: 0, y: lastY / 2 } : { x: 0, y: 0 },
-      data: { label: 'Henrik', sublabel: 'verbindet Systeme', kind: 'hub', vertical: !isDesktop },
+      data: {
+        label: 'Henrik',
+        sublabel: `${projects.length} Projekte`,
+        kind: 'hub',
+        vertical: !isDesktop,
+      },
       draggable: false,
     },
     ...projects.map((project, index) => ({

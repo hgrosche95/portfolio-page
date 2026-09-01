@@ -112,6 +112,49 @@ body::after {
 }
 
 /*
+ * X-ray mode. Toggled by the button in BaseLayout, which puts .xray on <html>.
+ * Every [data-xray] element is outlined and labelled with the component that
+ * renders it, so the islands architecture can be inspected on the live page
+ * rather than only described. Labels sit inside the top-left corner: an element
+ * flush against the sticky header would push an outside label off screen.
+ */
+.xray [data-xray] {
+  position: relative;
+  outline: 1px dashed var(--color-border-strong);
+  outline-offset: 4px;
+}
+
+.xray [data-xray][data-xray-kind='island'] {
+  outline-color: var(--color-accent);
+  outline-style: solid;
+}
+
+.xray [data-xray]::after {
+  content: attr(data-xray);
+  position: absolute;
+  top: 0;
+  left: 8px;
+  /* Straddle the outline instead of sitting on the content underneath. */
+  translate: 0 -50%;
+  z-index: 40;
+  pointer-events: none;
+  white-space: nowrap;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  background-color: var(--color-surface);
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.xray [data-xray][data-xray-kind='island']::after {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/*
  * Project write-ups are prose with bold lead-ins ("Warum so gebaut:"). The body
  * sits at muted weight so those lead-ins carry the scanning structure.
  */
