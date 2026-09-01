@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://agreeable-tree-0f9b1f60f.6.azurestaticapps.net/sitemap-index.xml
+Sitemap: https://henrikgrosche.is-a.dev/sitemap-index.xml

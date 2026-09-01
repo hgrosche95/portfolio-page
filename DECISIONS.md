@@ -105,16 +105,25 @@ pages intact.
 
 ## Hosting & deployment
 
-**Azure Static Web Apps, free tier, default subdomain.** Chosen because everything in this
-project needed to be free to run, and Static Web Apps' free tier covers static/Astro output
-completely. Its built-in GitHub Actions integration is also the actual data source behind the
-CI/CD pipeline visualization above — the "live" pipeline data is this site's real deploy
-pipeline, not a mock. A custom domain (~10-15€/year) was considered and deferred, not rejected —
-it can be attached to the same free hosting later without any rework.
+**Azure Static Web Apps, free tier.** Chosen because everything in this project needed to be
+free to run, and Static Web Apps' free tier covers static/Astro output completely. Its built-in
+GitHub Actions integration is also the actual data source behind the CI/CD pipeline
+visualization above — the "live" pipeline data is this site's real deploy pipeline, not a mock.
+
+**Custom domain: `henrikgrosche.is-a.dev`, not a paid TLD.** A paid domain (~10-15€/year) was
+considered and deferred early on, but a nicer-than-`*.azurestaticapps.net` name was still worth
+having for free. is-a.dev issues free subdomains specifically for developer
+portfolios/projects via a reviewed PR to their public GitHub registry (a JSON file mapping the
+subdomain to a CNAME target) — a good fit precisely because that's what this site is. DuckDNS
+was considered and rejected: it's a dynamic-DNS service associated with home-server/self-hosting
+use (Home Assistant, Plex, etc.), and would read as an odd choice on a professional portfolio to
+a technical reviewer who recognizes it. Free "vanity" TLDs like `.tk`/`.ml` were rejected outright
+for their spam/malware reputation. Azure's side of attaching a custom domain (plus managed TLS)
+is free on the same SKU — only the naming layer differs from a paid domain, not the mechanics.
 
 ## Scope philosophy
 
 Ship an MVP first, then treat this as a living project that keeps being extended — itself a
 signal of "actively maintained" work. Known backlog, deliberately deferred rather than
-forgotten: a real contact form with an Azure Function backend, a custom domain, an English
-translation, and additional projects as they're built.
+forgotten: a real contact form with an Azure Function backend, an English translation, and
+additional projects as they're built.

@@ -68,6 +68,24 @@ const lastPushed = stats
 			<Content />
 		</div>
 
+		<div
+			id="lightbox"
+			class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-6"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Screenshot vergrößert"
+		>
+			<button
+				id="lightbox-close"
+				type="button"
+				aria-label="Schließen"
+				class="absolute top-4 right-4 grid size-10 place-items-center rounded-md border border-white/20 text-2xl leading-none text-white transition-colors hover:border-white/50"
+			>
+				&times;
+			</button>
+			<img id="lightbox-img" src="" alt="" class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+		</div>
+
 		<a
 			href={`/projects/${next.id}`}
 			class="group mt-14 flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]"
@@ -87,5 +105,54 @@ const lastPushed = stats
 				aria-hidden="true">&rarr;</span
 			>
 		</a>
+
+		<script is:inline>
+			(function () {
+				const lightbox = document.getElementById('lightbox');
+				const lightboxImg = document.getElementById('lightbox-img');
+				const closeBtn = document.getElementById('lightbox-close');
+				const thumbs = document.querySelectorAll('.project-content img');
+
+				function open(img) {
+					lightboxImg.src = img.src;
+					lightboxImg.alt = img.alt;
+					lightbox.classList.remove('hidden');
+					lightbox.classList.add('flex');
+					document.body.style.overflow = 'hidden';
+					closeBtn.focus();
+				}
+
+				function close() {
+					lightbox.classList.add('hidden');
+					lightbox.classList.remove('flex');
+					document.body.style.overflow = '';
+					lightboxImg.src = '';
+				}
+
+				thumbs.forEach(function (img) {
+					img.classList.add('cursor-zoom-in');
+					img.tabIndex = 0;
+					img.setAttribute('role', 'button');
+					img.setAttribute('aria-label', 'Screenshot vergrößern: ' + img.alt);
+					img.addEventListener('click', function () {
+						open(img);
+					});
+					img.addEventListener('keydown', function (event) {
+						if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault();
+							open(img);
+						}
+					});
+				});
+
+				closeBtn.addEventListener('click', close);
+				lightbox.addEventListener('click', function (event) {
+					if (event.target === lightbox) close();
+				});
+				document.addEventListener('keydown', function (event) {
+					if (event.key === 'Escape' && !lightbox.classList.contains('hidden')) close();
+				});
+			})();
+		</script>
 	</article>
 </BaseLayout>

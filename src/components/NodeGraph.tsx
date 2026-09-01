@@ -1,4 +1,5 @@
-import { ReactFlow, type Node, type Edge, type OnSelectionChangeFunc } from '@xyflow/react';
+import type { KeyboardEvent } from 'react';
+import { ReactFlow, type Node, type Edge, type NodeMouseHandler } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ProjectNode, { type GraphNodeData } from './graph/ProjectNode';
 
@@ -8,6 +9,10 @@ export type GraphProject = { slug: string; label: string; sublabel: string };
 
 interface NodeGraphProps {
   projects: GraphProject[];
+}
+
+function goToProject(slug: string) {
+  window.location.href = `/projects/${slug}`;
 }
 
 export default function NodeGraph({ projects }: NodeGraphProps) {
@@ -37,23 +42,39 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     animated: true,
   }));
 
-  // Selection (not a raw click handler) is what fires for both mouse clicks
-  // and keyboard activation (Enter/Space on a focused node), so this is the
-  // one place that needs to handle navigation for it to work for both.
-  const handleSelectionChange: OnSelectionChangeFunc = ({ nodes: selected }) => {
-    const project = selected.find((node) => node.id !== 'hub');
-    if (project) {
-      window.location.href = `/projects/${project.id}`;
+  // Mouse: a direct click handler, fires exactly once per click.
+  const handleNodeClick: NodeMouseHandler = (_event, node) => {
+    if (node.id === 'hub') return;
+    goToProject(node.id);
+  };
+
+  // Keyboard: React Flow's own node keydown handler only updates internal
+  // selection state on Enter/Space, it never calls onNodeClick — so this is
+  // a separate handler on the wrapping div. It works via ordinary DOM event
+  // bubbling: the focused node wrapper is a descendant of this div, so its
+  // keydown reaches us here even though we don't render that wrapper
+  // ourselves. Reading data-id (which React Flow sets on every node
+  // wrapper) is what tells us which node was focused.
+  const handleContainerKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const nodeEl = (event.target as HTMLElement).closest<HTMLElement>('[data-id]');
+    const id = nodeEl?.dataset.id;
+    if (id && id !== 'hub') {
+      event.preventDefault();
+      goToProject(id);
     }
   };
 
   return (
-    <div className="h-72 rounded border border-[var(--color-border)] sm:h-[420px]">
+    <div
+      className="h-72 rounded border border-[var(--color-border)] sm:h-[420px]"
+      onKeyDown={handleContainerKeyDown}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        onSelectionChange={handleSelectionChange}
+        onNodeClick={handleNodeClick}
         nodesDraggable={false}
         nodesConnectable={false}
         panOnDrag={false}

@@ -11,7 +11,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://agreeable-tree-0f9b1f60f.6.azurestaticapps.net',
+  site: 'https://henrikgrosche.is-a.dev',
   output: 'static',
   integrations: [react(), mdx(), sitemap()],
 
