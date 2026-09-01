@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import type { CSSProperties, KeyboardEvent } from 'react';
 import { ReactFlow, type Node, type Edge, type NodeMouseHandler } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ProjectNode, { type GraphNodeData } from './graph/ProjectNode';
@@ -6,6 +6,18 @@ import ProjectNode, { type GraphNodeData } from './graph/ProjectNode';
 const nodeTypes = { project: ProjectNode };
 
 export type GraphProject = { slug: string; label: string; sublabel: string };
+
+/** Vertical distance between two project nodes, in flow units. */
+const NODE_SPACING = 80;
+
+/**
+ * The graph grows with the number of projects rather than sitting at a fixed
+ * height, so adding a project MDX file stays the only step needed — a fixed
+ * height would silently shrink every node once the list outgrows it.
+ */
+function graphHeight(projectCount: number): number {
+  return Math.max(360, projectCount * NODE_SPACING + 120);
+}
 
 interface NodeGraphProps {
   projects: GraphProject[];
@@ -20,14 +32,14 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     {
       id: 'hub',
       type: 'project',
-      position: { x: 0, y: ((projects.length - 1) * 100) / 2 },
+      position: { x: 0, y: ((projects.length - 1) * NODE_SPACING) / 2 },
       data: { label: 'Henrik', sublabel: 'verbindet Systeme', kind: 'hub' },
       draggable: false,
     },
     ...projects.map((project, index) => ({
       id: project.slug,
       type: 'project',
-      position: { x: 340, y: index * 100 },
+      position: { x: 340, y: index * NODE_SPACING },
       data: { label: project.label, sublabel: project.sublabel, kind: 'project' as const },
       draggable: false,
       ariaLabel: `Projekt ${project.label} öffnen`,
@@ -67,7 +79,8 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
 
   return (
     <div
-      className="h-72 rounded border border-[var(--color-border)] sm:h-[420px]"
+      className="h-72 rounded border border-[var(--color-border)] sm:h-(--graph-height)"
+      style={{ '--graph-height': `${graphHeight(projects.length)}px` } as CSSProperties}
       onKeyDown={handleContainerKeyDown}
     >
       <ReactFlow
