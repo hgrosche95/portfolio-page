@@ -1,0 +1,23 @@
+{
+  "name": "portfolio-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azure Functions backend for the portfolio contact form.",
+  "main": "dist/functions/*.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "func start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "typescript": "^5.7.2"
+  }
+}

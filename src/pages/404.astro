@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+	title="404 — Seite nicht gefunden"
+	description="Diese Seite gibt es nicht (mehr)."
+>
+	<section class="mx-auto flex max-w-5xl flex-col items-start px-4 py-24">
+		<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
+			Fehler 404
+		</p>
+		<h1 class="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-text)] sm:text-5xl">
+			Diese Seite gibt es nicht
+		</h1>
+		<p class="mt-4 max-w-xl text-base leading-relaxed text-[var(--color-text-muted)]">
+			Vermutlich ein Tippfehler in der Adresse oder ein alter Link. Von hier kommst du wieder
+			zurück:
+		</p>
+
+		<pre
+			class="mt-8 w-full max-w-xl overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 font-mono text-xs leading-relaxed text-[var(--color-text-muted)]"><code>$ curl -I {Astro.url.pathname}
+HTTP/1.1 <span class="text-[var(--color-accent)]">404 Not Found</span></code></pre>
+
+		<div class="mt-8 flex flex-wrap items-center gap-3">
+			<a
+				href="/"
+				class="rounded-md bg-[var(--color-accent)] px-4 py-2 font-mono text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
+			>
+				Zur Startseite
+			</a>
+			<a
+				href="/#projects"
+				class="rounded-md border border-[var(--color-border-strong)] px-4 py-2 font-mono text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+			>
+				Projekte
+			</a>
+			<a
+				href="/#kontakt"
+				class="font-mono text-sm text-[var(--color-text-muted)] underline-offset-4 transition-colors hover:text-[var(--color-accent)] hover:underline"
+			>
+				Kontakt →
+			</a>
+		</div>
+	</section>
+</BaseLayout>

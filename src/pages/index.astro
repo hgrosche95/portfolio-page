@@ -7,6 +7,7 @@ import NodeGraph, { type GraphProject } from '../components/NodeGraph';
 import ProjectCards, { type CardProject } from '../components/ProjectCards.astro';
 import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
+import ContactForm from '../components/ContactForm.astro';
 import Contact from '../components/Contact.astro';
 
 const projectEntries = (await getCollection('projects')).sort(
@@ -80,6 +81,7 @@ const cardProjects: CardProject[] = projectEntries.map((entry) => ({
 			title="Lass uns sprechen"
 			subtitle="Offen für Anfragen — am schnellsten per E-Mail."
 		/>
+		<ContactForm />
 		<Contact />
 	</section>
 </BaseLayout>

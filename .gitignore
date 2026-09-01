@@ -30,3 +30,8 @@ src/data/github-stats.json
 
 # Generated at build time by scripts/generate-og-images.ts
 public/og/
+
+# Azure Functions build output
+api/node_modules/
+api/dist/
+api/local.settings.json
