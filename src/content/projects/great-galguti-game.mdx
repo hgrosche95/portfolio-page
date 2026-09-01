@@ -7,8 +7,10 @@ order: 1
 
 Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Zahlenkarten und Jokern), gebaut, um mein TypeScript- und Full-Stack-Wissen an einem Projekt zu vertiefen, das größer ist als ein Tutorial — mit echten Nutzerkonten, Live-Zustand über mehrere Clients hinweg und den Problemen, die daraus entstehen.
 
-![Login-Screen](/projects/great-galguti-game/login.webp)
-![Laufende Partie mit Bots](/projects/great-galguti-game/gameplay.webp)
+<div class="screenshot-grid">
+  <img src="/projects/great-galguti-game/login.webp" alt="Login-Screen" />
+  <img src="/projects/great-galguti-game/gameplay.webp" alt="Laufende Partie mit Bots" />
+</div>
 
 **Warum so gebaut:** Das Repo ist ein Monorepo aus drei unabhängigen Teilprojekten: reine Spiellogik (`src/`, ohne Laufzeit-Abhängigkeiten, mit Vitest getestet), ein Node/Express-Server mit WebSockets für den Live-Betrieb sowie Prisma/PostgreSQL für Accounts, und ein React-19-Frontend. Der Server importiert die Spiellogik aus `src/` direkt, statt sie zu duplizieren — dieselben Funktionen entscheiden, ob ein Zug gültig ist, egal ob im Test, im Bot oder live im Spiel.
 

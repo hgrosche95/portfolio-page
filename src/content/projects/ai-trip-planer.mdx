@@ -7,8 +7,10 @@ order: 2
 
 Eine Chat-App, die Reisen plant: Man beschreibt Ziel, Zeitraum, Budget und Vorlieben, die KI stellt Rückfragen, sucht (simulierte) Flüge und Hotels, und speichert am Ende einen strukturierten Tag-für-Tag-Reiseplan in der Datenbank. Gebaut, um Next.js, NestJS, Prisma/Postgres und vor allem echte LLM-Tool-Use-Workflows und End-to-End-Tests praktisch zu lernen.
 
-![Chat-Oberfläche des Reiseplaners](/projects/ai-trip-planer/chat.webp)
-![Detaillierte Reiseübersicht](/projects/ai-trip-planer/trip.webp)
+<div class="screenshot-grid">
+  <img src="/projects/ai-trip-planer/chat.webp" alt="Chat-Oberfläche des Reiseplaners" />
+  <img src="/projects/ai-trip-planer/trip.webp" alt="Detaillierte Reiseübersicht" />
+</div>
 
 **Warum so gebaut:** Das Kernstück ist kein einzelner Prompt, sondern eine echte Agent-Schleife gegen die Anthropic-API (`claude-haiku-4-5`): Das Backend ruft `messages.create` mit einem `tools`-Array auf, führt angeforderte Tool-Calls aus (`search_flights`, `search_hotels`, `save_itinerary`) und gibt die Ergebnisse als `tool_result` zurück, bis das Modell keine weiteren Tools mehr braucht. Das `save_itinerary`-Tool hat ein festes JSON-Schema, das direkt auf das Prisma-Datenmodell abbildet — die KI liefert also von sich aus strukturierte, typsichere Daten statt Freitext, den man später parsen müsste.
 
