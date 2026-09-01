@@ -1,0 +1,91 @@
+---
+import githubStats from '../data/github-stats.json';
+
+export interface CardProject {
+	slug: string;
+	title: string;
+	summary: string;
+	techStack: string[];
+	githubRepo: string;
+}
+
+interface Props {
+	projects: CardProject[];
+}
+
+const { projects } = Astro.props;
+
+type RepoStats = { stars: number; language: string | null; lastPushedAt: string };
+const stats = githubStats as Record<string, RepoStats | undefined>;
+
+const formatDate = (iso: string) =>
+	new Date(iso).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' });
+
+/**
+ * Longer stacks are cut off with a "+n" counter so one card cannot outgrow the
+ * others in the grid. The full list is on the project page.
+ */
+const MAX_TAGS = 4;
+---
+
+<p
+	data-reveal
+	class="mt-12 border-t border-[var(--color-border)] pt-6 font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase"
+>
+	Dieselben Projekte als Liste
+</p>
+
+<div class="mt-4 grid gap-4 sm:grid-cols-2">
+	{
+		projects.map((project, index) => {
+			const repo = stats[project.githubRepo];
+			const extraTags = project.techStack.length - MAX_TAGS;
+
+			return (
+				<a
+					data-reveal
+					href={`/projects/${project.slug}`}
+					class="group flex flex-col rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-colors hover:border-[var(--color-accent)]"
+				>
+					<div class="flex items-baseline gap-3">
+						<span class="font-mono text-xs text-[var(--color-accent)]">
+							{String(index + 1).padStart(2, '0')}
+						</span>
+						<h3 class="font-medium text-[var(--color-text)] transition-colors group-hover:text-[var(--color-accent)]">
+							{project.title}
+						</h3>
+					</div>
+
+					<p class="mt-2 flex-1 text-sm leading-relaxed text-[var(--color-text-muted)]">
+						{project.summary}
+					</p>
+
+					<div class="mt-4 flex flex-wrap gap-1.5">
+						{project.techStack.slice(0, MAX_TAGS).map((tech) => (
+							<span class="rounded border border-[var(--color-border)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-muted)]">
+								{tech}
+							</span>
+						))}
+						{extraTags > 0 && (
+							<span class="px-1 py-0.5 font-mono text-xs text-[var(--color-text-muted)]">
+								+{extraTags}
+							</span>
+						)}
+					</div>
+
+					<div class="mt-4 flex items-center gap-4 border-t border-[var(--color-border)] pt-3 font-mono text-xs text-[var(--color-text-muted)]">
+						{repo?.language && <span>{repo.language}</span>}
+						{repo && <span>&#9733; {repo.stars}</span>}
+						{repo && <span>{formatDate(repo.lastPushedAt)}</span>}
+						<span
+							class="ml-auto transition-transform group-hover:translate-x-1 group-hover:text-[var(--color-accent)]"
+							aria-hidden="true"
+						>
+							&rarr;
+						</span>
+					</div>
+				</a>
+			);
+		})
+	}
+</div>

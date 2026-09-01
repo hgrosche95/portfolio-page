@@ -5,6 +5,8 @@ const projects = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/projects' }),
   schema: z.object({
     title: z.string(),
+    /** One or two sentences for the project card grid on the homepage. */
+    summary: z.string(),
     githubRepo: z.string(),
     techStack: z.array(z.string()),
     order: z.number(),

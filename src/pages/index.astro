@@ -4,19 +4,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import NodeGraph, { type GraphProject } from '../components/NodeGraph';
+import ProjectCards, { type CardProject } from '../components/ProjectCards.astro';
 import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
 import Contact from '../components/Contact.astro';
 
-const projectEntries = await getCollection('projects');
-const graphProjects: GraphProject[] = projectEntries
-	.sort((a, b) => a.data.order - b.data.order)
-	.map((entry) => ({
-		slug: entry.id,
-		label: entry.data.title,
-		sublabel: entry.data.techStack.slice(0, 2).join(', '),
-		architecture: entry.data.architecture,
-	}));
+const projectEntries = (await getCollection('projects')).sort(
+	(a, b) => a.data.order - b.data.order,
+);
+
+const graphProjects: GraphProject[] = projectEntries.map((entry) => ({
+	slug: entry.id,
+	label: entry.data.title,
+	sublabel: entry.data.techStack.slice(0, 2).join(', '),
+	architecture: entry.data.architecture,
+}));
+
+const cardProjects: CardProject[] = projectEntries.map((entry) => ({
+	slug: entry.id,
+	title: entry.data.title,
+	summary: entry.data.summary,
+	techStack: entry.data.techStack,
+	githubRepo: entry.data.githubRepo,
+}));
 ---
 
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
@@ -34,6 +44,8 @@ const graphProjects: GraphProject[] = projectEntries
 		<div data-reveal class="mt-6">
 			<NodeGraph projects={graphProjects} client:visible />
 		</div>
+
+		<ProjectCards projects={cardProjects} />
 	</section>
 
 	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-20">
