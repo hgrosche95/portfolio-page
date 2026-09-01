@@ -22,13 +22,15 @@ const graphProjects: GraphProject[] = projectEntries
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
 	<Hero />
 
-	<section id="projects" class="mx-auto max-w-5xl px-4 pb-20">
-		<SectionHeading
-			eyebrow="01 — Projekte"
-			title="Wie ich Systeme verbinde"
-			subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
-			desktopHint="Über den Pfeil klappt die Architektur des Projekts auf."
-		/>
+	<section id="projects" class="mx-auto max-w-7xl px-4 pb-20">
+		<div class="max-w-3xl">
+			<SectionHeading
+				eyebrow="01 — Projekte"
+				title="Wie ich Systeme verbinde"
+				subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
+				desktopHint="Über den Pfeil klappt die Architektur des Projekts auf."
+			/>
+		</div>
 		<div data-reveal class="mt-6">
 			<NodeGraph projects={graphProjects} client:visible />
 		</div>

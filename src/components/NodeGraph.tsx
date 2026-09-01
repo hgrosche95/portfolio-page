@@ -196,7 +196,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
 
   return (
     <div
-      className="h-72 rounded border border-[var(--color-border)] sm:h-(--graph-height)"
+      className="h-72 sm:h-(--graph-height)"
       style={{ '--graph-height': `${graphHeight(nodes)}px` } as CSSProperties}
       onKeyDown={handleContainerKeyDown}
     >
