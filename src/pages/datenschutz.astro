@@ -3,8 +3,55 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Datenschutzerklärung — Henrik Grosche">
-	<section class="mx-auto max-w-3xl px-4 py-16 font-mono text-sm text-[var(--color-text)]">
+	<section class="mx-auto max-w-3xl space-y-6 px-4 py-16 font-mono text-sm leading-relaxed text-[var(--color-text)]">
 		<h1 class="text-xl">Datenschutzerklärung</h1>
-		<p class="mt-4 text-[var(--color-text-muted)]">Wird in Phase 6 mit dem finalen Text befüllt.</p>
+
+		<div>
+			<h2 class="text-base text-[var(--color-accent)]">1. Verantwortlicher</h2>
+			<p class="mt-1">
+				Henrik Grosche, Düsseldorf<br />
+				E-Mail: <a href="mailto:h.grosche95@gmail.com" class="text-[var(--color-accent)] hover:underline">h.grosche95@gmail.com</a>
+			</p>
+		</div>
+
+		<div>
+			<h2 class="text-base text-[var(--color-accent)]">2. Keine Cookies, kein Tracking</h2>
+			<p class="mt-1">
+				Diese Seite setzt keine Cookies und keine Analyse- oder Tracking-Tools ein. Die einzige
+				gespeicherte Einstellung (Hell-/Dunkelmodus) wird ausschließlich lokal im Browser
+				(localStorage) gespeichert und nie an einen Server übertragen.
+			</p>
+		</div>
+
+		<div>
+			<h2 class="text-base text-[var(--color-accent)]">3. Hosting</h2>
+			<p class="mt-1">
+				Diese Seite wird über Azure Static Web Apps (Microsoft) gehostet. Beim Aufruf der Seite
+				verarbeitet der Hoster technisch bedingt Server-Logs (u. a. IP-Adresse, Zeitpunkt, abgerufene
+				Datei) zur Bereitstellung und Absicherung des Dienstes. Rechtsgrundlage ist Art. 6 Abs. 1
+				lit. f DSGVO (berechtigtes Interesse an einer technisch fehlerfreien und sicheren
+				Bereitstellung der Seite).
+			</p>
+		</div>
+
+		<div>
+			<h2 class="text-base text-[var(--color-accent)]">4. Kontaktaufnahme per E-Mail</h2>
+			<p class="mt-1">
+				Wenn Sie mich per E-Mail kontaktieren, werden die von Ihnen mitgeteilten Daten (E-Mail-Adresse,
+				ggf. Name und Nachrichteninhalt) ausschließlich zur Bearbeitung Ihrer Anfrage verarbeitet und
+				nicht an Dritte weitergegeben. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes
+				Interesse an der Beantwortung von Anfragen) bzw. Art. 6 Abs. 1 lit. b DSGVO, sofern Ihre
+				Anfrage auf eine mögliche Zusammenarbeit abzielt.
+			</p>
+		</div>
+
+		<div>
+			<h2 class="text-base text-[var(--color-accent)]">5. Ihre Rechte</h2>
+			<p class="mt-1">
+				Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
+				Datenübertragbarkeit sowie Widerspruch gegen die Verarbeitung Ihrer personenbezogenen Daten.
+				Wenden Sie sich hierzu an die oben genannte E-Mail-Adresse.
+			</p>
+		</div>
 	</section>
 </BaseLayout>

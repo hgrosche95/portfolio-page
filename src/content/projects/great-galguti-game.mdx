@@ -1,8 +1,14 @@
 ---
-title: "great_galguti_game"
+title: "Great Galguti Game"
 githubRepo: "great_galguti_game"
-techStack: ["TypeScript"]
+techStack: ["TypeScript", "React", "Node.js", "WebSocket", "PostgreSQL", "Prisma", "Docker", "Azure"]
 order: 1
 ---
 
-TODO: nach Lesen des Repo-Codes/READMEs in Phase 6 mit echtem "Warum/Wie"-Text befüllen.
+Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Zahlenkarten und Jokern), gebaut, um mein TypeScript- und Full-Stack-Wissen an einem Projekt zu vertiefen, das größer ist als ein Tutorial — mit echten Nutzerkonten, Live-Zustand über mehrere Clients hinweg und den Problemen, die daraus entstehen.
+
+**Warum so gebaut:** Das Repo ist ein Monorepo aus drei unabhängigen Teilprojekten: reine Spiellogik (`src/`, ohne Laufzeit-Abhängigkeiten, mit Vitest getestet), ein Node/Express-Server mit WebSockets für den Live-Betrieb sowie Prisma/PostgreSQL für Accounts, und ein React-19-Frontend. Der Server importiert die Spiellogik aus `src/` direkt, statt sie zu duplizieren — dieselben Funktionen entscheiden, ob ein Zug gültig ist, egal ob im Test, im Bot oder live im Spiel.
+
+**Technisch interessant:** Der Server validiert jeden Zug serverseitig gegen die tatsächliche Hand des Spielers, statt dem Client zu vertrauen — ein manipulierter WebSocket-Client kann also nicht schummeln. Jeder Client bekommt außerdem nur seine eigene Hand plus die Kartenanzahl der Gegner übermittelt, nie deren tatsächliche Karten — verdeckte Information wird serverseitig durchgesetzt, nicht nur im UI versteckt. Auth über WebSocket läuft über ein Handshake-Muster mit Timeout, weil Browser beim WS-Handshake keine eigenen Header setzen können.
+
+**Deployment:** Frontend auf Azure Static Web Apps (inkl. PR-Preview-Umgebungen), der Server als Docker-Container auf Azure Container Apps (OIDC-Deploy statt gespeicherter Zugangsdaten), Datenbank auf Azure Database for PostgreSQL. `main` ist geschützt und verlangt grünes CI (Typecheck + Tests über alle drei Teilprojekte) vor jedem Merge.

@@ -1,0 +1,42 @@
+---
+const entries = [
+	{
+		role: 'Full-Stack-Entwickler',
+		company: 'iurFRIEND AG, Düsseldorf',
+		period: '04/2024 – heute',
+		highlight: 'Systemintegration zwischen Outlook, Nextcloud, Advoware und Brevo inkl. KI-gestützter Dokumentenklassifizierung.',
+	},
+	{
+		role: 'Webentwickler',
+		company: 'argutus GmbH, Düsseldorf',
+		period: '08/2022 – 03/2024',
+		highlight: 'TYPO3, Shopify, Shopware, WordPress; Docker-Containerisierung; CI/CD-Deployment-Prozesse.',
+	},
+	{
+		role: 'Frontend-Entwickler',
+		company: 'Fact Informationssysteme & Consulting GmbH, Neuss',
+		period: '10/2020 – 07/2022',
+		highlight: 'Asset-Verwaltungs-Webanwendung mit React, TypeScript und Java im größeren Entwicklerteam.',
+	},
+	{
+		role: 'Softwareentwickler',
+		company: 'Commerz Real AG, Düsseldorf',
+		period: '04/2020 – 09/2020',
+		highlight: 'Interne Web-Plattform mit Python/Django, Datenbankentwicklung mit SQL.',
+	},
+];
+---
+
+<ol class="mt-4 space-y-6 border-l border-[var(--color-border)] pl-4 font-mono text-sm">
+	{
+		entries.map((entry) => (
+			<li>
+				<div class="text-[var(--color-text)]">
+					{entry.role} <span class="text-[var(--color-text-muted)]">— {entry.company}</span>
+				</div>
+				<div class="text-xs text-[var(--color-accent)]">{entry.period}</div>
+				<p class="mt-1 text-xs text-[var(--color-text-muted)]">{entry.highlight}</p>
+			</li>
+		))
+	}
+</ol>

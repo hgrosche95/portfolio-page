@@ -1,0 +1,29 @@
+---
+const links = [
+	{ label: 'E-Mail', href: 'mailto:h.grosche95@gmail.com', text: 'h.grosche95@gmail.com' },
+	{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/henrik-grosche-6559a51b5/', text: 'linkedin.com/in/henrik-grosche' },
+	{ label: 'GitHub', href: 'https://github.com/hgrosche95', text: 'github.com/hgrosche95' },
+];
+---
+
+<div class="mt-4 space-y-3 font-mono text-sm">
+	{
+		links.map((link) => (
+			<div>
+				<span class="text-[var(--color-text-muted)]">{link.label}: </span>
+				<a href={link.href} class="text-[var(--color-accent)] hover:underline">
+					{link.text}
+				</a>
+			</div>
+		))
+	}
+	<div>
+		<a
+			href="/cv-henrik-grosche.pdf"
+			download
+			class="mt-2 inline-block rounded border border-[var(--color-border)] px-3 py-1 text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+		>
+			Lebenslauf (PDF) herunterladen
+		</a>
+	</div>
+</div>

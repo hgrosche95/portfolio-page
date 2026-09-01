@@ -1,8 +1,14 @@
 ---
-title: "job-application-skill"
+title: "Bewerbungshelfer (Claude Code Skill)"
 githubRepo: "job-application-skill"
-techStack: ["Python"]
+techStack: ["Python", "Claude Code Skills", "ReportLab"]
 order: 4
 ---
 
-TODO: nach Lesen des Repo-Codes/READMEs in Phase 6 mit echtem "Warum/Wie"-Text befüllen.
+Eine "Claude Code Skill" ist kein eigenständiges Programm, sondern ein Ordner mit Anweisungen, den Claude Code automatisch lädt, sobald eine passende Aufgabe auftaucht — bei dieser hier, sobald jemand eine Stellenanzeige teilt oder um Hilfe bei einer Bewerbung bittet. Die `SKILL.md` beschreibt einen 7-stufigen Ablauf: Lebenslauf und Stellenanzeige einsammeln (notfalls per Interview strukturiert erfragen), 3–5 Anforderungen ehrlich gegen die eigene Erfahrung abgleichen (inklusive offenem Benennen von Lücken statt sie zu erfinden), ein Anschreiben nach festem Stilguide entwerfen, mit Rückmeldung verfeinern, und am Ende automatisch einen Bewerbungsordner samt PDF anlegen.
+
+**Warum so gebaut:** Die eigentliche "Bewerbung schreiben"-Logik läuft komplett im Sprachmodell — als dokumentierter Prozess in Markdown, nicht als Code. Python kommt nur für den Teil zum Einsatz, der wirklich deterministisch sein muss: PDF-Layout und Dateisystem-Operationen. Diese Trennung fand ich reizvoll: Die KI trifft die inhaltlichen Entscheidungen (was relevant ist, was fehlt, wie es formuliert wird), Skripte erzeugen nur, was die KI bereits entschieden hat — nie umgekehrt.
+
+**Technisch interessant:** Drei kleine CLI-Skripte, die Claude selbst aufruft: eines baut einen gestalteten Lebenslauf aus JSON-Daten mit ReportLab (inklusive optionalem Foto), eines rendert das fertig abgestimmte Anschreiben als PDF, eines legt automatisch einen sauber benannten Bewerbungsordner an und sortiert Anlagen ein. Sämtliche Leitplanken — keine erfundenen Erfahrungen, Foto nur wenn explizit gewünscht, nichts wird automatisch verschickt — stehen nicht im Code, sondern als Regeln direkt in der `SKILL.md`. Es läuft komplett lokal in der eigenen Claude-Code-Session, ohne eigenes Backend oder gespeicherte API-Keys.
+
+**Aktueller Stand:** Bewusst als MVP gebaut und dokumentiert, mit offenem Ausbauplan (u. a. automatisches Einlesen von GitHub-Profilen für Projektbeispiele).
