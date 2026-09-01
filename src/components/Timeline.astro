@@ -4,39 +4,76 @@ const entries = [
 		role: 'Full-Stack-Entwickler',
 		company: 'iurFRIEND AG, Düsseldorf',
 		period: '04/2024 – heute',
-		highlight: 'Systemintegration zwischen Outlook, Nextcloud, Advoware und Brevo inkl. KI-gestützter Dokumentenklassifizierung.',
+		details: [
+			'Webanwendungen für digitale Fachprozesse im juristischen Umfeld, inkl. responsiver Oberflächen und serverseitiger Funktionen',
+			'Buchungstool für Termine, das die manuelle Terminkoordination im Team deutlich reduziert hat',
+			'Systemintegration zwischen Outlook, Nextcloud, Advoware und Brevo zur automatisierten Termin- und Dokumentenverwaltung, inkl. KI-gestützter Klassifizierung eingehender beA-Dokumente',
+			'KI-gestützte Programmierung mit Claude Code und GitHub Copilot',
+			'Mitgestaltung standardisierter CI/CD-Prozesse (Node.js-basierte Build- & Deployment-Pipelines), die Deployments in neuen Projekten beschleunigt und Fehlerquellen reduziert haben',
+			'Entwicklung mit JavaScript, Node.js und PHP',
+		],
 	},
 	{
 		role: 'Webentwickler',
 		company: 'argutus GmbH, Düsseldorf',
 		period: '08/2022 – 03/2024',
-		highlight: 'TYPO3, Shopify, Shopware, WordPress; Docker-Containerisierung; CI/CD-Deployment-Prozesse.',
+		details: [
+			'Optimierung und Erstellung von Webseiten in TYPO3, Shopify, Shopware und WordPress',
+			'Entwicklung containerisierter Anwendungen mit Docker',
+			'Mitarbeit an automatisierten CI/CD-Deployment-Prozessen, die die Release-Frequenz erhöht haben',
+		],
 	},
 	{
 		role: 'Frontend-Entwickler',
 		company: 'Fact Informationssysteme & Consulting GmbH, Neuss',
 		period: '10/2020 – 07/2022',
-		highlight: 'Asset-Verwaltungs-Webanwendung mit React, TypeScript und Java im größeren Entwicklerteam.',
+		details: [
+			'Asset-Verwaltungs-Webanwendung mit React, TypeScript und Java',
+			'Docker-Container zur Optimierung der Entwicklungsumgebung',
+			'Nahtlose Versionierung und CI/CD mittels Git',
+			'Zusammenarbeit in einem größeren Entwicklerteam',
+		],
 	},
 	{
 		role: 'Softwareentwickler',
 		company: 'Commerz Real AG, Düsseldorf',
 		period: '04/2020 – 09/2020',
-		highlight: 'Interne Web-Plattform mit Python/Django, Datenbankentwicklung mit SQL.',
+		details: [
+			'Interne Softwarelösungen mit Python und Java zur Optimierung von Arbeitsprozessen',
+			'Web-Plattform für interne Anwendungen mit Python und Django',
+			'Datenbankentwicklung und -abfragen mit SQL',
+			'Schulungen zu Scrum und Kanban',
+		],
+	},
+	{
+		role: 'Praktikum',
+		company: 'Heinrich-Heine-Universität, Düsseldorf',
+		period: '04/2019 – 08/2019',
+		details: ['Implementierung und Pflege von Datenbanken mit PHP und SQL zur Optimierung der Datenverwaltung'],
 	},
 ];
 ---
 
-<ol class="mt-4 space-y-6 border-l border-[var(--color-border)] pl-4 font-mono text-sm">
+<div class="mt-4 space-y-2 font-mono text-sm">
 	{
 		entries.map((entry) => (
-			<li>
-				<div class="text-[var(--color-text)]">
-					{entry.role} <span class="text-[var(--color-text-muted)]">— {entry.company}</span>
-				</div>
-				<div class="text-xs text-[var(--color-accent)]">{entry.period}</div>
-				<p class="mt-1 text-xs text-[var(--color-text-muted)]">{entry.highlight}</p>
-			</li>
+			<details class="group rounded border border-[var(--color-border)] px-4 py-3 open:border-[var(--color-accent)]">
+				<summary class="flex cursor-pointer list-none items-center justify-between gap-4">
+					<span>
+						<span class="text-[var(--color-text)]">{entry.role}</span>{' '}
+						<span class="text-[var(--color-text-muted)]">— {entry.company}</span>
+					</span>
+					<span class="flex shrink-0 items-center gap-2 text-xs">
+						<span class="text-[var(--color-accent)]">{entry.period}</span>
+						<span class="text-[var(--color-text-muted)] transition-transform group-open:rotate-180">▾</span>
+					</span>
+				</summary>
+				<ul class="mt-3 list-inside list-disc space-y-1 text-xs text-[var(--color-text-muted)]">
+					{entry.details.map((detail) => (
+						<li>{detail}</li>
+					))}
+				</ul>
+			</details>
 		))
 	}
-</ol>
+</div>

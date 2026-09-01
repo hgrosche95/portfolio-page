@@ -12,7 +12,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
   return (
     <div
       className={[
-        'rounded border px-4 py-2 font-mono text-sm shadow-sm transition-colors',
+        'w-56 rounded border px-4 py-2 font-mono text-sm shadow-sm transition-colors',
         'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]',
         isHub
           ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -20,8 +20,12 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
       ].join(' ')}
     >
       <Handle type="target" position={Position.Left} style={{ visibility: 'hidden' }} />
-      <div>{data.label}</div>
-      {data.sublabel && <div className="text-xs text-[var(--color-text-muted)]">{data.sublabel}</div>}
+      <div className="truncate" title={data.label}>{data.label}</div>
+      {data.sublabel && (
+        <div className="truncate text-xs text-[var(--color-text-muted)]" title={data.sublabel}>
+          {data.sublabel}
+        </div>
+      )}
       <Handle type="source" position={Position.Right} style={{ visibility: 'hidden' }} />
     </div>
   );
