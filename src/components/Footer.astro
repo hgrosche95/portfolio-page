@@ -1,0 +1,14 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-[var(--color-border)]">
+	<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-6 font-mono text-xs text-[var(--color-text-muted)]">
+		<span>&copy; {year} Henrik Grosche</span>
+		<nav class="flex gap-4">
+			<a href="/impressum" class="hover:text-[var(--color-accent)]">impressum</a>
+			<a href="/datenschutz" class="hover:text-[var(--color-accent)]">datenschutz</a>
+			<a href="https://github.com/hgrosche95" class="hover:text-[var(--color-accent)]">github</a>
+		</nav>
+	</div>
+</footer>

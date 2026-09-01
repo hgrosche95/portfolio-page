@@ -1,17 +1,12 @@
 ---
-import '../styles/global.css';
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<html lang="de" class="dark">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Henrik Grosche — Full-Stack-Entwickler</title>
-	</head>
-	<body>
-		<h1>Portfolio — Phase 2 folgt</h1>
-	</body>
-</html>
+<BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
+	<section class="mx-auto max-w-5xl px-4 py-16">
+		<h1 class="font-mono text-2xl text-[var(--color-text)]">Henrik Grosche</h1>
+		<p class="mt-2 font-mono text-sm text-[var(--color-text-muted)]">
+			Full-Stack-Entwickler — Inhalte folgen in den nächsten Phasen.
+		</p>
+	</section>
+</BaseLayout>

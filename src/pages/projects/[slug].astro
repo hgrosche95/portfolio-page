@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+	// Placeholder path — replaced by real project slugs from the content
+	// collection in Phase 5.
+	return [{ params: { slug: 'beispiel-projekt' } }];
+}
+
+const { slug } = Astro.params;
+---
+
+<BaseLayout title={`${slug} — Henrik Grosche`}>
+	<section class="mx-auto max-w-3xl px-4 py-16 font-mono text-sm text-[var(--color-text)]">
+		<h1 class="text-xl">{slug}</h1>
+		<p class="mt-4 text-[var(--color-text-muted)]">Wird in Phase 5/6 mit echten Projektdaten befüllt.</p>
+	</section>
+</BaseLayout>
