@@ -4,6 +4,7 @@ export type StageNodeData = {
   label: string;
   sublabel?: string;
   active: boolean;
+  vertical?: boolean;
 };
 
 export default function StageNode({ data }: NodeProps & { data: StageNodeData }) {
@@ -16,14 +17,22 @@ export default function StageNode({ data }: NodeProps & { data: StageNodeData })
           : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] opacity-50',
       ].join(' ')}
     >
-      <Handle type="target" position={Position.Left} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="target"
+        position={data.vertical ? Position.Top : Position.Left}
+        style={{ visibility: 'hidden' }}
+      />
       <div>{data.label}</div>
       {data.sublabel && (
         <div className="truncate text-xs" title={data.sublabel}>
           {data.sublabel}
         </div>
       )}
-      <Handle type="source" position={Position.Right} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="source"
+        position={data.vertical ? Position.Bottom : Position.Right}
+        style={{ visibility: 'hidden' }}
+      />
     </div>
   );
 }

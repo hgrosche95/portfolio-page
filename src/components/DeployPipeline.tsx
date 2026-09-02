@@ -20,6 +20,15 @@ const stages: { id: string; label: string; sublabel: string }[] = [
 
 export default function DeployPipeline() {
   const [activeStage, setActiveStage] = useState(-1);
+  const [stacked, setStacked] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 639px)');
+    const update = () => setStacked(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     stages.forEach((_, index) => {
@@ -30,8 +39,8 @@ export default function DeployPipeline() {
   const nodes: Node<StageNodeData>[] = stages.map((stage, index) => ({
     id: stage.id,
     type: 'stage',
-    position: { x: index * 260, y: 0 },
-    data: { label: stage.label, sublabel: stage.sublabel, active: index <= activeStage },
+    position: stacked ? { x: 0, y: index * 90 } : { x: index * 260, y: 0 },
+    data: { label: stage.label, sublabel: stage.sublabel, active: index <= activeStage, vertical: stacked },
     draggable: false,
   }));
 
@@ -43,23 +52,24 @@ export default function DeployPipeline() {
   }));
 
   return (
-    <div className="h-40 overflow-x-auto rounded border border-[var(--color-border)] sm:h-[200px]">
-      <div className="h-full" style={{ width: stages.length * 260 + 40 }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          panOnDrag={false}
-          zoomOnScroll={false}
-          zoomOnPinch={false}
-          zoomOnDoubleClick={false}
-          proOptions={{ hideAttribution: true }}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-        />
-      </div>
+    <div
+      className="rounded border border-[var(--color-border)]"
+      style={{ height: stacked ? 400 : 200 }}
+    >
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        panOnDrag={false}
+        zoomOnScroll={false}
+        zoomOnPinch={false}
+        zoomOnDoubleClick={false}
+        proOptions={{ hideAttribution: true }}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+      />
     </div>
   );
 }
