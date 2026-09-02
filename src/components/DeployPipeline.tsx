@@ -43,7 +43,7 @@ export default function DeployPipeline() {
   const nodes: Node<StageNodeData>[] = stages.map((stage, index) => ({
     id: stage.id,
     type: 'stage',
-    position: stacked ? { x: 0, y: index * 90 } : { x: index * 260, y: 0 },
+    position: stacked ? { x: 0, y: index * 110 } : { x: index * 260, y: 0 },
     data: { label: stage.label, sublabel: stage.sublabel, active: index <= activeStage, vertical: stacked },
     draggable: false,
   }));
@@ -56,10 +56,7 @@ export default function DeployPipeline() {
   }));
 
   return (
-    <div
-      className="static-flow rounded border border-[var(--color-border)]"
-      style={{ height: stacked ? 340 : 200 }}
-    >
+    <div className="static-flow" style={{ height: stacked ? 400 : 200 }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
