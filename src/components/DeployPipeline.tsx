@@ -13,6 +13,7 @@ const formattedTimestamp = new Date(deployInfo.timestamp).toLocaleString('de-DE'
 
 const stages: { id: string; label: string; sublabel: string }[] = [
   { id: 'commit', label: 'Commit', sublabel: `${deployInfo.shortSha} — ${deployInfo.message}` },
+  { id: 'test', label: 'Test', sublabel: 'Vitest · Frontend + API' },
   { id: 'build', label: 'Build', sublabel: `Astro · ${deployInfo.branch}` },
   { id: 'deploy', label: 'Deploy', sublabel: 'Azure Static Web Apps' },
   { id: 'live', label: 'Live', sublabel: formattedTimestamp },
@@ -85,7 +86,7 @@ export default function DeployPipeline() {
   const nodes: Node<StageNodeData>[] = stages.map((stage, index) => ({
     id: stage.id,
     type: 'stage',
-    position: stacked ? { x: 0, y: index * 98 } : { x: index * 260, y: 0 },
+    position: stacked ? { x: 0, y: index * 90 } : { x: index * 230, y: 0 },
     data: { label: stage.label, sublabel: stage.sublabel, active: index <= activeStage, vertical: stacked },
     draggable: false,
   }));
@@ -98,7 +99,7 @@ export default function DeployPipeline() {
   }));
 
   return (
-    <div className="static-flow" style={{ height: stacked ? 300 : 200 }}>
+    <div className="static-flow" style={{ height: stacked ? 360 : 200 }}>
       <ReactFlowProvider>
         <PipelineCanvas nodes={nodes} edges={edges} stacked={stacked} />
       </ReactFlowProvider>

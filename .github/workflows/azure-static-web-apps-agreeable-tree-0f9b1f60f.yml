@@ -19,6 +19,20 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+          cache: "npm"
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Test frontend
+        run: npm test
+      - name: Install API dependencies
+        run: npm ci
+        working-directory: api
+      - name: Test API
+        run: npm test
+        working-directory: api
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1

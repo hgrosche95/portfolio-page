@@ -64,7 +64,7 @@ function useIsDesktop(): boolean {
  * one past the deepest predecessor. Walked iteratively so a cycle in the
  * authored data settles instead of recursing forever.
  */
-function computeDepths(architecture: Architecture): Map<string, number> {
+export function computeDepths(architecture: Architecture): Map<string, number> {
   const depths = new Map(architecture.nodes.map((node) => [node.id, 0]));
 
   for (let pass = 0; pass < architecture.nodes.length; pass += 1) {

@@ -14,7 +14,7 @@ export default function StageNode({ data }: NodeProps & { data: StageNodeData })
         // Vertical (mobile stack) gets ~25% larger boxes — there's no
         // neighbouring column fighting for width there, and the bigger
         // touch target reads better than the desktop row's compact size.
-        data.vertical ? 'w-[280px] px-5 py-2.5 text-base' : 'w-56 px-4 py-2 text-sm',
+        data.vertical ? 'w-[280px] px-5 py-2.5 text-base' : 'w-[190px] px-3 py-2 text-sm',
         'rounded border font-mono shadow-sm transition-all duration-500',
         data.active
           ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)] opacity-100'

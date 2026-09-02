@@ -11,13 +11,15 @@
     "build": "tsc",
     "prestart": "npm run build",
     "start": "func start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@azure/functions": "^4.7.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
   }
 }
