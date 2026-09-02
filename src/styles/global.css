@@ -205,6 +205,17 @@ body::after {
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
 }
 
+/*
+ * The deploy pipeline graph is purely decorative (no drag/zoom/pan), but
+ * xyflow's pane sets touch-action: none unconditionally so it can own pinch
+ * and drag gestures. That also swallows a plain vertical swipe, making the
+ * page feel stuck when a mobile scroll starts over it. Since nothing here
+ * actually needs touch gestures, hand vertical swipes back to the page.
+ */
+.deploy-pipeline .react-flow__pane {
+  touch-action: pan-y !important;
+}
+
 .project-content code {
   border-radius: 0.25rem;
   background-color: var(--color-surface-raised);

@@ -53,8 +53,8 @@ export default function DeployPipeline() {
 
   return (
     <div
-      className="rounded border border-[var(--color-border)]"
-      style={{ height: stacked ? 400 : 200 }}
+      className="deploy-pipeline rounded border border-[var(--color-border)]"
+      style={{ height: stacked ? 340 : 200 }}
     >
       <ReactFlow
         nodes={nodes}
@@ -62,13 +62,17 @@ export default function DeployPipeline() {
         nodeTypes={nodeTypes}
         nodesDraggable={false}
         nodesConnectable={false}
+        elementsSelectable={false}
+        nodesFocusable={false}
         panOnDrag={false}
+        panOnScroll={false}
         zoomOnScroll={false}
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
+        preventScrolling={false}
         proOptions={{ hideAttribution: true }}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: stacked ? 0.08 : 0.2 }}
       />
     </div>
   );
