@@ -63,10 +63,16 @@ const errorClass = 'mt-1 hidden font-mono text-xs text-[var(--color-accent)]';
 		<p class={errorClass} data-error-for="message"></p>
 	</div>
 
-	{/* Honeypot: hidden from people, irresistible to bots. */}
+	{/*
+		Honeypot: hidden from people, irresistible to bots. Deliberately NOT
+		named/labelled anything autofill-recognisable ("company", "organization",
+		"phone", ...) - Chrome's heuristic autofill overrides autocomplete="off"
+		for fields it thinks it recognises, which silently filled a previous
+		"company"-named honeypot and made every real submission look like a bot.
+	*/}
 	<div class="absolute left-[-9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
-		<label for="contact-company">Firma (bitte frei lassen)</label>
-		<input id="contact-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+		<label for="contact-hp">Dieses Feld leer lassen</label>
+		<input id="contact-hp" name="hp_field" type="text" tabindex="-1" autocomplete="off" />
 	</div>
 
 	<div class="mt-5 flex flex-wrap items-center gap-4">

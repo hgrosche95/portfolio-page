@@ -23,7 +23,7 @@ type ContactPayload = {
   email?: unknown;
   message?: unknown;
   /** Honeypot — a real browser leaves this hidden field empty. */
-  company?: unknown;
+  hp_field?: unknown;
 };
 
 /**
@@ -145,7 +145,7 @@ export async function contact(
 
   // Bots fill every field they find. Answer with success so they do not learn
   // that the submission was discarded.
-  if (asTrimmedString(payload.company)) {
+  if (asTrimmedString(payload.hp_field)) {
     context.log('Honeypot ausgelöst — Anfrage verworfen.');
     return json(200, { ok: true });
   }
