@@ -43,21 +43,23 @@ export default function DeployPipeline() {
   }));
 
   return (
-    <div className="h-40 rounded border border-[var(--color-border)] sm:h-[200px]">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        panOnDrag={false}
-        zoomOnScroll={false}
-        zoomOnPinch={false}
-        zoomOnDoubleClick={false}
-        proOptions={{ hideAttribution: true }}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-      />
+    <div className="h-40 overflow-x-auto rounded border border-[var(--color-border)] sm:h-[200px]">
+      <div className="h-full" style={{ width: stages.length * 260 + 40 }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          panOnDrag={false}
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          zoomOnDoubleClick={false}
+          proOptions={{ hideAttribution: true }}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+        />
+      </div>
     </div>
   );
 }
