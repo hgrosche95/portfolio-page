@@ -16,15 +16,15 @@ architecture:
     - [server, db]
 ---
 
-Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Zahlenkarten und Jokern), gebaut, um mein TypeScript- und Full-Stack-Wissen an einem Projekt zu vertiefen, das größer ist als ein Tutorial — mit echten Nutzerkonten, Live-Zustand über mehrere Clients hinweg und den Problemen, die daraus entstehen.
+Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Zahlenkarten und Jokern), gebaut, um mein TypeScript- und Full-Stack-Wissen an einem praktischen individuellen Projekt zu vertiefen. Es beinhaltet echte Nutzerkonten und einen Live-Zustand über mehrere Clients hinweg.
 
 <div class="screenshot-grid">
   <img src="/projects/great-galguti-game/login.webp" alt="Login-Screen" />
   <img src="/projects/great-galguti-game/gameplay.webp" alt="Laufende Partie mit Bots" />
 </div>
 
-**Warum so gebaut:** Das Repo ist ein Monorepo aus drei unabhängigen Teilprojekten: reine Spiellogik (`src/`, ohne Laufzeit-Abhängigkeiten, mit Vitest getestet), ein Node/Express-Server mit WebSockets für den Live-Betrieb sowie Prisma/PostgreSQL für Accounts, und ein React-19-Frontend. Der Server importiert die Spiellogik aus `src/` direkt, statt sie zu duplizieren — dieselben Funktionen entscheiden, ob ein Zug gültig ist, egal ob im Test, im Bot oder live im Spiel.
+**Warum so gebaut:** Das Repo ist ein Monorepo aus drei unabhängigen Teilprojekten: reine Spiellogik (`src/`, ohne Laufzeit-Abhängigkeiten, mit Vitest getestet), ein Node/Express-Server mit WebSockets für den Live-Betrieb sowie Prisma/PostgreSQL für Accounts, und ein React-19-Frontend. Der Server importiert die Spiellogik aus `src/` direkt, statt sie zu duplizieren. Das heißt, dieselben Funktionen entscheiden, ob ein Zug gültig ist, egal ob im Test, im Bot oder live im Spiel.
 
-**Technisch interessant:** Der Server validiert jeden Zug serverseitig gegen die tatsächliche Hand des Spielers, statt dem Client zu vertrauen — ein manipulierter WebSocket-Client kann also nicht schummeln. Jeder Client bekommt außerdem nur seine eigene Hand plus die Kartenanzahl der Gegner übermittelt, nie deren tatsächliche Karten — verdeckte Information wird serverseitig durchgesetzt, nicht nur im UI versteckt. Auth über WebSocket läuft über ein Handshake-Muster mit Timeout, weil Browser beim WS-Handshake keine eigenen Header setzen können.
+**Technisch interessant:** Der Server validiert jeden Zug serverseitig gegen die tatsächliche Hand des Spielers, statt dem Client zu vertrauen. Das schützt vor Betrug mittels eines manipulierten WebSocket-Clients. Jeder Client bekommt außerdem nur seine eigene Hand plus die Kartenanzahl der Gegner übermittelt, aber nie deren tatsächliche Karten. Verdeckte Informationen werden also serverseitig durchgesetzt, nicht nur im UI versteckt. Auth über WebSocket läuft über ein Handshake-Muster mit Timeout, weil Browser beim WS-Handshake keine eigenen Header setzen können.
 
 **Deployment:** Frontend auf Azure Static Web Apps (inkl. PR-Preview-Umgebungen), der Server als Docker-Container auf Azure Container Apps (OIDC-Deploy statt gespeicherter Zugangsdaten), Datenbank auf Azure Database for PostgreSQL. `main` ist geschützt und verlangt grünes CI (Typecheck + Tests über alle drei Teilprojekte) vor jedem Merge.
