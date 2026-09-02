@@ -309,9 +309,11 @@ function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
       nodesDraggable={false}
       nodesConnectable={false}
       panOnDrag={false}
+      panOnScroll={false}
       zoomOnScroll={false}
       zoomOnPinch={false}
       zoomOnDoubleClick={false}
+      preventScrolling={false}
       proOptions={{ hideAttribution: true }}
     />
   );
