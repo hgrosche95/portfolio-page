@@ -18,6 +18,7 @@ const graphProjects: GraphProject[] = projectEntries.map((entry) => ({
 	slug: entry.id,
 	label: entry.data.title,
 	sublabel: entry.data.techStack.slice(0, 2).join(', '),
+	techStack: entry.data.techStack,
 	architecture: entry.data.architecture,
 }));
 

@@ -18,8 +18,23 @@ export type GraphProject = {
   slug: string;
   label: string;
   sublabel: string;
+  techStack: string[];
   architecture?: Architecture;
 };
+
+/**
+ * Shared infrastructure worth its own graph column, drawn from real
+ * techStack entries rather than authored per-project — the same "the data
+ * defines the graph" approach the rest of this component already uses.
+ * Keep this to genuine shared infra (hosting, CI, containers), not
+ * languages or frameworks that just happen to repeat across projects.
+ */
+const INFRA_LABELS = ['Azure', 'Docker', 'GitHub Actions'] as const;
+
+/** Infra labels actually used by at least one project, in a fixed order. */
+function infraLabelsFor(projects: GraphProject[]): string[] {
+  return INFRA_LABELS.filter((label) => projects.some((project) => project.techStack.includes(label)));
+}
 
 /** Vertical distance between two collapsed project nodes, in flow units. */
 const NODE_SPACING = 80;
@@ -155,6 +170,58 @@ function buildGraph(
     animated: true,
   }));
 
+  // Desktop-only "Infrastruktur" node, one row below the last project: it
+  // toggles the same way a project's own architecture does, but fans in
+  // from every project that actually shares the given service instead of
+  // out from one expanded project.
+  if (isDesktop) {
+    const infraLabels = infraLabelsFor(projects);
+
+    nodes.push({
+      id: 'infra',
+      type: 'project',
+      position: { x: PROJECT_X, y: projects.length * NODE_SPACING },
+      data: {
+        label: 'Infrastruktur',
+        sublabel: infraLabels.join(', '),
+        kind: 'project',
+        expanded: expanded === 'infra',
+        onToggle: () => toggle('infra'),
+      },
+      draggable: false,
+      ariaLabel: expanded === 'infra' ? 'Infrastruktur ausblenden' : 'Infrastruktur anzeigen',
+      ariaRole: 'button',
+    });
+    edges.push({ id: 'hub-infra', source: 'hub', target: 'infra', animated: true });
+
+    if (expanded === 'infra') {
+      // Centred against the projects' own vertical midpoint (the same y
+      // the hub uses) rather than the infra node's row, since edges fan in
+      // from several projects up and down the column, not from one row.
+      infraLabels.forEach((label, row) => {
+        nodes.push({
+          id: `infra--${label}`,
+          type: 'project',
+          position: { x: ARCH_X, y: lastY / 2 + (row - (infraLabels.length - 1) / 2) * ARCH_ROW },
+          data: { label, kind: 'architecture', archKind: 'external' },
+          draggable: false,
+          selectable: false,
+        });
+      });
+
+      for (const project of projects) {
+        for (const label of infraLabels) {
+          if (!project.techStack.includes(label)) continue;
+          edges.push({
+            id: `infra-${project.slug}-${label}`,
+            source: project.slug,
+            target: `infra--${label}`,
+          });
+        }
+      }
+    }
+  }
+
   if (architecture && depths && expandedProject) {
     const baseY = expandedIndex * NODE_SPACING;
     const placed = new Map<number, number>();
@@ -265,6 +332,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   // whitespace, not a mis-sized box, so this costs nothing visually.
   const desktopHeight = Math.max(
     graphHeight(buildGraph(projects, null, true, toggle).nodes),
+    graphHeight(buildGraph(projects, 'infra', true, toggle).nodes),
     ...projects
       .filter((project) => project.architecture)
       .map((project) => graphHeight(buildGraph(projects, project.slug, true, toggle).nodes)),
@@ -274,6 +342,12 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   // Mouse: a direct click handler, fires exactly once per click.
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
     if (node.id === 'hub' || node.id.includes('--')) return;
+    // Infra has no page of its own — clicking it toggles the same as its
+    // arrow button, instead of navigating.
+    if (node.id === 'infra') {
+      toggle('infra');
+      return;
+    }
     goToProject(node.id);
   };
 
@@ -291,10 +365,13 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     if ((event.target as HTMLElement).closest('button')) return;
     const nodeEl = (event.target as HTMLElement).closest<HTMLElement>('[data-id]');
     const id = nodeEl?.dataset.id;
-    if (id && id !== 'hub' && !id.includes('--')) {
-      event.preventDefault();
-      goToProject(id);
+    if (!id || id === 'hub' || id.includes('--')) return;
+    event.preventDefault();
+    if (id === 'infra') {
+      toggle('infra');
+      return;
     }
+    goToProject(id);
   };
 
   return (

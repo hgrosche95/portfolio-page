@@ -86,8 +86,8 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
             type="button"
             onClick={handleToggle}
             aria-expanded={data.expanded}
-            aria-label={data.expanded ? 'Architektur ausblenden' : 'Architektur anzeigen'}
-            title={data.expanded ? 'Architektur ausblenden' : 'Architektur anzeigen'}
+            aria-label={data.expanded ? 'Details ausblenden' : 'Details anzeigen'}
+            title={data.expanded ? 'Details ausblenden' : 'Details anzeigen'}
             // Hidden on phones: an unfolded architecture is ~1170 units wide,
             // which fitView would shrink past legibility on a 375px screen.
             // The project page describes the same architecture in prose.
