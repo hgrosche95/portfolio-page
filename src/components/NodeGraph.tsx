@@ -299,7 +299,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
 
   return (
     <div
-      className="h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
+      className="static-flow h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
       style={
         {
           '--graph-height-mobile': `${mobileHeight}px`,

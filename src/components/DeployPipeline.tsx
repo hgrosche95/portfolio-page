@@ -23,7 +23,11 @@ export default function DeployPipeline() {
   const [stacked, setStacked] = useState(false);
 
   useEffect(() => {
-    const mql = window.matchMedia('(max-width: 639px)');
+    // The section caps out at max-w-5xl (~992px usable), but the four
+    // stages need ~1040px laid out horizontally — so anything narrower
+    // than that gets squeezed by fitView, not just phones. Match the lg
+    // breakpoint so the row only ever appears once it has full room.
+    const mql = window.matchMedia('(max-width: 1023px)');
     const update = () => setStacked(mql.matches);
     update();
     mql.addEventListener('change', update);
@@ -53,7 +57,7 @@ export default function DeployPipeline() {
 
   return (
     <div
-      className="deploy-pipeline rounded border border-[var(--color-border)]"
+      className="static-flow rounded border border-[var(--color-border)]"
       style={{ height: stacked ? 340 : 200 }}
     >
       <ReactFlow

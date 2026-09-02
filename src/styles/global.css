@@ -206,13 +206,15 @@ body::after {
 }
 
 /*
- * The deploy pipeline graph is purely decorative (no drag/zoom/pan), but
- * xyflow's pane sets touch-action: none unconditionally so it can own pinch
- * and drag gestures. That also swallows a plain vertical swipe, making the
- * page feel stuck when a mobile scroll starts over it. Since nothing here
- * actually needs touch gestures, hand vertical swipes back to the page.
+ * Both graphs on this site (deploy pipeline, project node graph) have their
+ * own drag/zoom/pan disabled — the project graph only needs taps to
+ * navigate. But xyflow's pane sets touch-action: none unconditionally so it
+ * can own pinch and drag gestures, which also swallows a plain vertical
+ * swipe and makes the page feel stuck when a mobile scroll starts over one
+ * of them. Since neither actually needs touch gestures, hand vertical
+ * swipes back to the page; tap-to-navigate is unaffected by touch-action.
  */
-.deploy-pipeline .react-flow__pane {
+.static-flow .react-flow__pane {
   touch-action: pan-y !important;
 }
 
