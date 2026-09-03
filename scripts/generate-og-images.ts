@@ -12,6 +12,10 @@ import sharp from 'sharp';
  * satori renders the layout to an SVG with the glyphs already turned into
  * paths, so sharp can rasterise it without depending on fonts being installed
  * on the build machine. That keeps local and CI output identical.
+ *
+ * sharp is a declared devDependency even though Astro's image pipeline already
+ * pulls it in: this script imports it directly, so it must not rely on staying
+ * a transitive dependency of something else. Both resolve to one deduped copy.
  */
 
 const PROJECTS_DIR = 'src/content/projects';
