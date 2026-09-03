@@ -206,6 +206,20 @@ body::after {
 }
 
 /*
+ * A lone screenshot has no neighbour to line up with, so the fixed row height
+ * only shrinks it - which is the wrong trade for a terminal capture, where
+ * the text is the content. Show it at its own size instead: never upscaled
+ * (there is no detail to gain), never squeezed. Browsers without :has() keep
+ * the row-height behaviour above, which is merely smaller, not broken.
+ */
+.project-content .screenshot-grid:has(img:only-child) img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+/*
  * Both graphs on this site (deploy pipeline, project node graph) have their
  * own drag/zoom/pan disabled — the project graph only needs taps to
  * navigate. But xyflow's pane sets touch-action: none unconditionally so it
