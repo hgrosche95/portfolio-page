@@ -46,15 +46,41 @@ async function fetchRepoStats(repo: string): Promise<RepoStats> {
 
 async function main() {
   const repos = readProjectRepos();
-  const stats: Record<string, RepoStats> = {};
 
-  for (const repo of repos) {
-    stats[repo] = await fetchRepoStats(repo);
-  }
+  // allSettled rather than all: one unreachable repo must not take the other
+  // four with it, and the requests are independent anyway.
+  const results = await Promise.allSettled(repos.map((repo) => fetchRepoStats(repo)));
+
+  const stats: Record<string, RepoStats> = {};
+  const failures: string[] = [];
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      stats[repos[index]] = result.value;
+    } else {
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      failures.push(`${repos[index]} — ${reason}`);
+    }
+  });
 
   mkdirSync('src/data', { recursive: true });
   writeFileSync('src/data/github-stats.json', JSON.stringify(stats, null, 2));
-  console.log(`github-stats.json written for ${repos.length} repo(s)`);
+
+  if (failures.length > 0) {
+    // These numbers are decorative, and every consumer already renders without
+    // them - so a GitHub outage must not be able to block a deploy of an
+    // unrelated text change. Warned loudly all the same: a revoked token would
+    // otherwise quietly become permanent.
+    console.warn(`WARNUNG: keine GitHub-Daten für ${failures.length} von ${repos.length} Repo(s):`);
+    for (const failure of failures) console.warn(`  - ${failure}`);
+  }
+
+  console.log(`github-stats.json written for ${Object.keys(stats).length}/${repos.length} repo(s)`);
 }
 
-main();
+// Only our own failures (unreadable content directory, unwritable target) are
+// real build errors. Third-party ones are handled above and degrade instead.
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

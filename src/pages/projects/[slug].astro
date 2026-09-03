@@ -17,9 +17,14 @@ export async function getStaticPaths() {
 
 const { entry, next } = Astro.props;
 const { Content } = await render(entry);
-const stats = (githubStats as Record<string, { stars: number; language: string | null; lastPushedAt: string; description: string | null }>)[
-	entry.data.githubRepo
-];
+// Possibly absent: fetch-github-stats.ts omits repos the GitHub API did not
+// answer for rather than failing the build over it.
+const stats = (
+	githubStats as Record<
+		string,
+		{ stars: number; language: string | null; lastPushedAt: string; description: string | null } | undefined
+	>
+)[entry.data.githubRepo];
 const lastPushed = stats
 	? new Date(stats.lastPushedAt).toLocaleDateString('de-DE', { dateStyle: 'medium' })
 	: null;
