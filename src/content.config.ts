@@ -11,6 +11,13 @@ const projects = defineCollection({
     techStack: z.array(z.string()),
     order: z.number(),
     /**
+     * Optional live deployment. Set both, or neither: without a URL there is
+     * nothing to label. The label exists because "Live ansehen" is wrong for
+     * something you actually play.
+     */
+    liveUrl: z.string().url().optional(),
+    liveLabel: z.string().optional(),
+    /**
      * Optional internal architecture, unfolded from the project's node in the
      * homepage graph. Kept here rather than in the component so that adding a
      * project MDX file stays the only step needed to extend the graph.

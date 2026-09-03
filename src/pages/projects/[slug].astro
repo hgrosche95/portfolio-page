@@ -52,6 +52,21 @@ const lastPushed = stats
 			}
 		</div>
 
+		{
+			entry.data.liveUrl && (
+				<a
+					href={entry.data.liveUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="mt-5 inline-flex items-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2 font-mono text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
+				>
+					{entry.data.liveLabel ?? 'Live ansehen'}
+					<span aria-hidden="true">&#8599;</span>
+					<span class="sr-only">(öffnet in neuem Tab)</span>
+				</a>
+			)
+		}
+
 		<div
 			class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-[var(--color-border)] py-3 font-mono text-xs text-[var(--color-text-muted)]"
 		>
