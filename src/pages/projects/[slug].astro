@@ -47,13 +47,25 @@ const lastPushed = stats
 			{entry.data.title}
 		</h1>
 
-		<div class="mt-4 flex flex-wrap gap-1.5">
+		<div class="mt-4 flex flex-wrap items-center gap-1.5">
 			{
 				entry.data.techStack.map((tech: string) => (
 					<span class="rounded border border-[var(--color-border)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-muted)]">
 						{tech}
 					</span>
 				))
+			}
+			{
+				entry.data.plannedTech && entry.data.plannedTech.length > 0 && (
+					<>
+						<span class="ml-1.5 font-mono text-xs text-[var(--color-text-muted)]">geplant:</span>
+						{entry.data.plannedTech.map((tech: string) => (
+							<span class="rounded border border-dashed border-[var(--color-border-strong)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-muted)]">
+								{tech}
+							</span>
+						))}
+					</>
+				)
 			}
 		</div>
 
