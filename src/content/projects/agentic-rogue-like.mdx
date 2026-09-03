@@ -1,0 +1,27 @@
+---
+title: "Agentic Roguelike"
+summary: "Roguelike, dessen Run-Inhalt nicht aus einer festen Drop-Tabelle kommt, sondern von einem LLM-Agenten erzeugt wird — eingegrenzt durch ein Balance-Budget im Tool-Schema."
+githubRepo: "agentic-rogue-like"
+techStack: ["Python", "Pydantic", "pytest", "uv", "LangGraph (geplant)", "Claude API (geplant)"]
+order: 6
+architecture:
+  nodes:
+    - { id: cli, label: "Terminal-CLI", kind: frontend }
+    - { id: engine, label: "Run-Engine", kind: backend }
+    - { id: mapgen, label: "Prozedurale Node-Map", kind: backend }
+    - { id: combat, label: "Würfelbasierter Kampf", kind: backend }
+    - { id: models, label: "Pydantic-Modelle", kind: data }
+  edges:
+    - [cli, engine]
+    - [engine, mapgen]
+    - [engine, combat]
+    - [engine, models]
+---
+
+Ein Roguelike in der Tradition von Slay the Spire und FTL, bei dem der Inhalt eines Durchgangs nicht aus einer handgeschriebenen Drop-Tabelle stammt, sondern zur Laufzeit von einem LLM-Agenten erzeugt wird. Der Agent darf Gegner, Relikte und Events erfinden — aber nur über Tool-Calls mit festem Schema und gegen ein Balance-Budget pro Etage. Er kann also kreativ sein, ohne den Durchgang unspielbar zu machen.
+
+**Warum so gebaut:** Die meisten Roguelikes beziehen ihre Abwechslung aus großen, handgepflegten Content-Tabellen. Hier ist es umgekehrt: Der Content-Generator ist ein Agent, der zustandsbewusste Entscheidungen trifft — was spawnt, wie stark, was es tut — statt aus einer statischen Tabelle zu ziehen oder unbeschränkten Freitext zu produzieren. Entscheidend war die Reihenfolge: Der deterministische Kern-Loop wurde zuerst gebaut und getestet, komplett ohne LLM. Das Spiel ist für sich spielbar und seine Balance nachvollziehbar, bevor ein Agent anfängt, Inhalte hineinzugenerieren. Die Grenze zwischen "was die KI entscheiden darf" und "was feste Spiellogik bleibt" bleibt dadurch sichtbar, statt zu verschwimmen.
+
+**Technisch interessant:** Der Zustand eines Durchgangs liegt als Pydantic-Modell vor (`RunState`, `PlayerState`, `MapNode`, `Enemy`) — dasselbe Schema dient später als Tool-Schema für den Agenten. Damit validiert dieselbe Typdefinition sowohl das Spiel als auch das, was das Sprachmodell zurückgeben darf; eine ungültige Agenten-Antwort scheitert an der Modellvalidierung statt im Spielzustand zu landen. Die Engine, die prozedurale Map-Generierung und der würfelbasierte Kampf sind je eigene Module mit eigenen pytest-Suites, sodass sich die Balance des Spiels unabhängig vom Agenten prüfen lässt.
+
+**Aktueller Stand:** Der deterministische Kern ist fertig und im Terminal vollständig spielbar — prozedural erzeugte Node-Map, Kampf, Event-, Rast- und Shop-Auflösung, Sieg- und Niederlagebedingungen, jeweils mit Tests. Die Agenten-Schicht ist der nächste Schritt: ein Encounter-Agent, der die statischen Content-Pools über constrained Tool-Calls ersetzt, danach ein Narrator- und ein Difficulty-Agent. Ziel des Projekts ist es, Agentic AI in Python praktisch aufzubauen (LangGraph, Tool-Calling, Validierung strukturierter Ausgaben) — als Gegenstück zum TypeScript/NestJS-Agenten im AI Trip Planner.
