@@ -8,6 +8,12 @@
       "statusCode": 404
     }
   },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "X-Frame-Options": "DENY"
+  },
   "routes": [
     {
       "route": "/_astro/*",
