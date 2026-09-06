@@ -2,8 +2,7 @@
 title: "Agentic Roguelike"
 summary: "Roguelike, dessen Run-Inhalt nicht aus einer festen Drop-Tabelle kommt, sondern von einem LLM-Agenten erzeugt wird — eingegrenzt durch ein Balance-Budget im Tool-Schema."
 githubRepo: "agentic-rogue-like"
-techStack: ["Python", "Pydantic", "pytest", "uv"]
-plannedTech: ["LangGraph", "Claude API"]
+techStack: ["Python", "Pydantic", "LangGraph", "Groq", "pytest", "uv", "ruff"]
 order: 2
 architecture:
   nodes:
@@ -11,11 +10,13 @@ architecture:
     - { id: engine, label: "Run-Engine", kind: backend }
     - { id: mapgen, label: "Prozedurale Node-Map", kind: backend }
     - { id: combat, label: "Würfelbasierter Kampf", kind: backend }
+    - { id: agent, label: "Encounter-Agent (Groq)", kind: external }
     - { id: models, label: "Pydantic-Modelle", kind: data }
   edges:
     - [cli, engine]
     - [engine, mapgen]
     - [engine, combat]
+    - [engine, agent]
     - [engine, models]
 ---
 
@@ -29,4 +30,4 @@ Ein Roguelike in der Tradition von Slay the Spire und FTL, bei dem der Inhalt ei
 
 **Technisch interessant:** Der Zustand eines Durchgangs liegt als Pydantic-Modell vor (`RunState`, `PlayerState`, `MapNode`, `Enemy`) — dasselbe Schema dient später als Tool-Schema für den Agenten. Damit validiert dieselbe Typdefinition sowohl das Spiel als auch das, was das Sprachmodell zurückgeben darf; eine ungültige Agenten-Antwort scheitert an der Modellvalidierung statt im Spielzustand zu landen. Die Engine, die prozedurale Map-Generierung und der würfelbasierte Kampf sind je eigene Module mit eigenen pytest-Suites, sodass sich die Balance des Spiels unabhängig vom Agenten prüfen lässt.
 
-**Aktueller Stand:** Der deterministische Kern ist fertig und im Terminal vollständig spielbar — prozedural erzeugte Node-Map, Kampf, Event-, Rast- und Shop-Auflösung, Sieg- und Niederlagebedingungen, jeweils mit Tests. Die Agenten-Schicht ist der nächste Schritt: ein Encounter-Agent, der die statischen Content-Pools über constrained Tool-Calls ersetzt, danach ein Narrator- und ein Difficulty-Agent. Ziel des Projekts ist es, Agentic AI in Python praktisch aufzubauen (LangGraph, Tool-Calling, Validierung strukturierter Ausgaben) — als Gegenstück zum TypeScript/NestJS-Agenten im AI Trip Planner.
+**Aktueller Stand:** Der deterministische Kern ist fertig und im Terminal vollständig spielbar — prozedural erzeugte Node-Map, Kampf, Event-, Rast- und Shop-Auflösung, Sieg- und Niederlagebedingungen, jeweils mit Tests. Der Encounter-Agent ist inzwischen echt verdrahtet: ein LangGraph-Agent generiert Gegner über constrained Tool-Calls gegen ein Etagen-Budget, mit Retry bei Budget-Verstoß. Er läuft über Groq, ist aber standardmäßig aus (`ENCOUNTER_AGENT_ENABLED=1`) und fällt bei jedem Fehler — API nicht erreichbar, Budget nach drei Versuchen nie getroffen — auf den statischen Content-Pool zurück, statt den Run abzubrechen. Das ist bereits in einem echten Lauf beobachtet und zusätzlich per `monkeypatch` deterministisch getestet, damit die Test-Suite schnell und ohne Netzwerkzugriff bleibt. Relikte und Events als weitere agentengenerierte Content-Typen fehlen noch, danach folgen ein Narrator-Agent (verpackt Ergebnisse in Flavor-Text) und ein Difficulty-Agent (passt künftige Budgets an den Run-Verlauf an). Ziel des Projekts ist es, Agentic AI in Python praktisch aufzubauen (LangGraph, Tool-Calling, Validierung strukturierter Ausgaben) — als Gegenstück zum TypeScript/NestJS-Agenten im AI Trip Planner.

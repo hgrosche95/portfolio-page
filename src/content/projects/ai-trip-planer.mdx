@@ -2,17 +2,20 @@
 title: "AI Trip Planner"
 summary: "Chat-App, die Reisen plant: Die KI stellt Rückfragen, ruft eigene Such-Tools auf und legt am Ende einen strukturierten Tag-für-Tag-Reiseplan in der Datenbank ab."
 githubRepo: "ai-trip-planer"
-techStack: ["TypeScript", "Next.js", "NestJS", "Prisma", "PostgreSQL", "Claude API", "Azure", "Bicep", "Playwright"]
+techStack: ["TypeScript", "Next.js", "NestJS", "Prisma", "PostgreSQL", "Groq", "Claude API", "Docker", "Azure", "Bicep", "Playwright", "GitHub Actions"]
+plannedTech: ["pgvector"]
 order: 3
+liveUrl: "https://witty-pond-0504bdc0f.7.azurestaticapps.net"
+liveLabel: "Live-Demo öffnen"
 architecture:
   nodes:
     - { id: web, label: "Next.js", kind: frontend }
     - { id: api, label: "NestJS", kind: backend }
-    - { id: claude, label: "Anthropic API", kind: external }
-    - { id: db, label: "PostgreSQL · Prisma", kind: data }
+    - { id: llm, label: "LLM-Provider (Groq/Claude)", kind: external }
+    - { id: db, label: "PostgreSQL (Neon) · Prisma", kind: data }
   edges:
     - [web, api]
-    - [api, claude]
+    - [api, llm]
     - [api, db]
 ---
 
@@ -23,8 +26,8 @@ Eine Chat-App, die Reisen plant: Man beschreibt Ziel, Zeitraum, Budget und Vorli
   <img src="/projects/ai-trip-planer/trip.webp" alt="Detaillierte Reiseübersicht" />
 </div>
 
-**Warum so gebaut:** Das Kernstück ist kein einzelner Prompt, sondern eine echte Agent-Schleife gegen die Anthropic-API (`claude-haiku-4-5`): Das Backend ruft `messages.create` mit einem `tools`-Array auf, führt angeforderte Tool-Calls aus (`search_flights`, `search_hotels`, `save_itinerary`) und gibt die Ergebnisse als `tool_result` zurück, bis das Modell keine weiteren Tools mehr braucht. Das `save_itinerary`-Tool hat ein festes JSON-Schema, das direkt auf das Prisma-Datenmodell abbildet. Die KI liefert also von sich aus strukturierte, typsichere Daten statt Freitext, den man später noch in die richtigen Daten parsen müsste.
+**Warum so gebaut:** Das Kernstück ist kein einzelner Prompt, sondern eine echte Agent-Schleife: Das Backend ruft das LLM mit einem `tools`-Array auf, führt angeforderte Tool-Calls aus (`search_flights`, `search_hotels`, `save_itinerary`) und gibt die Ergebnisse als `tool_result` zurück, bis das Modell keine weiteren Tools mehr braucht. Das `save_itinerary`-Tool hat ein festes JSON-Schema, das direkt auf das Prisma-Datenmodell abbildet. Die KI liefert also von sich aus strukturierte, typsichere Daten statt Freitext, den man später noch in die richtigen Daten parsen müsste. Der LLM-Aufruf selbst läuft hinter einer eigenen Provider-Schnittstelle mit Retry-Wrapper: Groq ist der Produktions-Default (kostenloses Tier), Anthropic bleibt als umschaltbarer Fallback über dieselbe Schnittstelle erreichbar — ein Anbieterwechsel ist eine Konfigurationsänderung, keine Code-Änderung.
 
-**Technisch interessant:** Flug- und Hotelsuche sind bewusst simuliert (feste Testdaten). Der Punkt des Projekts ist die Orchestrierung und der Tool-Calling-Vertrag, nicht die Anbindung an echte Reise-APIs, auch wegen Kostengründen. Sicherheitsrelevant: Der Chat-Endpunkt erreicht die Anthropic-API, bevor irgendeine DB-Prüfung greift, weshalb der gesamte Endpunkt hinter Login liegt. Lediglich als Schutz vor API-Key-Missbrauch, nicht eine Prüfung pro Tool-Call. Ein Playwright-E2E-Test fährt den kompletten Ablauf (Login → Chat → Speichern) in CI gegen einen echten Postgres-Service-Container und die echte Anthropic-API.
+**Technisch interessant:** Flug- und Hotelsuche sind bewusst simuliert (feste Testdaten). Der Punkt des Projekts ist die Orchestrierung und der Tool-Calling-Vertrag, nicht die Anbindung an echte Reise-APIs, auch wegen Kostengründen. Sicherheitsrelevant: Der Chat-Endpunkt erreicht das LLM, bevor irgendeine DB-Prüfung greift, weshalb der gesamte Endpunkt hinter Login liegt — als Schutz vor API-Key-Missbrauch, nicht als Prüfung pro Tool-Call. Rate-Limits und ein Token-Budget begrenzen zusätzlich, was ein einzelner Chat kosten darf. Ein Playwright-E2E-Test fährt den kompletten Ablauf (Login → Chat → Speichern) in CI gegen einen echten Postgres-Service-Container und die echte LLM-API. Für eine spätere RAG-Erweiterung liegt bereits eine `pgvector`-Spalte im Schema (384 Dimensionen, passend zu einem lokalen Embedding-Modell) — bewusst nur die Struktur, noch ohne Ingestion- oder Retrieval-Code.
 
-**Deployment:** Vollständig als Infrastructure-as-Code über Bicep-Module nach Azure. Static Web Apps fürs Frontend, Container Apps mit Skalierung auf null (minimierte laufende Kosten) für die NestJS-API, Azure-Postgres-Flexible-Server, dazu Application Insights mit einem eigenen `ItinerarySaved`-Event für echtes Produkt-Tracking statt nur Standard-Request-Logging.
+**Deployment:** Vollständig als Infrastructure-as-Code über Bicep-Module nach Azure. Static Web Apps fürs Frontend, Container Apps mit Skalierung auf null (minimierte laufende Kosten) für die NestJS-API im Docker-Container (Image über GitHub Actions nach GHCR gepusht), dazu Application Insights mit einem eigenen `ItinerarySaved`-Event für echtes Produkt-Tracking statt nur Standard-Request-Logging. Die Datenbank läuft auf Neon statt auf einem selbst verwalteten Azure-Postgres — ein bewusster Tausch: eine verwaltete `DATABASE_URL` aus einem Secret statt eigener Firewall-Konfiguration und Bicep-Modul für die DB. Der Login gegen Azure für den Deploy läuft über OIDC (Federated Credentials), ganz ohne langlebigen Secret-Schlüssel.
