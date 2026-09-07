@@ -1,33 +1,39 @@
 ---
 title: "AI Trip Planner"
-summary: "Chat-App, die Reisen plant: Die KI stellt Rückfragen, ruft eigene Such-Tools auf und legt am Ende einen strukturierten Tag-für-Tag-Reiseplan in der Datenbank ab."
+summary: "Chat-Agent, der einen Reiseplan im Dialog erarbeitet und Faktenfragen zu Reisezielen über eine eigene RAG-Wissensbasis mit sichtbaren Quellen beantwortet, statt zu raten."
 githubRepo: "ai-trip-planer"
-techStack: ["TypeScript", "Next.js", "NestJS", "Prisma", "PostgreSQL", "Groq", "Claude API", "Docker", "Azure", "Bicep", "Playwright", "GitHub Actions"]
-plannedTech: ["pgvector"]
+techStack: ["TypeScript", "Next.js", "NestJS", "Prisma", "PostgreSQL", "pgvector", "Python", "FastAPI", "Groq", "Claude API", "MCP", "Langfuse", "Docker", "Azure", "Bicep", "Playwright", "GitHub Actions"]
 order: 3
 liveUrl: "https://witty-pond-0504bdc0f.7.azurestaticapps.net"
 liveLabel: "Live-Demo öffnen"
 architecture:
   nodes:
     - { id: web, label: "Next.js", kind: frontend }
-    - { id: api, label: "NestJS", kind: backend }
+    - { id: mcp, label: "MCP-Server", kind: frontend }
+    - { id: api, label: "NestJS Agent", kind: backend }
+    - { id: rag, label: "RAG-Service (FastAPI)", kind: backend }
     - { id: llm, label: "LLM-Provider (Groq/Claude)", kind: external }
-    - { id: db, label: "PostgreSQL (Neon) · Prisma", kind: data }
+    - { id: obs, label: "Langfuse (Tracing)", kind: external }
+    - { id: db, label: "PostgreSQL + pgvector (Neon)", kind: data }
   edges:
     - [web, api]
+    - [mcp, api]
     - [api, llm]
+    - [api, rag]
+    - [api, obs]
     - [api, db]
+    - [rag, db]
 ---
 
-Eine Chat-App, die Reisen plant: Man beschreibt Ziel, Zeitraum, Budget und Vorlieben. Daraufhin stellt die KI bei Bedarf die nötigen Rückfragen, sucht (simulierte) Flüge und Hotels, und speichert am Ende einen strukturierten Reiseplan für jeden Tag in der Datenbank. Gebaut, um Next.js, NestJS, Prisma/Postgres und vor allem echte LLM-Tool-Use-Workflows und End-to-End-Tests praktisch zu lernen.
+Eine Chat-App, die Reisen plant: Man beschreibt Ziel, Zeitraum, Budget und Vorlieben, und der Agent stellt bei Bedarf Rückfragen, sucht (simulierte) Flüge und Hotels und speichert am Ende einen strukturierten Tagesplan in der Datenbank. Fragt man stattdessen etwas zum Reiseziel selbst, zum Beispiel was man in Lissabon essen sollte, durchsucht der Agent eine eigene Wissensbasis und antwortet mit Quellenangabe, statt aus dem Gedächtnis zu spekulieren. Gebaut als Lernprojekt für produktionsnahe LLM-Anwendungen: Tool-Use-Agenten, Retrieval-Augmented Generation, austauschbare LLM-Anbieter, ein eigener MCP-Server und automatisierte Qualitätsmessung.
 
 <div class="screenshot-grid">
   <img src="/projects/ai-trip-planer/chat.webp" alt="Chat-Oberfläche des Reiseplaners" />
   <img src="/projects/ai-trip-planer/trip.webp" alt="Detaillierte Reiseübersicht" />
 </div>
 
-**Warum so gebaut:** Das Kernstück ist kein einzelner Prompt, sondern eine echte Agent-Schleife: Das Backend ruft das LLM mit einem `tools`-Array auf, führt angeforderte Tool-Calls aus (`search_flights`, `search_hotels`, `save_itinerary`) und gibt die Ergebnisse als `tool_result` zurück, bis das Modell keine weiteren Tools mehr braucht. Das `save_itinerary`-Tool hat ein festes JSON-Schema, das direkt auf das Prisma-Datenmodell abbildet. Die KI liefert also von sich aus strukturierte, typsichere Daten statt Freitext, den man später noch in die richtigen Daten parsen müsste. Der LLM-Aufruf selbst läuft hinter einer eigenen Provider-Schnittstelle mit Retry-Wrapper: Groq ist der Produktions-Default (kostenloses Tier), Anthropic bleibt als umschaltbarer Fallback über dieselbe Schnittstelle erreichbar: Ein Anbieterwechsel ist eine Konfigurationsänderung, keine Code-Änderung.
+**Warum so gebaut:** Das Kernstück ist kein einzelner Prompt, sondern eine echte Agent-Schleife: Das Backend ruft das LLM mit einem `tools`-Array auf, führt angeforderte Tool-Calls aus (`search_flights`, `search_hotels`, `save_itinerary`, `search_travel_knowledge`) und gibt die Ergebnisse als `tool_result` zurück, bis das Modell keine weiteren Tools mehr braucht. Die Wissenssuche ist dabei bewusst ein Tool und keine starre Vorschaltsuche vor jeder Anfrage: Das Modell entscheidet selbst, wann eine Faktenfrage vorliegt, statt jede Nachricht unabhängig vom Inhalt erst durch die Suche zu schicken. Der LLM-Aufruf selbst läuft hinter einer eigenen Provider-Schnittstelle mit Retry-Wrapper: Groq ist der Produktions-Default (kostenloses Tier), Anthropic bleibt als umschaltbarer Fallback über dieselbe Schnittstelle erreichbar. Ein Anbieterwechsel ist damit eine Konfigurationsänderung, keine Code-Änderung.
 
-**Technisch interessant:** Flug- und Hotelsuche sind bewusst simuliert (feste Testdaten). Der Punkt des Projekts ist die Orchestrierung und der Tool-Calling-Vertrag, nicht die Anbindung an echte Reise-APIs, auch wegen Kostengründen. Sicherheitsrelevant: Der Chat-Endpunkt erreicht das LLM, bevor irgendeine DB-Prüfung greift, weshalb der gesamte Endpunkt hinter Login liegt, als Schutz vor API-Key-Missbrauch und nicht als Prüfung pro Tool-Call. Rate-Limits und ein Token-Budget begrenzen zusätzlich, was ein einzelner Chat kosten darf. Ein Playwright-E2E-Test fährt den kompletten Ablauf (Login → Chat → Speichern) in CI gegen einen echten Postgres-Service-Container und die echte LLM-API. Für eine spätere RAG-Erweiterung liegt bereits eine `pgvector`-Spalte im Schema (384 Dimensionen, passend zu einem lokalen Embedding-Modell), bewusst nur als Struktur, noch ohne Ingestion- oder Retrieval-Code.
+**Technisch interessant:** Die Wissenssuche läuft als eigener Python/FastAPI-Service statt als In-Process-Bibliothek im NestJS-Backend, weil das Embedding-Ökosystem (hier `fastembed`, lokal über ONNX, ohne API-Key und ohne laufende Kosten) in Python lebt und die Agent-Orchestrierung in TypeScript: eine dokumentierte HTTP-Schnittstelle zwischen beiden statt eines Sprachkompromisses für alles. Jeder Agentenlauf wird zusätzlich als Langfuse-Trace aufgezeichnet, allerdings bewusst ohne Freitext-Inhalte: Getraced werden nur Modellname, Token-Zahlen, Latenz und welche Tools mit wie vielen Treffern liefen, nicht die Nutzernachricht oder die Antwort selbst, da beide Reisepräferenzen enthalten können. Dieselben Fähigkeiten (Wissenssuche, Reiseplan anlegen und auflisten) stehen außerdem über einen eigenen MCP-Server zur Verfügung, nutzbar direkt aus Claude Code oder Claude Desktop; das Löschen eines Reiseplans existiert bewusst nur als REST-Endpunkt und nicht als MCP-Tool, damit ein Modell nicht autonom unwiderruflich Daten löschen kann. Ob RAG und Tool-Auswahl überhaupt funktionieren, ist keine Meinung, sondern wird von einem eigenen Eval-Harness gegen ein festes Golden Dataset gemessen (Recall@k, MRR, Tool-Genauigkeit), das nachts automatisch gegen den echten Stack läuft und als CI-Artefakt landet.
 
-**Deployment:** Vollständig als Infrastructure-as-Code über Bicep-Module nach Azure. Static Web Apps fürs Frontend, Container Apps mit Skalierung auf null (minimierte laufende Kosten) für die NestJS-API im Docker-Container (Image über GitHub Actions nach GHCR gepusht), dazu Application Insights mit einem eigenen `ItinerarySaved`-Event für echtes Produkt-Tracking statt nur Standard-Request-Logging. Die Datenbank läuft auf Neon statt auf einem selbst verwalteten Azure-Postgres: ein bewusster Tausch, eine verwaltete `DATABASE_URL` aus einem Secret statt eigener Firewall-Konfiguration und Bicep-Modul für die DB. Der Login gegen Azure für den Deploy läuft über OIDC (Federated Credentials), ganz ohne langlebigen Secret-Schlüssel.
+**Deployment:** Vollständig als Infrastructure-as-Code über Bicep-Module nach Azure. Static Web Apps fürs Frontend, zwei Container Apps in derselben Environment für NestJS-Backend und RAG-Service (beide mit Skalierung auf null), wobei der RAG-Service ohne öffentliche Erreichbarkeit läuft und nur intern über seinen Namen erreichbar ist. Dazu Application Insights mit einem eigenen `ItinerarySaved`-Event für echtes Produkt-Tracking statt nur Standard-Request-Logging. Die Datenbank läuft auf Neon statt auf einem selbst verwalteten Azure-Postgres: eine verwaltete `DATABASE_URL` aus einem Secret statt eigener Firewall-Konfiguration und Bicep-Modul für die DB. Der Login gegen Azure für den Deploy läuft über OIDC (Federated Credentials), ganz ohne langlebigen Secret-Schlüssel.
