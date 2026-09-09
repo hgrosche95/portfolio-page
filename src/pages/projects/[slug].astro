@@ -84,6 +84,20 @@ const lastPushed = stats
 			)
 		}
 
+		{
+			entry.data.liveUrl && entry.data.liveStatusCheck && (
+				<p
+					id="live-status"
+					data-project={entry.id}
+					class="mt-2 font-mono text-xs text-[var(--color-text-muted)]"
+					data-xray="Live-Status · Inline-Skript, ruft /api/live-status"
+					data-xray-kind="static"
+				>
+					Prüfe, ob der Server gerade wach ist…
+				</p>
+			)
+		}
+
 		<div
 			class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-[var(--color-border)] py-3 font-mono text-xs text-[var(--color-text-muted)]"
 		>
@@ -188,6 +202,34 @@ const lastPushed = stats
 				document.addEventListener('keydown', function (event) {
 					if (event.key === 'Escape' && !lightbox.classList.contains('hidden')) close();
 				});
+			})();
+		</script>
+
+		<script is:inline>
+			(function () {
+				const el = document.getElementById('live-status');
+				if (!el) return;
+
+				const project = el.dataset.project;
+
+				fetch('/api/live-status?project=' + encodeURIComponent(project))
+					.then(function (response) {
+						if (!response.ok) throw new Error('live-status request failed');
+						return response.json();
+					})
+					.then(function (data) {
+						if (data.awake) {
+							el.textContent = '● Server ist gerade wach';
+							el.classList.add('text-[var(--color-accent)]');
+						} else {
+							el.textContent = '○ Server schläft gerade, wacht beim Öffnen in ca. 30–40s auf';
+						}
+					})
+					.catch(function () {
+						// No status is better than a wrong one: this is a "nice to
+						// know", not something worth showing an error state for.
+						el.hidden = true;
+					});
 			})();
 		</script>
 	</article>

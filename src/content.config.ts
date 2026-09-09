@@ -25,6 +25,17 @@ const projects = defineCollection({
     liveUrl: z.string().url().optional(),
     liveLabel: z.string().optional(),
     /**
+     * Shows a "server is awake / asleep" check next to the live button.
+     * Only true for projects with a scale-to-zero backend behind the demo,
+     * where the first request after idling can take 30-40s - without a
+     * warning that reads as the demo being broken. The matching target URL
+     * lives server-side in api/src/functions/live-status.ts, on a fixed
+     * allowlist rather than taken from this field, so the check can never be
+     * pointed at an arbitrary URL by editing content: the two must be kept
+     * in sync by hand when this flag changes.
+     */
+    liveStatusCheck: z.boolean().optional(),
+    /**
      * Optional internal architecture, unfolded from the project's node in the
      * homepage graph. Kept here rather than in the component so that adding a
      * project MDX file stays the only step needed to extend the graph.
