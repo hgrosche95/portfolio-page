@@ -44,6 +44,7 @@ const MAX_TAGS = 4;
 			return (
 				<a
 					data-reveal
+					data-project-tags={project.techStack.join('|')}
 					href={`/projects/${project.slug}`}
 					class="group flex flex-col rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-colors hover:border-[var(--color-accent)]"
 				>

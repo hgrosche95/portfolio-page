@@ -1,0 +1,117 @@
+---
+interface Props {
+	tags: string[];
+}
+
+const { tags } = Astro.props;
+
+const baseChipClass =
+	'rounded border px-2.5 py-1 font-mono text-xs transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]';
+const inactiveChipClass = 'border-[var(--color-border)] text-[var(--color-text-muted)]';
+const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]';
+---
+
+<div
+	data-reveal
+	class="mt-6 flex flex-wrap items-center gap-2"
+	data-xray="ProjectFilter.astro · Inline-Skript, kein Bundle"
+	data-xray-kind="static"
+>
+	<div
+		id="project-filter"
+		role="group"
+		aria-label="Projekte nach Technologie filtern"
+		class="flex flex-wrap gap-1.5"
+	>
+		<button type="button" data-filter-all class={`${baseChipClass} ${activeChipClass}`} aria-pressed="true">
+			Alle
+		</button>
+		{
+			tags.map((tag) => (
+				<button
+					type="button"
+					data-filter-tag={tag}
+					class={`${baseChipClass} ${inactiveChipClass}`}
+					aria-pressed="false"
+				>
+					{tag}
+				</button>
+			))
+		}
+	</div>
+	<span id="project-filter-count" class="ml-1 font-mono text-xs text-[var(--color-text-muted)]"></span>
+</div>
+
+<script>
+	(function () {
+		const root = document.getElementById('project-filter');
+		const allButton = root?.querySelector<HTMLButtonElement>('[data-filter-all]');
+		const tagButtons = root
+			? Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filter-tag]'))
+			: [];
+		const countEl = document.getElementById('project-filter-count');
+		if (!root || !allButton || tagButtons.length === 0) return;
+
+		const INACTIVE = ['border-[var(--color-border)]', 'text-[var(--color-text-muted)]'];
+		const ACTIVE = [
+			'border-[var(--color-accent)]',
+			'bg-[var(--color-accent-soft)]',
+			'text-[var(--color-accent)]',
+		];
+
+		const selected = new Set<string>();
+
+		function setPressed(button: HTMLButtonElement, pressed: boolean) {
+			button.setAttribute('aria-pressed', String(pressed));
+			INACTIVE.forEach((cls) => button.classList.toggle(cls, !pressed));
+			ACTIVE.forEach((cls) => button.classList.toggle(cls, pressed));
+		}
+
+		// Every card on the page declares its own tags; nothing here needs to
+		// know how many cards exist or where they live.
+		function cards() {
+			return Array.from(document.querySelectorAll<HTMLElement>('[data-project-tags]'));
+		}
+
+		function apply() {
+			const all = cards();
+			let visible = 0;
+
+			for (const card of all) {
+				const tags = (card.dataset.projectTags ?? '').split('|');
+				const matches = selected.size === 0 || tags.some((tag) => selected.has(tag));
+				card.hidden = !matches;
+				if (matches) visible += 1;
+			}
+
+			setPressed(allButton, selected.size === 0);
+			tagButtons.forEach((button) => setPressed(button, selected.has(button.dataset.filterTag ?? '')));
+
+			if (countEl) {
+				countEl.textContent = selected.size === 0 ? '' : `${visible} von ${all.length} Projekten`;
+			}
+
+			// The graph is a React island living elsewhere on the page: a
+			// CustomEvent is the only interface a static script and a React
+			// component can share without either depending on the other.
+			window.dispatchEvent(
+				new CustomEvent('project-filter-change', { detail: { tags: Array.from(selected) } }),
+			);
+		}
+
+		allButton.addEventListener('click', () => {
+			selected.clear();
+			apply();
+		});
+
+		tagButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				const tag = button.dataset.filterTag;
+				if (!tag) return;
+				if (selected.has(tag)) selected.delete(tag);
+				else selected.add(tag);
+				apply();
+			});
+		});
+	})();
+</script>

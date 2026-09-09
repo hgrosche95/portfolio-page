@@ -36,6 +36,34 @@ function infraLabelsFor(projects: GraphProject[]): string[] {
   return INFRA_LABELS.filter((label) => projects.some((project) => project.techStack.includes(label)));
 }
 
+/**
+ * Marks project/infra nodes that don't match the active tag filter, without
+ * touching positions or the node/edge set itself — filtering dims instead of
+ * removing, so the graph's shape (including the shared infra edges) never
+ * needs a re-fit just because a filter was toggled. Hub and architecture
+ * sub-nodes are never dimmed: the hub isn't tied to any one tag, and
+ * sub-nodes only ever appear inside an already-expanded, already-relevant
+ * project.
+ */
+function withFilterDimming(
+  nodes: Node<GraphNodeData>[],
+  projects: GraphProject[],
+  filterTags: string[],
+): Node<GraphNodeData>[] {
+  if (filterTags.length === 0) return nodes;
+
+  const techStackBySlug = new Map(projects.map((project) => [project.slug, project.techStack]));
+  const infraLabels = infraLabelsFor(projects);
+
+  return nodes.map((node) => {
+    if (node.id === 'hub' || node.id.includes('--')) return node;
+    const tags = node.id === 'infra' ? infraLabels : techStackBySlug.get(node.id);
+    if (!tags) return node;
+    const dimmed = !tags.some((tag) => filterTags.includes(tag));
+    return { ...node, data: { ...node.data, dimmed } };
+  });
+}
+
 /** Vertical distance between two collapsed project nodes, in flow units. */
 const NODE_SPACING = 80;
 /** Vertical distance between architecture nodes sharing a column. */
@@ -321,11 +349,24 @@ function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
 
 export default function NodeGraph({ projects }: NodeGraphProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
   const isDesktop = useIsDesktop();
+
+  // ProjectFilter.astro is a static component elsewhere on the page; a
+  // CustomEvent is the only channel a plain script and a React island can
+  // share without either one depending on the other.
+  useEffect(() => {
+    const onFilterChange = (event: Event) => {
+      setFilterTags((event as CustomEvent<{ tags: string[] }>).detail?.tags ?? []);
+    };
+    window.addEventListener('project-filter-change', onFilterChange);
+    return () => window.removeEventListener('project-filter-change', onFilterChange);
+  }, []);
 
   const toggle = (slug: string) => setExpanded((current) => (current === slug ? null : slug));
 
-  const { nodes, edges } = buildGraph(projects, expanded, isDesktop, toggle);
+  const { nodes: builtNodes, edges } = buildGraph(projects, expanded, isDesktop, toggle);
+  const nodes = withFilterDimming(builtNodes, projects, filterTags);
 
   // Sized from the tallest of every reachable state (collapsed, plus each
   // project's own expansion) rather than just the current one, so the

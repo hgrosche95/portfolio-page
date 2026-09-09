@@ -5,6 +5,7 @@ import Hero from '../components/Hero.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import NodeGraph, { type GraphProject } from '../components/NodeGraph';
 import ProjectCards, { type CardProject } from '../components/ProjectCards.astro';
+import ProjectFilter from '../components/ProjectFilter.astro';
 import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
 import ContactForm from '../components/ContactForm.astro';
@@ -29,6 +30,22 @@ const cardProjects: CardProject[] = projectEntries.map((entry) => ({
 	techStack: entry.data.techStack,
 	githubRepo: entry.data.githubRepo,
 }));
+
+// Derived from the same content the cards/graph already use, not hand-picked:
+// a tag only earns a filter chip by actually recurring across projects.
+// A one-off tag (a project's only Python dependency, say) would just be a
+// filter with one possible result, which isn't a filter, just a relabelled
+// link to that project.
+const tagCounts = new Map<string, number>();
+for (const entry of projectEntries) {
+	for (const tag of entry.data.techStack) {
+		tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+	}
+}
+const filterTags = [...tagCounts.entries()]
+	.filter(([, count]) => count >= 2)
+	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+	.map(([tag]) => tag);
 ---
 
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
@@ -42,6 +59,7 @@ const cardProjects: CardProject[] = projectEntries.map((entry) => ({
 				subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
 				desktopHint="Über den Pfeil klappt die Architektur des Projekts auf."
 			/>
+			<ProjectFilter tags={filterTags} />
 		</div>
 		<div
 			data-reveal

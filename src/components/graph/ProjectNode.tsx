@@ -15,6 +15,10 @@ export type GraphNodeData = {
   /** Hub/project nodes only: true on the mobile top-to-bottom layout, so
    *  edges connect via top/bottom handles instead of left/right ones. */
   vertical?: boolean;
+  /** Project/infra nodes only: doesn't match the active tag filter. Dimmed
+   *  rather than removed, so the graph's shape and the shared infra edges
+   *  stay intact instead of needing a re-fit on every filter change. */
+  dimmed?: boolean;
 };
 
 /**
@@ -67,6 +71,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
         isHub
           ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
           : 'group hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] cursor-pointer',
+        data.dimmed ? 'opacity-35' : 'opacity-100',
       ].join(' ')}
     >
       <Handle type="target" position={targetPosition} style={{ visibility: 'hidden' }} />
