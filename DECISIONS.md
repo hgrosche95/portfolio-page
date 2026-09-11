@@ -35,6 +35,30 @@ page load: honest (no fabricated data) but always visually alive.
 language) from the GitHub API rather than being hardcoded, layered on top of hand-written
 "why/how" explanations for each project.
 
+**Reachability check for scale-to-zero demos, done server-to-server.** Two of the live project
+demos run their backend on Azure Container Apps with scale-to-zero: after a few idle minutes the
+container sleeps, and the first real request takes 30-40s to wake it back up (measured directly:
+38s on a cold request). Without a warning, a visitor clicking the live-demo button in that window
+sees nothing happen and reasonably assumes the demo is broken. A direct browser-side check was
+considered and rejected: both backends' CORS policy only allows their own frontend's origin, so a
+fetch from this site's origin would be blocked — and a CORS rejection is indistinguishable from a
+dead server on the client side, making the check worse than useless. Solved with a small Azure
+Function on this site (`api/src/functions/live-status.ts`) that probes server-to-server instead,
+where CORS doesn't apply. The target URL always comes from a fixed allowlist keyed by project
+slug, never from the request: accepting a caller-supplied URL here would turn a reachability
+check into an open fetch proxy. Results are cached briefly (20s) so several visitors hitting a
+project page at once don't each trigger their own probe against someone else's server.
+
+**Project filter: derived tags, not a hand-picked list; dims the graph, hides the list.** The
+homepage's tag filter only offers tags that recur across at least two projects, computed from the
+same `techStack` frontmatter the cards and node-graph already read — a tag only one project has
+would be a filter with exactly one possible result, which isn't a filter, just a relabelled link
+to that project. The card list and the graph react differently to a non-matching project on
+purpose: the list hides it outright (it's explicitly framed as "the same projects as a list"),
+while the graph dims it instead of removing it, because the graph is also the structural map of
+shared infrastructure (which projects share Azure, Docker, GitHub Actions) — removing a node
+would force a re-fit/reflow of the whole layout for what is otherwise a purely cosmetic change.
+
 ## Content & structure
 
 **Multi-page, not single-page scroll.** Considered a single scrolling page with anchor links,
@@ -42,17 +66,23 @@ chose separate routes per project (`/projects/[slug]`) instead. Reasoning: the n
 navigation needs somewhere to route *to*, and each project's "why/how" explanation needs room
 to be substantive rather than squeezed into a scroll section.
 
-**All four current repos are featured** (`great_galguti_game`, `ai-trip-planer`,
-`Cocktail-Orders`, `job-application-skill`), even though none currently have GitHub
-descriptions. The "why/how" write-up for each is drafted from actually reading the repo's code
-and README — not just the repo name — specifically to avoid the site itself becoming an example
-of shallow, non-developer-quality content.
+**Every project repo gets featured**, not a curated subset — six as of this writing (the two
+game/agent projects, AI Trip Planner, Cocktail Orders, the job-application Claude Code skill,
+and this site itself). Adding one is a single MDX file under `src/content/projects/`; title,
+tech stack, GitHub API card data, node-graph position and optional architecture diagram all come
+from that file's frontmatter, so extending the site doesn't require touching component code (see
+`src/content.config.ts`). Each project's "why/how" write-up is drafted from actually reading that
+repo's code, not just its README or repo name — a project's own README turned out to be stale on
+a real architecture change at least once, caught only by checking source directly. Doing this
+specifically avoids the site itself becoming an example of shallow, non-developer-quality content.
 
-**Contact kept simple on purpose.** `mailto:` link + LinkedIn + downloadable CV PDF, instead of
-a contact form with a backend. A form (Azure Function) was considered and deliberately deferred
-to a later iteration — it would add real backend complexity (spam handling, maintenance) for
-a marginal gain on a portfolio site, but is kept as a known next step precisely because it *is*
-a good way to further differentiate the site later.
+**Contact form: built, not deferred.** The original plan here kept contact simple (`mailto:` +
+LinkedIn + CV download only) and deferred a real form as a known next step. It was built shortly
+after: an Azure Function backend (delivery via Brevo) with a honeypot field and a best-effort,
+in-memory rate limit rather than a shared store — deliberately sized to what a portfolio contact
+form actually needs, not a general-purpose form platform. `mailto:`/LinkedIn/CV download stayed
+as a fallback alongside it rather than being replaced, since a backend outage or a JS failure
+should never be the only way to reach out.
 
 **Impressum/Datenschutzerklärung included**, using city + email only rather than a full home
 address. German TMG/DSGVO Impressum obligations are a legal grey area for a non-commercial
@@ -125,5 +155,6 @@ is free on the same SKU — only the naming layer differs from a paid domain, no
 
 Ship an MVP first, then treat this as a living project that keeps being extended — itself a
 signal of "actively maintained" work. Known backlog, deliberately deferred rather than
-forgotten: a real contact form with an Azure Function backend, an English translation, and
-additional projects as they're built.
+forgotten: an English translation, and additional projects as they're built. The contact form
+that used to be on this list was built (see Content & structure above); it's the clearest
+evidence so far that the backlog gets acted on rather than just accumulated.
