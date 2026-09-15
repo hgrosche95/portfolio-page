@@ -1,26 +1,30 @@
 ---
-title: "Bewerbungshelfer (Claude Code Skill)"
-summary: "Eine Claude Code Skill, die aus Lebenslauf und Stellenanzeige ein Anschreiben entwirft und daraus einen fertigen Bewerbungsordner samt PDF erzeugt."
+title: "Bewerbungshelfer"
+summary: "Aus Claude-Code-Skill wurde ein echter Dienst: entwirft aus Lebenslauf und Stellenanzeige ein Anschreiben, prüft es automatisch auf Ton/Länge und legt einen fertigen Bewerbungsordner an — nutzbar per REST, MCP oder direkt in Claude."
 githubRepo: "job-application-skill"
-techStack: ["Python", "Claude Code Skills", "ReportLab"]
+techStack: ["TypeScript", "NestJS", "Python", "ReportLab", "MCP", "Groq", "Claude API", "Langfuse", "Docker", "Azure", "Bicep", "GitHub Actions"]
 order: 5
 liveUrl: "https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestcentral.azurecontainerapps.io/health"
 liveLabel: "API-Health-Check ansehen"
 liveStatusCheck: true
 architecture:
   nodes:
-    - { id: claude, label: "Claude Code", kind: external }
-    - { id: skill, label: "SKILL.md · 7-Schritt-Ablauf", kind: backend }
+    - { id: claude, label: "Claude (MCP)", kind: external }
+    - { id: api, label: "NestJS API", kind: backend }
+    - { id: llm, label: "LLM-Provider (Groq/Claude)", kind: external }
     - { id: scripts, label: "Python-CLI → PDF & Ordner", kind: data }
+    - { id: langfuse, label: "Langfuse (Tracing)", kind: external }
   edges:
-    - [claude, skill]
-    - [skill, scripts]
+    - [claude, api]
+    - [api, llm]
+    - [api, scripts]
+    - [api, langfuse]
 ---
 
-Eine "Claude Code Skill" ist kein eigenständiges Programm, sondern ein Ordner mit Anweisungen, den Claude Code automatisch lädt, sobald eine passende Aufgabe auftaucht — bei dieser hier, sobald jemand eine Stellenanzeige teilt oder um Hilfe bei einer Bewerbung bittet. Die `SKILL.md` beschreibt einen 7-stufigen Ablauf: Lebenslauf und Stellenanzeige einsammeln (notfalls per Interview strukturiert erfragen), 3–5 Anforderungen ehrlich gegen die eigene Erfahrung abgleichen (inklusive offenem Benennen von Lücken statt sie zu erfinden), ein Anschreiben nach festem Stilguide entwerfen, mit Rückmeldung verfeinern, und am Ende automatisch einen Bewerbungsordner samt PDF anlegen.
+Begann als reine "Claude Code Skill" — ein Ordner mit Anweisungen (`SKILL.md`), den Claude automatisch lädt, sobald jemand eine Stellenanzeige teilt: Lebenslauf und Anzeige einsammeln, 3–5 Anforderungen ehrlich gegen die eigene Erfahrung abgleichen (Lücken benennen statt erfinden), ein Anschreiben entwerfen, mit Rückmeldung verfeinern, am Ende einen Bewerbungsordner samt PDF anlegen. Das läuft komplett in der Klartext-Anleitung, keine Zeile Code für die inhaltlichen Entscheidungen.
 
-**Warum so gebaut:** Die eigentliche "Bewerbung schreiben"-Logik läuft komplett im Sprachmodell — als dokumentierter Prozess in Markdown, nicht als Code. Python kommt nur für den Teil zum Einsatz, der wirklich deterministisch sein muss: PDF-Layout und Dateisystem-Operationen. Diese Trennung fand ich reizvoll: Die KI trifft die inhaltlichen Entscheidungen (was relevant ist, was fehlt, wie es formuliert wird), Skripte erzeugen nur, was die KI bereits entschieden hat — nie umgekehrt.
+**Warum der Ausbau zum Dienst:** Als Teil von [life-ops-platform](/projects/life-ops-platform) sollte dieselbe Fähigkeit auch außerhalb einer einzelnen Claude-Code-Session nutzbar sein — von unterwegs per Claude Desktop, und automatisiert durch n8n (z. B. eine Jobbörse beobachten und selbstständig gegen den eigenen Lebenslauf abgleichen). Das bedeutet: ein echtes Backend, ein MCP-Server für Claude, eine REST-API für n8n. Die drei ursprünglichen Python-Skripte (Lebenslauf/Anschreiben als PDF, Bewerbungsordner anlegen) blieben dabei unverändert — sie werden jetzt vom NestJS-Backend aus aufgerufen statt direkt von Claude, machen aber inhaltlich dasselbe.
 
-**Technisch interessant:** Drei kleine CLI-Skripte, die Claude selbst aufruft: eines baut einen gestalteten Lebenslauf aus JSON-Daten mit ReportLab (inklusive optionalem Foto), eines rendert das fertig abgestimmte Anschreiben als PDF, eines legt automatisch einen sauber benannten Bewerbungsordner an und sortiert Anlagen ein. Sämtliche Leitplanken — keine erfundenen Erfahrungen, Foto nur wenn explizit gewünscht, nichts wird automatisch verschickt — stehen nicht im Code, sondern als Regeln direkt in der `SKILL.md`. Es läuft komplett lokal in der eigenen Claude-Code-Session, ohne eigenes Backend oder gespeicherte API-Keys.
+**Technisch interessant:** `match_job_posting` und `draft_cover_letter` laufen jetzt serverseitig gegen ein LLM (Groq als kostenloser Standard, Anthropic als Fallback) statt in Claudes eigener Session — mit derselben Leitplanke wie im ursprünglichen Skill, nur diesmal als Prompt-Regel statt als Markdown-Anweisung: keine erfundenen Erfahrungen oder Kennzahlen. Live beim Testen gezeigt, dass das nicht zuverlässig genug ist — das Modell erfand trotzdem gelegentlich Zahlen. Die eigentliche Lösung dafür ist ein Validierungs-Loop nach dem Muster des `encounter_agent`-Patterns aus `agentic-rogue-like`: generieren, deterministisch gegen Wortzahl- und Floskel-Regeln prüfen, bei Verstoß mit dem konkreten Fehler im Prompt erneut versuchen (gedeckelt auf 3 Versuche). Jeder Versuch bekommt einen eigenen verschachtelten Langfuse-Span — der Loop ist damit vollständig nachvollziehbar, nicht nur eine Black Box, die irgendwann einen Text ausspuckt.
 
-**Aktueller Stand:** Bewusst als MVP gebaut und dokumentiert, mit offenem Ausbauplan (u. a. automatisches Einlesen von GitHub-Profilen für Projektbeispiele).
+**Deployment:** Läuft als Container App in Azure, mit Python direkt im selben Container wie das NestJS-Backend (`node:20-slim` + `apt install python3`), weil die PDF-Skripte weiterhin echte Python-Prozesse sind, kein Node-Äquivalent. Details zur geteilten Infrastruktur (RAG, Langfuse) und ein paar echte Stolpersteine beim Azure-Deployment stehen bei [life-ops-platform](/projects/life-ops-platform).
