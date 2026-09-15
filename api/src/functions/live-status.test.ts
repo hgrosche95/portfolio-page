@@ -66,6 +66,17 @@ describe('liveStatus', () => {
     );
   });
 
+  it('probes job-application-skill against its own allowlisted host', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const liveStatus = await freshLiveStatus();
+    await liveStatus(makeRequest('job-application-skill', freshIp()), makeContext());
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('job-application-skill-dev-api'),
+      expect.anything(),
+    );
+  });
+
   it('reports awake when the backend responds, even with a 404', async () => {
     vi.stubGlobal(
       'fetch',

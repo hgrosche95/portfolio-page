@@ -1,0 +1,34 @@
+---
+title: "life-ops-platform"
+summary: "Ein Dach über zwei bestehende Projekte: ein geteilter Wissens-/Tracing-Layer statt drei isolierter Fachdienste, plus n8n-Automationen, die sie ohne manuellen Eingriff verbinden."
+githubRepo: "life-ops-platform"
+techStack: ["n8n", "Docker", "Bicep", "GitHub Actions"]
+order: 7
+architecture:
+  nodes:
+    - { id: claude, label: "Claude (MCP)", kind: external }
+    - { id: n8n, label: "n8n (REST)", kind: backend }
+    - { id: trip, label: "ai-trip-planer", kind: external }
+    - { id: jobapp, label: "job-application-skill", kind: external }
+    - { id: rag, label: "RAG + Postgres (collection)", kind: data }
+    - { id: langfuse, label: "Langfuse (geteilt)", kind: external }
+  edges:
+    - [claude, trip]
+    - [claude, jobapp]
+    - [n8n, trip]
+    - [n8n, jobapp]
+    - [n8n, langfuse]
+    - [trip, rag]
+    - [trip, langfuse]
+    - [jobapp, langfuse]
+---
+
+Kein eigenständiges Produkt, sondern ein Meta-Repo über zwei bereits bestehende Projekte (`ai-trip-planer`, `job-application-skill`) — die Frage dahinter: Was, wenn mehrere eigene LLM-Projekte nicht isoliert nebeneinanderstehen, sondern sich Infrastruktur teilen und sich gegenseitig automatisiert am Laufen halten? Ein drittes Repo, `agentic-rogue-like`, ist dabei bewusst nur Ideen-Geber, kein integrierter Dienst: sein Validierungs-Loop-Muster (generieren → deterministisch prüfen → bei Verstoß mit dem konkreten Fehler erneut, gedeckelt) wurde für den Anschreiben-Ton-/Längen-Check nachgebaut, ohne dass `life-ops-platform` dafür Code aus diesem Repo importiert.
+
+**Zwei bewusst unterschiedliche Zugänge zu denselben Fähigkeiten:** Claude (Code/Desktop) spricht beide Dienste über MCP an — das Modell entdeckt die Tools live selbst, kein vordefinierter Ablauf nötig. n8n spricht dieselben Fähigkeiten stattdessen über einfaches REST an: Workflows sind vorab festgelegt (Jobbörse beobachten, Wissensbasis aktuell halten, Kosten überwachen), MCP-Overhead wäre dort unnötige Komplexität für einen bereits feststehenden Ablauf.
+
+**Geteilt statt verdreifacht:** Eine einzige RAG-Instanz mit einem `collection`-Feld (`travel`/`jobs`) trennt Reise- von Karriere-Wissen in derselben Tabelle, statt für jeden Dienst eine eigene Vektordatenbank zu betreiben. Beide Dienste tracen in dasselbe Langfuse-Projekt — mit derselben Zurückhaltung wie im `ai-trip-planer`-Tracing selbst: Modell, Token-Zahlen und grobe Ergebnisform ja, der tatsächliche Anzeigen-/Lebenslauf-/Anschreiben-Text nie.
+
+**Technisch interessant:** Drei der n8n-Workflows liefen erst nach einer echten Kurskorrektur: Ein geplanter GitHub-Commit-Watcher für die Wissensbasis scheiterte daran, dass diese n8n-Version `$getWorkflowStaticData` zwischen automatischen Läufen nicht wie dokumentiert persistiert (mit sechs beobachteten Produktionsläufen in der n8n-eigenen SQLite-Datenbank verifiziert, nicht nur vermutet) — ersetzt durch einen zustandslosen stündlichen Trigger, der sich auf den ohnehin vorhandenen Hash-Vergleich der Ingestion-Pipeline verlässt, statt einen fragilen State-Mechanismus zu reparieren. Die Jobbörsen-Automation riss außerdem live das Groq-Free-Tier-Rate-Limit, weil ein RSS-Feed mit 20+ Einträgen ebenso viele parallele LLM-Aufrufe auslöste — behoben mit einem einfachen Limit-Node statt komplexerer Drosselung.
+
+**Deployment:** `job-application-skill` bekam für dieses Projekt sein erstes echtes Azure-Deployment — eigene, isolierte Resource Group statt die von `ai-trip-planer` mitzunutzen, eigene Federated Credential mit auf genau diese Resource Group beschränkten Rechten (nicht subscription-weit, wie es das ältere Muster im selben Account vorsah). Der Login-Server läuft dabei tatsächlich mit Python im selben Container wie das NestJS-Backend, weil die Bewerbungshelfer-Skripte (Lebenslauf/Anschreiben als PDF) Python-Prozesse aufrufen — `node:20-slim` bekommt Python 3 einfach per `apt` dazu, statt ein zweites Basis-Image zu brauchen.

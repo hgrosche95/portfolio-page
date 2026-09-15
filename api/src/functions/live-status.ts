@@ -22,7 +22,7 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
  * hosts through this server.
  */
 
-type ProjectSlug = 'great-galguti-game' | 'ai-trip-planer';
+type ProjectSlug = 'great-galguti-game' | 'ai-trip-planer' | 'job-application-skill';
 
 const TARGETS: Record<ProjectSlug, string> = {
   // No /health route on this one; any response (even a 404) still proves
@@ -31,6 +31,8 @@ const TARGETS: Record<ProjectSlug, string> = {
     'https://great-galguti-server.redisland-e7c19e60.germanywestcentral.azurecontainerapps.io/',
   'ai-trip-planer':
     'https://trip-planner-dev-api.redisland-e7c19e60.germanywestcentral.azurecontainerapps.io/health',
+  'job-application-skill':
+    'https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestcentral.azurecontainerapps.io/health',
 };
 
 /** Comfortably longer than a warm response, far short of a 30-40s cold start. */
