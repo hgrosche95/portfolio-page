@@ -90,8 +90,6 @@ const NODE_WIDTH = 256;
 const NODE_HEIGHT = 56;
 /** Minimum gap between two adjacent ring nodes' edges, so labels never crowd. */
 const MIN_ORBIT_GAP = 40;
-/** How far out an expanded node moves along its own radial line. */
-const EXPAND_PULL = 1.7;
 
 /** Matches Tailwind's `sm` breakpoint, i.e. where the expand button appears. */
 const DESKTOP_QUERY = '(min-width: 640px)';
@@ -166,31 +164,27 @@ function nodeTopLeft(centerX: number, centerY: number): { x: number; y: number }
 }
 
 /**
- * Places one expanded node's architecture (or infra's fanned-in labels)
- * outward from its pulled-out position, reusing the exact same
- * depth/row math the desktop hub-and-spoke layout always used — only the
- * coordinate frame changes, from "add depth*ARCH_COLUMN to x" to "add it
- * along this node's own outward radial direction". Works unchanged for any
- * architecture shape (any depth, any row count), which a hand-arranged
- * "moons in a circle" version could not without breaking on the first
- * project whose architecture has more than four nodes.
+ * Places one column of an expanded node's fanned-out architecture (or
+ * infra's fanned-out labels), rightward from its docked anchor — the same
+ * depth/row grid the pre-orbit hub-and-spoke layout always used. Always
+ * rightward and never rotated to the anchor's ring angle: a rotated version
+ * once sent a project's fan-out straight back through the ring, or blew up
+ * the layout's overall extent (and so fitView's zoom) enough to make labels
+ * illegible, depending on which ring slot the expanded item happened to
+ * start from. Anchoring every expanded item at the same fixed dock instead
+ * keeps this bounded and readable regardless of architecture complexity.
  */
 function fanOutward(
   anchorX: number,
   anchorY: number,
-  angle: number,
   depth: number,
   columnRows: number,
   row: number,
 ): { x: number; y: number } {
-  const along = NODE_WIDTH / 2 + ARCH_GAP + depth * ARCH_COLUMN;
-  const perp = (row - (columnRows - 1) / 2) * ARCH_ROW;
-  const ux = Math.cos(angle);
-  const uy = Math.sin(angle);
-  // perpendicular = the outward direction rotated 90°
-  const px = -uy;
-  const py = ux;
-  return { x: anchorX + ux * along + px * perp, y: anchorY + uy * along + py * perp };
+  return {
+    x: anchorX + NODE_WIDTH / 2 + ARCH_GAP + depth * ARCH_COLUMN,
+    y: anchorY + (row - (columnRows - 1) / 2) * ARCH_ROW,
+  };
 }
 
 /**
@@ -260,13 +254,26 @@ function buildGraph(
     return { nodes, edges };
   }
 
-  // Desktop: every project plus infra shares one ring around the hub. A
-  // ring, not spokes: the connection is "shares this orbit", not a drawn
-  // line per project, which is also what leaves room for as many projects
-  // as exist without the graph turning into a spoke thicket.
-  const ringMembers = [...projects.map((project) => project.slug), 'infra'];
-  const radius = orbitRadius(ringMembers.length);
-  const angleOf = new Map(ringMembers.map((id, index) => [id, orbitAngle(index, ringMembers.length)]));
+  // Desktop: projects share one ring around the hub — a ring, not spokes,
+  // since the connection is "shares this orbit", not a drawn line per
+  // project, which is also what leaves room for as many projects as exist
+  // without the graph turning into a spoke thicket. Infra sits on its own
+  // fixed spot below the ring instead of taking a ring slot: it isn't a
+  // project like the others, so it shouldn't read as an equally-weighted
+  // planet among them.
+  const radius = orbitRadius(projects.length);
+  const angleOf = new Map(projects.map((project, index) => [project.slug, orbitAngle(index, projects.length)]));
+  // Where the single expanded item (a project or infra) relocates to, clear
+  // of the ring on every side, so its architecture fan-out always has open
+  // space to grow into — regardless of which ring slot it came from. A
+  // fixed, unrotated docking spot (rather than pulling a node further out
+  // along its own ring angle) is what keeps the detail view's size and
+  // shape independent of the expanded item's position and architecture
+  // complexity: the previous per-angle version could send a node's fan-out
+  // straight back through the ring, or send the whole layout's extent (and
+  // therefore fitView's zoom) far enough out that labels turned illegible.
+  const dock = { x: radius + NODE_WIDTH + 100, y: 0 };
+  const infraAnchor = { x: 0, y: radius + 140 };
 
   nodes.push({
     id: 'ring',
@@ -282,21 +289,21 @@ function buildGraph(
     focusable: false,
   });
 
-  function memberCenter(id: string): { x: number; y: number } {
-    const angle = angleOf.get(id) ?? 0;
-    const r = id === expanded ? radius * EXPAND_PULL : radius;
-    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
+  function projectCenter(slug: string): { x: number; y: number } {
+    if (slug === expanded) return dock;
+    const angle = angleOf.get(slug) ?? 0;
+    return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
   }
 
-  // The one edge on the ring: a stretched spoke back to the hub, only for
-  // whichever node is currently pulled out — showing it left its slot
+  // The one edge leaving the ring: a spoke back to the hub, only for
+  // whichever item is currently docked out — showing it left its slot
   // instead of implying every project is individually wired to the hub.
-  if (expanded && angleOf.has(expanded)) {
+  if (expanded) {
     edges.push({ id: `hub-${expanded}`, source: 'hub', target: expanded, animated: true, style: { strokeDasharray: '4 4' } });
   }
 
   projects.forEach((project) => {
-    const center = memberCenter(project.slug);
+    const center = projectCenter(project.slug);
     nodes.push({
       id: project.slug,
       type: 'project',
@@ -317,7 +324,7 @@ function buildGraph(
   });
 
   const infraLabels = infraLabelsFor(projects);
-  const infraCenter = memberCenter('infra');
+  const infraCenter = expanded === 'infra' ? dock : infraAnchor;
   nodes.push({
     id: 'infra',
     type: 'project',
@@ -335,9 +342,12 @@ function buildGraph(
   });
 
   if (expanded === 'infra') {
-    const angle = angleOf.get('infra') ?? 0;
+    // Fixed rightward fan-out (angle 0), same as an expanded project's
+    // architecture below — always predictable regardless of where infra's
+    // own anchor sits, which matters doubly here since every project's
+    // techStack can draw a line back to these labels.
     infraLabels.forEach((label, row) => {
-      const pos = fanOutward(infraCenter.x, infraCenter.y, angle, 0, infraLabels.length, row);
+      const pos = fanOutward(dock.x, dock.y, 0, infraLabels.length, row);
       nodes.push({
         id: `infra--${label}`,
         type: 'project',
@@ -357,8 +367,6 @@ function buildGraph(
   }
 
   if (architecture && depths && expandedProject) {
-    const angle = angleOf.get(expandedProject.slug) ?? 0;
-    const anchor = memberCenter(expandedProject.slug);
     const placed = new Map<number, number>();
 
     for (const node of architecture.nodes) {
@@ -366,7 +374,7 @@ function buildGraph(
       const row = placed.get(depth) ?? 0;
       placed.set(depth, row + 1);
       const columnRows = rowsByColumn.get(depth) ?? 1;
-      const pos = fanOutward(anchor.x, anchor.y, angle, depth, columnRows, row);
+      const pos = fanOutward(dock.x, dock.y, depth, columnRows, row);
 
       nodes.push({
         id: `${expandedProject.slug}--${node.id}`,
