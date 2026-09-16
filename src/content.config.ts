@@ -18,6 +18,15 @@ const projects = defineCollection({
     plannedTech: z.array(z.string()).optional(),
     order: z.number(),
     /**
+     * What kind of thing this project architecturally is, not what it's
+     * built with — drives the node's border style in the homepage graph
+     * (solid/dashed/double/dotted) so a project's shape is visible before
+     * reading a single tag. A judgement call, not derived from techStack:
+     * a project with an LLM call and a web frontend is still "agent" if
+     * the agent is the point of the project, not the frontend.
+     */
+    kind: z.enum(['fullstack', 'agent', 'orchestration', 'static']),
+    /**
      * Optional live deployment. Set both, or neither: without a URL there is
      * nothing to label. The label exists because "Live ansehen" is wrong for
      * something you actually play.

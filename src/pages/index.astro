@@ -20,6 +20,7 @@ const graphProjects: GraphProject[] = projectEntries.map((entry) => ({
 	label: entry.data.title,
 	sublabel: entry.data.techStack.slice(0, 2).join(', '),
 	techStack: entry.data.techStack,
+	kind: entry.data.kind,
 	architecture: entry.data.architecture,
 }));
 
@@ -57,7 +58,7 @@ const filterTags = [...tagCounts.entries()]
 				eyebrow="01 — Projekte"
 				title="Private Projekte"
 				subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
-				desktopHint="Über den Pfeil klappt die Architektur des Projekts auf."
+				desktopHint="Über den Pfeil klappt die Architektur des Projekts auf; die Randart eines Knotens zeigt seine Art."
 			/>
 			<ProjectFilter tags={filterTags} />
 		</div>

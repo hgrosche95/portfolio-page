@@ -2,23 +2,31 @@ import type { MouseEvent } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 export type ArchitectureKind = 'frontend' | 'backend' | 'data' | 'external';
+export type ProjectKind = 'fullstack' | 'agent' | 'orchestration' | 'static';
 
 export type GraphNodeData = {
   label: string;
   sublabel?: string;
-  kind: 'hub' | 'project' | 'architecture';
+  kind: 'hub' | 'project' | 'architecture' | 'ring';
   /** Architecture nodes only: drives the colour coding and the legend. */
   archKind?: ArchitectureKind;
+  /** Project nodes only: what kind of thing the project architecturally is
+   *  (content.config.ts `kind`), driving the border style below. Absent on
+   *  the hub and on infra, neither of which is any one project's "kind". */
+  projectKind?: ProjectKind;
   /** Project nodes only: absent when the project declares no architecture. */
   expanded?: boolean;
   onToggle?: () => void;
   /** Hub/project nodes only: true on the mobile top-to-bottom layout, so
    *  edges connect via top/bottom handles instead of left/right ones. */
   vertical?: boolean;
-  /** Project/infra nodes only: doesn't match the active tag filter. Dimmed
-   *  rather than removed, so the graph's shape and the shared infra edges
-   *  stay intact instead of needing a re-fit on every filter change. */
+  /** Project/infra nodes only: doesn't match the active tag filter, or a
+   *  sibling of the node currently expanded. Dimmed rather than removed, so
+   *  the graph's shape and the shared infra edges stay intact instead of
+   *  needing a re-fit on every filter or expand change. */
   dimmed?: boolean;
+  /** Ring nodes only: the decorative orbit's diameter, in flow units. */
+  diameter?: number;
 };
 
 /**
@@ -32,9 +40,37 @@ const ARCH_STYLES: Record<ArchitectureKind, string> = {
   external: 'border-dashed border-[var(--color-border-strong)] text-[var(--color-text-muted)]',
 };
 
+/**
+ * Border style per project kind — a project's architectural shape should be
+ * visible before reading a single tag. Style rather than colour, so this
+ * stays inside the site's one-accent palette instead of adding new hues:
+ * "fullstack" is the plain/default look precisely because it's the most
+ * common shape, "agent" reuses the same dashed language ARCH_STYLES already
+ * gives "external" services (an LLM call reaches out, same as those do).
+ */
+export const PROJECT_KIND_STYLES: Record<ProjectKind, string> = {
+  fullstack: 'border-2 border-solid border-[var(--color-border)]',
+  agent: 'border-2 border-dashed border-[var(--color-accent)]',
+  // `double` needs >=3px to actually render as two lines, so this one
+  // carries its own width instead of sharing the others' border-2.
+  orchestration: 'border-4 border-double border-[var(--color-accent)]',
+  static: 'border-2 border-dotted border-[var(--color-border-strong)]',
+};
+
 export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData }) {
   const isHub = data.kind === 'hub';
   const isArchitecture = data.kind === 'architecture';
+  const isRing = data.kind === 'ring';
+
+  if (isRing) {
+    return (
+      <div
+        aria-hidden="true"
+        style={{ width: data.diameter, height: data.diameter }}
+        className="rounded-full border border-dashed border-[var(--color-border)]"
+      />
+    );
+  }
 
   if (isArchitecture) {
     return (
@@ -66,11 +102,12 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
   return (
     <div
       className={[
-        'w-64 rounded border px-4 py-2 font-mono text-sm shadow-sm transition-colors',
-        'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]',
+        'w-64 rounded px-4 py-2 font-mono text-sm shadow-sm transition-colors',
+        'bg-[var(--color-surface)] text-[var(--color-text)]',
         isHub
-          ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-          : 'group hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] cursor-pointer',
+          ? 'border-2 border-solid border-[var(--color-accent)] text-[var(--color-accent)]'
+          : (data.projectKind ? PROJECT_KIND_STYLES[data.projectKind] : 'border-2 border-solid border-[var(--color-border)]'),
+        !isHub && 'group hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] cursor-pointer',
         data.dimmed ? 'opacity-35' : 'opacity-100',
       ].join(' ')}
     >

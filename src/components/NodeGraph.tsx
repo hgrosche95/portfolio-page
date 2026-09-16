@@ -8,7 +8,12 @@ import {
   type NodeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import ProjectNode, { type ArchitectureKind, type GraphNodeData } from './graph/ProjectNode';
+import ProjectNode, {
+  type ArchitectureKind,
+  type GraphNodeData,
+  type ProjectKind,
+  PROJECT_KIND_STYLES,
+} from './graph/ProjectNode';
 
 const nodeTypes = { project: ProjectNode };
 
@@ -19,15 +24,16 @@ export type GraphProject = {
   label: string;
   sublabel: string;
   techStack: string[];
+  kind: ProjectKind;
   architecture?: Architecture;
 };
 
 /**
- * Shared infrastructure worth its own graph column, drawn from real
- * techStack entries rather than authored per-project — the same "the data
- * defines the graph" approach the rest of this component already uses.
- * Keep this to genuine shared infra (hosting, CI, containers), not
- * languages or frameworks that just happen to repeat across projects.
+ * Shared infrastructure worth its own orbit slot, drawn from real techStack
+ * entries rather than authored per-project — the same "the data defines the
+ * graph" approach the rest of this component already uses. Keep this to
+ * genuine shared infra (hosting, CI, containers), not languages or
+ * frameworks that just happen to repeat across projects.
  */
 const INFRA_LABELS = ['Azure', 'Docker', 'GitHub Actions'] as const;
 
@@ -37,45 +43,55 @@ function infraLabelsFor(projects: GraphProject[]): string[] {
 }
 
 /**
- * Marks project/infra nodes that don't match the active tag filter, without
- * touching positions or the node/edge set itself — filtering dims instead of
- * removing, so the graph's shape (including the shared infra edges) never
- * needs a re-fit just because a filter was toggled. Hub and architecture
- * sub-nodes are never dimmed: the hub isn't tied to any one tag, and
- * sub-nodes only ever appear inside an already-expanded, already-relevant
- * project.
+ * Marks project/infra nodes dimmed rather than hidden — for two independent
+ * reasons that both resolve to the same visual treatment: not matching the
+ * active tag filter, or being a sibling of whichever node is currently
+ * expanded. Never touches positions or the node/edge set, so the graph's
+ * shape (the ring, the shared infra edges) never needs a re-fit just
+ * because a filter or an expand state changed. Hub and architecture
+ * sub-nodes are never dimmed: the hub isn't tied to any one tag or expand
+ * state, and sub-nodes only ever appear inside an already-relevant project.
  */
-function withFilterDimming(
+function withDimming(
   nodes: Node<GraphNodeData>[],
   projects: GraphProject[],
   filterTags: string[],
+  expanded: string | null,
+  isDesktop: boolean,
 ): Node<GraphNodeData>[] {
-  if (filterTags.length === 0) return nodes;
+  if (filterTags.length === 0 && !expanded) return nodes;
 
   const techStackBySlug = new Map(projects.map((project) => [project.slug, project.techStack]));
   const infraLabels = infraLabelsFor(projects);
 
   return nodes.map((node) => {
-    if (node.id === 'hub' || node.id.includes('--')) return node;
+    if (node.id === 'hub' || node.id.includes('--') || node.id === 'ring') return node;
+
     const tags = node.id === 'infra' ? infraLabels : techStackBySlug.get(node.id);
-    if (!tags) return node;
-    const dimmed = !tags.some((tag) => filterTags.includes(tag));
+    const filterDimmed = filterTags.length > 0 && !!tags && !tags.some((tag) => filterTags.includes(tag));
+    const expandDimmed = isDesktop && !!expanded && node.id !== expanded;
+    const dimmed = filterDimmed || expandDimmed;
+
     return { ...node, data: { ...node.data, dimmed } };
   });
 }
 
-/** Vertical distance between two collapsed project nodes, in flow units. */
+/** Vertical distance between two collapsed project rows on mobile. */
 const NODE_SPACING = 80;
 /** Vertical distance between architecture nodes sharing a column. */
 const ARCH_ROW = 52;
-/** x of the project column, the first architecture column, and the column gap
- *  (desktop's left-to-right layout only — mobile lays out top-to-bottom). */
-const PROJECT_X = 300;
-const ARCH_X = 610;
+/** Gap between a fanned-out architecture column and the one before it. */
 const ARCH_COLUMN = 185;
+/** Clearance between an expanded node's own edge and its first architecture column. */
+const ARCH_GAP = 150;
 
-/** Roughly a project node's rendered height, for the content extent below. */
+/** A project/hub/infra node's rendered footprint, for layout math. */
+const NODE_WIDTH = 256;
 const NODE_HEIGHT = 56;
+/** Minimum gap between two adjacent ring nodes' edges, so labels never crowd. */
+const MIN_ORBIT_GAP = 40;
+/** How far out an expanded node moves along its own radial line. */
+const EXPAND_PULL = 1.7;
 
 /** Matches Tailwind's `sm` breakpoint, i.e. where the expand button appears. */
 const DESKTOP_QUERY = '(min-width: 640px)';
@@ -84,9 +100,9 @@ const DESKTOP_QUERY = '(min-width: 640px)';
  * Below `sm`, the expand-architecture button is hidden (an unfolded
  * architecture would be far too wide for a phone — see ProjectNode), so
  * mobile only ever needs the plain hub-and-projects view. Rather than
- * squeeze the desktop's left-to-right layout into a narrow column, mobile
- * gets its own top-to-bottom stack, which is what a linear list actually
- * wants on a narrow screen.
+ * squeeze the desktop's orbit into a narrow column, mobile gets its own
+ * top-to-bottom stack, which is what a linear list actually wants on a
+ * narrow screen.
  */
 function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -130,6 +146,54 @@ function goToProject(slug: string) {
 }
 
 /**
+ * The ring a slot sits on has N members (every project, plus infra on
+ * desktop): evenly spaced starting at the top, going clockwise. Radius is
+ * whatever keeps adjacent nodes from crowding, not a fixed number — so
+ * adding a project file grows the ring instead of packing it tighter.
+ */
+function orbitRadius(memberCount: number): number {
+  if (memberCount <= 1) return 220;
+  return Math.max(220, (NODE_WIDTH + MIN_ORBIT_GAP) / (2 * Math.sin(Math.PI / memberCount)));
+}
+
+function orbitAngle(index: number, memberCount: number): number {
+  return -Math.PI / 2 + (index / memberCount) * 2 * Math.PI;
+}
+
+/** Centre-to-top-left conversion for a plain project/hub-sized box. */
+function nodeTopLeft(centerX: number, centerY: number): { x: number; y: number } {
+  return { x: centerX - NODE_WIDTH / 2, y: centerY - NODE_HEIGHT / 2 };
+}
+
+/**
+ * Places one expanded node's architecture (or infra's fanned-in labels)
+ * outward from its pulled-out position, reusing the exact same
+ * depth/row math the desktop hub-and-spoke layout always used — only the
+ * coordinate frame changes, from "add depth*ARCH_COLUMN to x" to "add it
+ * along this node's own outward radial direction". Works unchanged for any
+ * architecture shape (any depth, any row count), which a hand-arranged
+ * "moons in a circle" version could not without breaking on the first
+ * project whose architecture has more than four nodes.
+ */
+function fanOutward(
+  anchorX: number,
+  anchorY: number,
+  angle: number,
+  depth: number,
+  columnRows: number,
+  row: number,
+): { x: number; y: number } {
+  const along = NODE_WIDTH / 2 + ARCH_GAP + depth * ARCH_COLUMN;
+  const perp = (row - (columnRows - 1) / 2) * ARCH_ROW;
+  const ux = Math.cos(angle);
+  const uy = Math.sin(angle);
+  // perpendicular = the outward direction rotated 90°
+  const px = -uy;
+  const py = ux;
+  return { x: anchorX + ux * along + px * perp, y: anchorY + uy * along + py * perp };
+}
+
+/**
  * Builds the full node/edge set for one graph state (a given expanded
  * project, on a given layout). Used both for the state actually on screen
  * and, in NodeGraph, to measure every reachable state up front so the
@@ -154,14 +218,13 @@ function buildGraph(
     }
   }
 
-  const expandedIndex = projects.findIndex((project) => project.slug === expanded);
   const lastY = (projects.length - 1) * NODE_SPACING;
 
   const nodes: Node<GraphNodeData>[] = [
     {
       id: 'hub',
       type: 'project',
-      position: isDesktop ? { x: 0, y: lastY / 2 } : { x: 0, y: 0 },
+      position: isDesktop ? nodeTopLeft(0, 0) : { x: 0, y: 0 },
       data: {
         label: 'Henrik',
         sublabel: `${projects.length} Projekte`,
@@ -170,17 +233,79 @@ function buildGraph(
       },
       draggable: false,
     },
-    ...projects.map((project, index) => ({
+  ];
+  const edges: Edge[] = [];
+
+  if (!isDesktop) {
+    // Mobile: unchanged plain top-to-bottom stack, no ring, no infra.
+    projects.forEach((project, index) => {
+      nodes.push({
+        id: project.slug,
+        type: 'project',
+        position: { x: 0, y: (index + 1) * NODE_SPACING },
+        data: {
+          label: project.label,
+          sublabel: project.sublabel,
+          kind: 'project',
+          projectKind: project.kind,
+          vertical: true,
+        },
+        draggable: false,
+        ariaLabel: `Projekt ${project.label} öffnen`,
+        ariaRole: 'button',
+      });
+      edges.push({ id: `hub-${project.slug}`, source: 'hub', target: project.slug, animated: true });
+    });
+
+    return { nodes, edges };
+  }
+
+  // Desktop: every project plus infra shares one ring around the hub. A
+  // ring, not spokes: the connection is "shares this orbit", not a drawn
+  // line per project, which is also what leaves room for as many projects
+  // as exist without the graph turning into a spoke thicket.
+  const ringMembers = [...projects.map((project) => project.slug), 'infra'];
+  const radius = orbitRadius(ringMembers.length);
+  const angleOf = new Map(ringMembers.map((id, index) => [id, orbitAngle(index, ringMembers.length)]));
+
+  nodes.push({
+    id: 'ring',
+    type: 'project',
+    // Centred on the hub — unlike every other node here, the ring's own
+    // footprint is radius*2, not the fixed NODE_WIDTH/NODE_HEIGHT nodeTopLeft
+    // assumes, so it needs its own top-left math.
+    position: { x: -radius, y: -radius },
+    data: { kind: 'ring', diameter: radius * 2 },
+    style: { width: radius * 2, height: radius * 2 },
+    draggable: false,
+    selectable: false,
+    focusable: false,
+  });
+
+  function memberCenter(id: string): { x: number; y: number } {
+    const angle = angleOf.get(id) ?? 0;
+    const r = id === expanded ? radius * EXPAND_PULL : radius;
+    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
+  }
+
+  // The one edge on the ring: a stretched spoke back to the hub, only for
+  // whichever node is currently pulled out — showing it left its slot
+  // instead of implying every project is individually wired to the hub.
+  if (expanded && angleOf.has(expanded)) {
+    edges.push({ id: `hub-${expanded}`, source: 'hub', target: expanded, animated: true, style: { strokeDasharray: '4 4' } });
+  }
+
+  projects.forEach((project) => {
+    const center = memberCenter(project.slug);
+    nodes.push({
       id: project.slug,
       type: 'project',
-      position: isDesktop
-        ? { x: PROJECT_X, y: index * NODE_SPACING }
-        : { x: 0, y: (index + 1) * NODE_SPACING },
+      position: nodeTopLeft(center.x, center.y),
       data: {
         label: project.label,
         sublabel: project.sublabel,
-        kind: 'project' as const,
-        vertical: !isDesktop,
+        kind: 'project',
+        projectKind: project.kind,
         ...(project.architecture
           ? { expanded: expanded === project.slug, onToggle: () => toggle(project.slug) }
           : {}),
@@ -188,85 +313,65 @@ function buildGraph(
       draggable: false,
       ariaLabel: `Projekt ${project.label} öffnen`,
       ariaRole: 'button',
-    })),
-  ];
-
-  const edges: Edge[] = projects.map((project) => ({
-    id: `hub-${project.slug}`,
-    source: 'hub',
-    target: project.slug,
-    animated: true,
-  }));
-
-  // Desktop-only "Infrastruktur" node, one row below the last project: it
-  // toggles the same way a project's own architecture does, but fans in
-  // from every project that actually shares the given service instead of
-  // out from one expanded project.
-  if (isDesktop) {
-    const infraLabels = infraLabelsFor(projects);
-
-    nodes.push({
-      id: 'infra',
-      type: 'project',
-      position: { x: PROJECT_X, y: projects.length * NODE_SPACING },
-      data: {
-        label: 'Infrastruktur',
-        sublabel: infraLabels.join(', '),
-        kind: 'project',
-        expanded: expanded === 'infra',
-        onToggle: () => toggle('infra'),
-      },
-      draggable: false,
-      ariaLabel: expanded === 'infra' ? 'Infrastruktur ausblenden' : 'Infrastruktur anzeigen',
-      ariaRole: 'button',
     });
-    edges.push({ id: 'hub-infra', source: 'hub', target: 'infra', animated: true });
+  });
 
-    if (expanded === 'infra') {
-      // Centred against the projects' own vertical midpoint (the same y
-      // the hub uses) rather than the infra node's row, since edges fan in
-      // from several projects up and down the column, not from one row.
-      infraLabels.forEach((label, row) => {
-        nodes.push({
-          id: `infra--${label}`,
-          type: 'project',
-          position: { x: ARCH_X, y: lastY / 2 + (row - (infraLabels.length - 1) / 2) * ARCH_ROW },
-          data: { label, kind: 'architecture', archKind: 'external' },
-          draggable: false,
-          selectable: false,
-        });
+  const infraLabels = infraLabelsFor(projects);
+  const infraCenter = memberCenter('infra');
+  nodes.push({
+    id: 'infra',
+    type: 'project',
+    position: nodeTopLeft(infraCenter.x, infraCenter.y),
+    data: {
+      label: 'Infrastruktur',
+      sublabel: infraLabels.join(', '),
+      kind: 'project',
+      expanded: expanded === 'infra',
+      onToggle: () => toggle('infra'),
+    },
+    draggable: false,
+    ariaLabel: expanded === 'infra' ? 'Infrastruktur ausblenden' : 'Infrastruktur anzeigen',
+    ariaRole: 'button',
+  });
+
+  if (expanded === 'infra') {
+    const angle = angleOf.get('infra') ?? 0;
+    infraLabels.forEach((label, row) => {
+      const pos = fanOutward(infraCenter.x, infraCenter.y, angle, 0, infraLabels.length, row);
+      nodes.push({
+        id: `infra--${label}`,
+        type: 'project',
+        position: { x: pos.x - 96, y: pos.y - 20 },
+        data: { label, kind: 'architecture', archKind: 'external' },
+        draggable: false,
+        selectable: false,
       });
+    });
 
-      for (const project of projects) {
-        for (const label of infraLabels) {
-          if (!project.techStack.includes(label)) continue;
-          edges.push({
-            id: `infra-${project.slug}-${label}`,
-            source: project.slug,
-            target: `infra--${label}`,
-          });
-        }
+    for (const project of projects) {
+      for (const label of infraLabels) {
+        if (!project.techStack.includes(label)) continue;
+        edges.push({ id: `infra-${project.slug}-${label}`, source: project.slug, target: `infra--${label}` });
       }
     }
   }
 
   if (architecture && depths && expandedProject) {
-    const baseY = expandedIndex * NODE_SPACING;
+    const angle = angleOf.get(expandedProject.slug) ?? 0;
+    const anchor = memberCenter(expandedProject.slug);
     const placed = new Map<number, number>();
 
     for (const node of architecture.nodes) {
       const depth = depths.get(node.id) ?? 0;
       const row = placed.get(depth) ?? 0;
       placed.set(depth, row + 1);
-
       const columnRows = rowsByColumn.get(depth) ?? 1;
-      // Centre each column against the project node's own row.
-      const offset = (row - (columnRows - 1) / 2) * ARCH_ROW;
+      const pos = fanOutward(anchor.x, anchor.y, angle, depth, columnRows, row);
 
       nodes.push({
         id: `${expandedProject.slug}--${node.id}`,
         type: 'project',
-        position: { x: ARCH_X + depth * ARCH_COLUMN, y: baseY + offset },
+        position: { x: pos.x - 96, y: pos.y - 20 },
         data: { label: node.label, kind: 'architecture', archKind: node.kind },
         draggable: false,
         selectable: false,
@@ -295,10 +400,52 @@ function buildGraph(
   return { nodes, edges };
 }
 
-function graphHeight(nodes: { position: { y: number } }[]): number {
-  const ys = nodes.map((node) => node.position.y);
-  const extent = Math.max(...ys) - Math.min(...ys) + NODE_HEIGHT;
-  return Math.max(360, extent + 100);
+/** Architecture/infra-label node footprint (ProjectNode's `w-48` box). */
+const ARCH_NODE_WIDTH = 192;
+const ARCH_NODE_HEIGHT = 40;
+
+/**
+ * Each node's own rendered footprint, since positions here are already
+ * top-left: the ring (diameter can run past 700 units) and an architecture
+ * label are both far smaller/larger than a plain project box, so a single
+ * flat padding added after the fact (as a hub-and-spoke layout could get
+ * away with, everything there being the same size) would over- or
+ * under-count depending on which shape happened to land on the extreme.
+ */
+function nodeFootprint(node: { id: string; data: GraphNodeData }): { width: number; height: number } {
+  if (node.data.kind === 'ring' && node.data.diameter) {
+    return { width: node.data.diameter, height: node.data.diameter };
+  }
+  if (node.id.includes('--')) return { width: ARCH_NODE_WIDTH, height: ARCH_NODE_HEIGHT };
+  return { width: NODE_WIDTH, height: NODE_HEIGHT };
+}
+
+function graphExtent(nodes: Node<GraphNodeData>[]): { width: number; height: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const node of nodes) {
+    const { width, height } = nodeFootprint(node);
+    minX = Math.min(minX, node.position.x);
+    minY = Math.min(minY, node.position.y);
+    maxX = Math.max(maxX, node.position.x + width);
+    maxY = Math.max(maxY, node.position.y + height);
+  }
+  return { width: maxX - minX, height: maxY - minY };
+}
+
+/**
+ * A container height from the taller of the two axes actually needed: the
+ * ring is roughly as wide as it is tall, but a pulled-out expand can push
+ * one axis noticeably past the other depending on which way that project's
+ * slot happens to face. `width` only matters here as a stand-in for "how
+ * much fitView will have to shrink this to fit the fixed-width container" —
+ * the container's own width is always 100% of its parent regardless.
+ */
+function graphHeight(nodes: Node<GraphNodeData>[]): number {
+  const { width, height } = graphExtent(nodes);
+  return Math.max(360, Math.max(width * 0.55, height) + 120);
 }
 
 interface NodeGraphProps {
@@ -347,6 +494,28 @@ function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
   );
 }
 
+const LEGEND: { kind: ProjectKind; label: string }[] = [
+  { kind: 'fullstack', label: 'Full-Stack-App' },
+  { kind: 'agent', label: 'KI / Agent' },
+  { kind: 'orchestration', label: 'Orchestrierung' },
+  { kind: 'static', label: 'Statische Seite' },
+];
+
+/** Desktop-only, next to the filter: explains the ring's border language
+ *  before anyone has to guess what a dashed vs. a dotted node means. */
+function KindLegend() {
+  return (
+    <div className="mb-3 hidden flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-xs text-[var(--color-text-muted)] sm:flex">
+      {LEGEND.map(({ kind, label }) => (
+        <span key={kind} className="flex items-center gap-1.5">
+          <span className={['size-3 rounded-sm bg-[var(--color-surface)]', PROJECT_KIND_STYLES[kind]].join(' ')} />
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function NodeGraph({ projects }: NodeGraphProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filterTags, setFilterTags] = useState<string[]>([]);
@@ -366,7 +535,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   const toggle = (slug: string) => setExpanded((current) => (current === slug ? null : slug));
 
   const { nodes: builtNodes, edges } = buildGraph(projects, expanded, isDesktop, toggle);
-  const nodes = withFilterDimming(builtNodes, projects, filterTags);
+  const nodes = withDimming(builtNodes, projects, filterTags, expanded, isDesktop);
 
   // Sized from the tallest of every reachable state (collapsed, plus each
   // project's own expansion) rather than just the current one, so the
@@ -384,7 +553,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
 
   // Mouse: a direct click handler, fires exactly once per click.
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
-    if (node.id === 'hub' || node.id.includes('--')) return;
+    if (node.id === 'hub' || node.id === 'ring' || node.id.includes('--')) return;
     // Infra has no page of its own — clicking it toggles the same as its
     // arrow button, instead of navigating.
     if (node.id === 'infra') {
@@ -408,7 +577,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     if ((event.target as HTMLElement).closest('button')) return;
     const nodeEl = (event.target as HTMLElement).closest<HTMLElement>('[data-id]');
     const id = nodeEl?.dataset.id;
-    if (!id || id === 'hub' || id.includes('--')) return;
+    if (!id || id === 'hub' || id === 'ring' || id.includes('--')) return;
     event.preventDefault();
     if (id === 'infra') {
       toggle('infra');
@@ -418,19 +587,22 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   };
 
   return (
-    <div
-      className="static-flow h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
-      style={
-        {
-          '--graph-height-mobile': `${mobileHeight}px`,
-          '--graph-height-desktop': `${desktopHeight}px`,
-        } as CSSProperties
-      }
-      onKeyDown={handleContainerKeyDown}
-    >
-      <ReactFlowProvider>
-        <GraphCanvas nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
-      </ReactFlowProvider>
+    <div>
+      {isDesktop && <KindLegend />}
+      <div
+        className="static-flow h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
+        style={
+          {
+            '--graph-height-mobile': `${mobileHeight}px`,
+            '--graph-height-desktop': `${desktopHeight}px`,
+          } as CSSProperties
+        }
+        onKeyDown={handleContainerKeyDown}
+      >
+        <ReactFlowProvider>
+          <GraphCanvas nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
+        </ReactFlowProvider>
+      </div>
     </div>
   );
 }
