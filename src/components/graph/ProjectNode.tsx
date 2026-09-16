@@ -27,6 +27,15 @@ export type GraphNodeData = {
   dimmed?: boolean;
   /** Ring nodes only: the decorative orbit's diameter, in flow units. */
   diameter?: number;
+  /** Infra-label architecture nodes only: overrides ARCH_STYLES' border/text
+   *  colour so each infra label reads as visually distinct from the others,
+   *  matching the colour of the edges that connect projects to it. Every
+   *  project's line converges on the same docked cluster when infra is
+   *  expanded, so colour (rather than shape, already used up by `kind`) is
+   *  what lets a line be traced to its label instead of just "some line
+   *  passing near the infra node". Drawn only from tokens already in the
+   *  theme, not a new palette. */
+  accentColor?: string;
 };
 
 /**
@@ -79,6 +88,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
           'w-48 rounded border bg-[var(--color-surface)] px-3 py-1.5 font-mono text-xs shadow-sm',
           data.archKind ? ARCH_STYLES[data.archKind] : '',
         ].join(' ')}
+        style={data.accentColor ? { borderColor: data.accentColor, color: data.accentColor } : undefined}
       >
         <Handle type="target" position={Position.Left} style={{ visibility: 'hidden' }} />
         <div className="truncate" title={data.label}>

@@ -37,6 +37,13 @@ export type GraphProject = {
  */
 const INFRA_LABELS = ['Azure', 'Docker', 'GitHub Actions'] as const;
 
+/**
+ * One colour per infra label (cycled if there were ever more than three),
+ * drawn only from tokens already in the theme — see ProjectNode's
+ * `accentColor` doc for why this exists instead of just leaving these grey.
+ */
+const INFRA_ACCENTS = ['var(--color-accent)', 'var(--color-text-muted)', 'var(--color-border-strong)'];
+
 /** Infra labels actually used by at least one project, in a fixed order. */
 function infraLabelsFor(projects: GraphProject[]): string[] {
   return INFRA_LABELS.filter((label) => projects.some((project) => project.techStack.includes(label)));
@@ -78,12 +85,12 @@ function withDimming(
 
 /** Vertical distance between two collapsed project rows on mobile. */
 const NODE_SPACING = 80;
-/** Vertical distance between architecture nodes sharing a column. */
-const ARCH_ROW = 52;
-/** Gap between a fanned-out architecture column and the one before it. */
-const ARCH_COLUMN = 185;
-/** Clearance between an expanded node's own edge and its first architecture column. */
-const ARCH_GAP = 150;
+/** Horizontal distance between architecture nodes sharing a tier. */
+const ARCH_TIER_SPREAD = 220;
+/** Vertical gap between a fanned-out architecture tier and the one before it. */
+const ARCH_TIER_GAP = 110;
+/** Clearance between an expanded node's own edge and its first architecture tier. */
+const ARCH_GAP = 90;
 
 /** A project/hub/infra node's rendered footprint, for layout math. */
 const NODE_WIDTH = 256;
@@ -164,26 +171,29 @@ function nodeTopLeft(centerX: number, centerY: number): { x: number; y: number }
 }
 
 /**
- * Places one column of an expanded node's fanned-out architecture (or
- * infra's fanned-out labels), rightward from its docked anchor — the same
- * depth/row grid the pre-orbit hub-and-spoke layout always used. Always
- * rightward and never rotated to the anchor's ring angle: a rotated version
- * once sent a project's fan-out straight back through the ring, or blew up
- * the layout's overall extent (and so fitView's zoom) enough to make labels
- * illegible, depending on which ring slot the expanded item happened to
- * start from. Anchoring every expanded item at the same fixed dock instead
- * keeps this bounded and readable regardless of architecture complexity.
+ * Places one tier of an expanded node's fanned-out architecture (or infra's
+ * fanned-out labels), upward from its docked anchor — the same depth/row
+ * grid the pre-orbit hub-and-spoke layout always used, just turned 90°.
+ * Deeper tiers stack up (not further right) and siblings within a tier
+ * spread sideways: the page's width is fixed by its max-width and is what
+ * a rightward fan-out was competing for (an architecture with several
+ * layers pushed the layout wide enough that fitView had to shrink
+ * everything to fit, however tightly the dock was clamped to the ring).
+ * Height has no such ceiling - the page just scrolls a little further - so
+ * a project's own depth (usually its largest dimension) grows into that
+ * instead, and only a tier's own width (its widest single row of siblings,
+ * reliably smaller) still competes for page width.
  */
 function fanOutward(
   anchorX: number,
   anchorY: number,
   depth: number,
-  columnRows: number,
+  tierWidth: number,
   row: number,
 ): { x: number; y: number } {
   return {
-    x: anchorX + NODE_WIDTH / 2 + ARCH_GAP + depth * ARCH_COLUMN,
-    y: anchorY + (row - (columnRows - 1) / 2) * ARCH_ROW,
+    x: anchorX + (row - (tierWidth - 1) / 2) * ARCH_TIER_SPREAD,
+    y: anchorY - (NODE_HEIGHT / 2 + ARCH_GAP + depth * ARCH_TIER_GAP),
   };
 }
 
@@ -263,16 +273,18 @@ function buildGraph(
   // planet among them.
   const radius = orbitRadius(projects.length);
   const angleOf = new Map(projects.map((project, index) => [project.slug, orbitAngle(index, projects.length)]));
-  // Where the single expanded item (a project or infra) relocates to, clear
-  // of the ring on every side, so its architecture fan-out always has open
-  // space to grow into — regardless of which ring slot it came from. A
-  // fixed, unrotated docking spot (rather than pulling a node further out
-  // along its own ring angle) is what keeps the detail view's size and
-  // shape independent of the expanded item's position and architecture
+  // Where the single expanded item (a project or infra) relocates to: clear
+  // above the ring, so its architecture fan-out always opens upward into
+  // empty space, regardless of which ring slot it came from. A fixed,
+  // unrotated docking spot (rather than pulling a node further out along
+  // its own ring angle) is what keeps the detail view's size and shape
+  // independent of the expanded item's position and architecture
   // complexity: the previous per-angle version could send a node's fan-out
-  // straight back through the ring, or send the whole layout's extent (and
-  // therefore fitView's zoom) far enough out that labels turned illegible.
-  const dock = { x: radius + NODE_WIDTH + 100, y: 0 };
+  // straight back through the ring, or blow up the layout's overall extent
+  // (and therefore fitView's zoom) enough to make labels illegible. Above
+  // rather than beside the ring specifically because the page has a fixed
+  // max-width but no height ceiling - see fanOutward.
+  const dock = { x: 0, y: -(radius + NODE_HEIGHT + 100) };
   const infraAnchor = { x: 0, y: radius + 140 };
 
   nodes.push({
@@ -346,22 +358,34 @@ function buildGraph(
     // architecture below — always predictable regardless of where infra's
     // own anchor sits, which matters doubly here since every project's
     // techStack can draw a line back to these labels.
+    const accentOf = new Map(infraLabels.map((label, index) => [label, INFRA_ACCENTS[index % INFRA_ACCENTS.length]]));
+
     infraLabels.forEach((label, row) => {
       const pos = fanOutward(dock.x, dock.y, 0, infraLabels.length, row);
       nodes.push({
         id: `infra--${label}`,
         type: 'project',
         position: { x: pos.x - 96, y: pos.y - 20 },
-        data: { label, kind: 'architecture', archKind: 'external' },
+        data: { label, kind: 'architecture', archKind: 'external', accentColor: accentOf.get(label) },
         draggable: false,
         selectable: false,
       });
     });
 
+    // Every project on the ring converges on this same docked cluster, so
+    // their lines inevitably cross near it — colouring each one to match
+    // its target label (see accentOf above) is what keeps "which line goes
+    // where" answerable despite the crossing, rather than trying to
+    // physically route the lines apart.
     for (const project of projects) {
       for (const label of infraLabels) {
         if (!project.techStack.includes(label)) continue;
-        edges.push({ id: `infra-${project.slug}-${label}`, source: project.slug, target: `infra--${label}` });
+        edges.push({
+          id: `infra-${project.slug}-${label}`,
+          source: project.slug,
+          target: `infra--${label}`,
+          style: { stroke: accentOf.get(label) },
+        });
       }
     }
   }
@@ -445,15 +469,32 @@ function graphExtent(nodes: Node<GraphNodeData>[]): { width: number; height: num
 
 /**
  * A container height from the taller of the two axes actually needed: the
- * ring is roughly as wide as it is tall, but a pulled-out expand can push
- * one axis noticeably past the other depending on which way that project's
- * slot happens to face. `width` only matters here as a stand-in for "how
- * much fitView will have to shrink this to fit the fixed-width container" —
- * the container's own width is always 100% of its parent regardless.
+ * collapsed ring is roughly as wide as it is tall, but an expanded state's
+ * upward fan-out (see fanOutward) can need noticeably more height than
+ * width. `width` only matters here as a stand-in for "how much fitView
+ * would have to shrink this to fit the fixed-width container" — the
+ * container's own width is always 100% of its parent regardless.
  */
 function graphHeight(nodes: Node<GraphNodeData>[]): number {
   const { width, height } = graphExtent(nodes);
   return Math.max(360, Math.max(width * 0.55, height) + 120);
+}
+
+/**
+ * The hub, the docked item, and its own detail nodes — the part of the
+ * graph actually worth reading once something is expanded. Everything else
+ * (the ring's far side, its other members) is still rendered and still
+ * visible in the background, but fitView zooming to include it too was the
+ * direct cause of illegible text on a project with a wide architecture: the
+ * more of the ring fitView had to fit alongside the fan-out, the more it
+ * had to shrink everything to do it. Restricting both the sizing math and
+ * the actual fitView call to this subset keeps the zoom level tied to the
+ * detail view's own size, not the ring's.
+ */
+function focusNodes(nodes: Node<GraphNodeData>[], expandedId: string): Node<GraphNodeData>[] {
+  return nodes.filter(
+    (node) => node.id === 'hub' || node.id === expandedId || node.id.startsWith(`${expandedId}--`),
+  );
 }
 
 interface NodeGraphProps {
@@ -464,6 +505,9 @@ interface GraphCanvasProps {
   nodes: Node<GraphNodeData>[];
   edges: Edge[];
   onNodeClick: NodeMouseHandler;
+  /** Desktop only: id of the expanded project/infra, so fitView can zoom to
+   *  just its detail view instead of the whole ring — see focusNodes. */
+  expanded: string | null;
 }
 
 /**
@@ -472,16 +516,16 @@ interface GraphCanvasProps {
  * remounting the whole <ReactFlow> via a `key`, is what makes the camera
  * move fit the new layout instead of hard-cutting to it.
  */
-function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
+function GraphCanvas({ nodes, edges, onNodeClick, expanded }: GraphCanvasProps) {
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    fitView({ padding: 0.12, duration: 300 });
+    fitView({ padding: 0.12, duration: 300, nodes: expanded ? focusNodes(nodes, expanded) : undefined });
     // Re-fit on every node/edge change, i.e. whenever the visible layout
     // actually changes (toggle, or a desktop/mobile switch) - not on every
     // render, since `nodes`/`edges` are rebuilt fresh each time regardless.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges]);
+  }, [nodes, edges, expanded]);
 
   return (
     <ReactFlow
@@ -552,10 +596,10 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   // whitespace, not a mis-sized box, so this costs nothing visually.
   const desktopHeight = Math.max(
     graphHeight(buildGraph(projects, null, true, toggle).nodes),
-    graphHeight(buildGraph(projects, 'infra', true, toggle).nodes),
+    graphHeight(focusNodes(buildGraph(projects, 'infra', true, toggle).nodes, 'infra')),
     ...projects
       .filter((project) => project.architecture)
-      .map((project) => graphHeight(buildGraph(projects, project.slug, true, toggle).nodes)),
+      .map((project) => graphHeight(focusNodes(buildGraph(projects, project.slug, true, toggle).nodes, project.slug))),
   );
   const mobileHeight = graphHeight(buildGraph(projects, null, false, toggle).nodes);
 
@@ -608,7 +652,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
         onKeyDown={handleContainerKeyDown}
       >
         <ReactFlowProvider>
-          <GraphCanvas nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
+          <GraphCanvas nodes={nodes} edges={edges} onNodeClick={handleNodeClick} expanded={isDesktop ? expanded : null} />
         </ReactFlowProvider>
       </div>
     </div>
