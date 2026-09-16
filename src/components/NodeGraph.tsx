@@ -308,9 +308,12 @@ function buildGraph(
   }
 
   // The one edge leaving the ring: a spoke back to the hub, only for
-  // whichever item is currently docked out — showing it left its slot
-  // instead of implying every project is individually wired to the hub.
-  if (expanded) {
+  // whichever ring project is currently docked out — showing it left its
+  // slot instead of implying every project is individually wired to the
+  // hub. Infra gets its own permanent edge below instead: it was never on
+  // the ring to begin with, so it needs a constant connection rather than
+  // one that only appears once "pulled out".
+  if (expanded && expanded !== 'infra') {
     edges.push({ id: `hub-${expanded}`, source: 'hub', target: expanded, animated: true, style: { strokeDasharray: '4 4' } });
   }
 
@@ -335,12 +338,22 @@ function buildGraph(
     });
   });
 
+  // Infra always sits at its own fixed spot below the ring, expanded or
+  // not — unlike a ring project, it never relocates to the dock. Its
+  // detail is always the same flat, single-tier list of labels, so it has
+  // none of the variable depth a project's architecture can have, and
+  // nothing to gain from the dock's ability to grow upward: keeping it in
+  // place means it never has to jump across the ring to open, and its
+  // labels landing right underneath it (rather than far away, docked
+  // alongside a project's own detail view) is what actually keeps this
+  // state compact instead of forcing fitView to zoom in hard just to fill
+  // a container sized for the biggest project's architecture (see maxZoom
+  // below, which is the other half of that fix).
   const infraLabels = infraLabelsFor(projects);
-  const infraCenter = expanded === 'infra' ? dock : infraAnchor;
   nodes.push({
     id: 'infra',
     type: 'project',
-    position: nodeTopLeft(infraCenter.x, infraCenter.y),
+    position: nodeTopLeft(infraAnchor.x, infraAnchor.y),
     data: {
       label: 'Infrastruktur',
       sublabel: infraLabels.join(', '),
@@ -352,31 +365,31 @@ function buildGraph(
     ariaLabel: expanded === 'infra' ? 'Infrastruktur ausblenden' : 'Infrastruktur anzeigen',
     ariaRole: 'button',
   });
+  // Infra isn't on the ring, so — unlike a project — it needs a constant
+  // line to the hub rather than one that only appears once expanded.
+  edges.push({ id: 'hub-infra', source: 'hub', target: 'infra', animated: true });
 
   if (expanded === 'infra') {
-    // Fixed rightward fan-out (angle 0), same as an expanded project's
-    // architecture below — always predictable regardless of where infra's
-    // own anchor sits, which matters doubly here since every project's
-    // techStack can draw a line back to these labels.
     const accentOf = new Map(infraLabels.map((label, index) => [label, INFRA_ACCENTS[index % INFRA_ACCENTS.length]]));
+    const labelY = infraAnchor.y + NODE_HEIGHT / 2 + ARCH_GAP;
 
     infraLabels.forEach((label, row) => {
-      const pos = fanOutward(dock.x, dock.y, 0, infraLabels.length, row);
+      const labelX = infraAnchor.x + (row - (infraLabels.length - 1) / 2) * ARCH_TIER_SPREAD;
       nodes.push({
         id: `infra--${label}`,
         type: 'project',
-        position: { x: pos.x - 96, y: pos.y - 20 },
+        position: { x: labelX - 96, y: labelY - 20 },
         data: { label, kind: 'architecture', archKind: 'external', accentColor: accentOf.get(label) },
         draggable: false,
         selectable: false,
       });
     });
 
-    // Every project on the ring converges on this same docked cluster, so
-    // their lines inevitably cross near it — colouring each one to match
-    // its target label (see accentOf above) is what keeps "which line goes
-    // where" answerable despite the crossing, rather than trying to
-    // physically route the lines apart.
+    // Every project on the ring converges on this same small label cluster,
+    // so their lines inevitably cross near it — colouring each one to
+    // match its target label (see accentOf above) is what keeps "which
+    // line goes where" answerable despite the crossing, rather than trying
+    // to physically route the lines apart.
     for (const project of projects) {
       for (const label of infraLabels) {
         if (!project.techStack.includes(label)) continue;
@@ -520,7 +533,15 @@ function GraphCanvas({ nodes, edges, onNodeClick, expanded }: GraphCanvasProps) 
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    fitView({ padding: 0.12, duration: 300, nodes: expanded ? focusNodes(nodes, expanded) : undefined });
+    // The container's height is shared across every reachable state (see
+    // desktopHeight) so toggling never resizes it — but that means a state
+    // simpler than the one that sized the container (infra's flat label
+    // list, next to a project with a deep architecture) has room to spare,
+    // and fitView fills that room by zooming in past 1:1 rather than
+    // leaving it as slack. Capping at 1 keeps that spare room as whitespace
+    // instead, which is what it already reads as everywhere else on this
+    // page (see graphHeight).
+    fitView({ padding: 0.12, duration: 300, maxZoom: 1, nodes: expanded ? focusNodes(nodes, expanded) : undefined });
     // Re-fit on every node/edge change, i.e. whenever the visible layout
     // actually changes (toggle, or a desktop/mobile switch) - not on every
     // render, since `nodes`/`edges` are rebuilt fresh each time regardless.
