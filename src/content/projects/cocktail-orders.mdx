@@ -1,33 +1,38 @@
 ---
 title: "Cocktail Orders"
-summary: "Bestell-App für die eigene Hausbar übers lokale WLAN — mit Live-Warteschlange für Gäste und einer Barkeeper-Ansicht, die fehlende Zutaten sofort aus der Karte nimmt."
+summary: "Bestell-App für die eigene Hausbar — mit Live-Warteschlange, einer Barkeeper-Ansicht, die fehlende Zutaten sofort aus der Karte nimmt, und einer Freitext-Bestellung, die ein LLM in eine passende Cocktail-Auswahl übersetzt."
 githubRepo: "Cocktail-Orders"
-techStack: ["TypeScript", "React", "Node.js", "WebSocket", "SQLite"]
+techStack: ["TypeScript", "React", "Node.js", "Express", "WebSocket", "PostgreSQL", "Prisma", "Groq", "Docker", "Azure", "Bicep", "GitHub Actions"]
 order: 4
 kind: fullstack
 liveUrl: "https://kind-ground-07fd6390f.6.azurestaticapps.net/"
 liveLabel: "Live testen"
+liveStatusCheck: true
 architecture:
   nodes:
     - { id: web, label: "React · Vite", kind: frontend }
     - { id: api, label: "Express (REST)", kind: backend }
     - { id: ws, label: "WebSocket → Clients", kind: backend }
-    - { id: db, label: "node:sqlite", kind: data }
+    - { id: groq, label: "Groq (LLM)", kind: external }
+    - { id: db, label: "PostgreSQL · Prisma", kind: data }
   edges:
     - [web, api]
     - [api, db]
     - [api, ws]
+    - [api, groq]
 ---
 
-Eine Bestell-App für die eigene Cocktail-Party, übers lokale WLAN: Gäste öffnen die Seite auf dem Handy, loggen sich nur mit Namen ein, bestellen aus einer filterbaren Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann. Dann verschwinden betroffene Cocktails automatisch aus der Gästekarte.
+Eine Bestell-App für die eigene Cocktail-Party: Gäste öffnen die Seite, loggen sich nur mit Namen ein, bestellen aus einer filterbaren, filmklassiker-themed Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind — oder beschreiben ihren Wunsch in eigenen Worten ("etwas Bitteres, ohne Rum, ohne Eis"), den ein LLM in einen passenden Menüeintrag übersetzt. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann; betroffene Cocktails verschwinden dann automatisch aus der Gästekarte. Bewertete Cocktails fließen außerdem in eine "Empfohlen für dich"-Sektion pro Gast ein.
 
 <div class="screenshot-grid">
   <img src="/projects/cocktail-orders/menu.webp" alt="Cocktail-Karte aus Gastsicht" />
   <img src="/projects/cocktail-orders/barkeeper.webp" alt="Barkeeper-Dashboard mit offenen Bestellungen" />
 </div>
 
-**Warum so gebaut:** Zwei unabhängige Node-Projekte statt eines Monolithen. Ein React/Vite-Frontend und ein schlanker Express-Server. Für die Datenhaltung nutze ich bewusst Nodes eingebautes, natives `node:sqlite` statt eines Treibers wie `better-sqlite3` oder eines ORMs. Das reduziert die Abhängigkeit. Das Frontend erkennt selbstständig, von welchem Host es geladen wurde, wodurch es ohne Konfiguration auf jedem Gerät im selben WLAN funktioniert.
+**Warum so gebaut:** Zwei unabhängige Node-Projekte statt eines Monolithen: ein React/Vite-Frontend und ein schlanker Express-Server. Die Freitext-Bestellung läuft bewusst als klar abgegrenzter Schritt statt als offener Chat: Ein einzelner LLM-Aufruf ordnet den Wunsch entweder eindeutig einem Cocktail zu (inklusive Hinweisen wie "ohne Eis", die direkt ins Notizfeld übernommen werden) oder liefert bei Mehrdeutigkeit eine Auswahlliste zurück — bestätigt wird am Ende immer über das normale Bestellformular, nie direkt aus dem Freitext heraus. Das Frontend erkennt selbstständig, von welchem Host es geladen wurde, wodurch es ohne Konfiguration auch im lokalen WLAN funktioniert.
 
-**Technisch interessant:** Die Echtzeit-Synchronisierung ist bewusst einfach gehalten. Der WebSocket-Server sendet bei jeder Änderung nur ein kurzes `'orders-changed'`-Signal, keine Nutzdaten. Clients holen sich den aktuellen Stand dann per normalem REST-Call. Das kostet einen zusätzlichen Roundtrip, macht die Synchronisierung dafür aber deutlich einfacher und weniger fehleranfällig als vollen State über den Socket zu schicken. Welche Cocktails bestellbar sind, wird nicht gespeichert, sondern aus den als "nicht vorrätig" markierten Zutaten und den Rezepten live berechnet. Das Barkeeper-Passwort liegt ausschließlich in einer nicht versionierten `.env`-Datei.
+**Technisch interessant:** Die Echtzeit-Synchronisierung ist bewusst einfach gehalten. Der WebSocket-Server sendet bei jeder Änderung nur ein kurzes `'orders-changed'`-Signal, keine Nutzdaten. Clients holen sich den aktuellen Stand dann per normalem REST-Call — kostet einen zusätzlichen Roundtrip, macht die Synchronisierung dafür aber deutlich einfacher und weniger fehleranfällig als vollen State über den Socket zu schicken. Welche Cocktails bestellbar sind, wird nicht gespeichert, sondern aus den als "nicht vorrätig" markierten Zutaten und den Rezepten live berechnet. Die "Empfohlen für dich"-Sektion läuft über klassisches Collaborative Filtering auf den Bewertungen anderer Gäste, ohne LLM. Erreicht Groq während einer Session sein Rate-Limit, wird die Freitext-Funktion für den Rest der Session sauber deaktiviert statt Fehler zu werfen oder endlos zu retryen.
 
-**Aktueller Stand:** Fertig nutzbar, mit CI-Pipeline (Lint/Test/Build für beide Teile parallel), geschütztem `main`-Branch und Tests gegen eine In-Memory-SQLite-Datenbank via Supertest.
+**Deployment:** Frontend als Azure Static Web App, Backend als Container App mit Skalierung auf null (Image über GHCR), Datenbank auf einem extern verwalteten Postgres — alles über Bicep als Infrastructure-as-Code bei jedem Push nach `main` neu ausgerollt. Die Kaltstart-Wartezeit nach einer Ruhephase lässt sich vorab über den Status neben dem Live-Button oben prüfen.
+
+**Aktueller Stand:** Fertig nutzbar, mit CI-Pipeline (Lint/Test/Build für Frontend und Backend parallel), geschütztem `main`-Branch und Tests gegen eine echte Postgres-Instanz via Supertest.

@@ -1,9 +1,9 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions';
 
 /**
- * Reachability probe for the two live demos: GET /api/live-status?project=...
+ * Reachability probe for the live demos: GET /api/live-status?project=...
  *
- * Both demos run their backend on Azure Container Apps with scale-to-zero.
+ * Each demo runs its backend on Azure Container Apps with scale-to-zero.
  * After a few idle minutes the container sleeps; the first real request
  * wakes it back up and takes 30-40s. Without a warning, a visitor clicking
  * the live-demo button in that window sees nothing happen and assumes the
@@ -22,7 +22,7 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
  * hosts through this server.
  */
 
-type ProjectSlug = 'great-galguti-game' | 'ai-trip-planer' | 'job-application-skill';
+type ProjectSlug = 'great-galguti-game' | 'ai-trip-planer' | 'job-application-skill' | 'cocktail-orders';
 
 const TARGETS: Record<ProjectSlug, string> = {
   // No /health route on this one; any response (even a 404) still proves
@@ -33,6 +33,8 @@ const TARGETS: Record<ProjectSlug, string> = {
     'https://trip-planner-dev-api.redisland-e7c19e60.germanywestcentral.azurecontainerapps.io/health',
   'job-application-skill':
     'https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestcentral.azurecontainerapps.io/health',
+  'cocktail-orders':
+    'https://cocktail-orders-dev-server.calmisland-5c2bee0b.germanywestcentral.azurecontainerapps.io/api/ping',
 };
 
 /** Comfortably longer than a warm response, far short of a 30-40s cold start. */
