@@ -1,0 +1,52 @@
+---
+import platformStatus from '../data/platform-status.json';
+
+const rtf = new Intl.RelativeTimeFormat('de-DE', { numeric: 'auto' });
+
+function relativeTime(iso: string): string {
+	const diffMs = new Date(iso).getTime() - Date.now();
+	const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+	if (Math.abs(diffHours) < 24) return rtf.format(diffHours, 'hour');
+	return rtf.format(Math.round(diffHours / 24), 'day');
+}
+
+const updatedAt = new Date(platformStatus.updatedAt).toLocaleString('de-DE', {
+	dateStyle: 'medium',
+	timeStyle: 'short',
+});
+---
+
+<div
+	class="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 font-mono text-sm"
+	data-xray="PlatformStatus.astro · statisch, Datenquelle: n8n-Commit"
+	data-xray-kind="static"
+>
+	<ul class="space-y-3">
+		{
+			platformStatus.workflows.map((workflow) => (
+				<li class="border-b border-[var(--color-border)] pb-3 last:border-b-0 last:pb-0">
+					<div class="flex items-baseline justify-between gap-4">
+						<span class="flex min-w-0 items-baseline gap-2">
+							<span
+								class={
+									workflow.status === 'success'
+										? 'text-[var(--color-accent)]'
+										: 'text-[var(--color-text-muted)]'
+								}
+								aria-hidden="true"
+							>
+								{workflow.status === 'success' ? '●' : '○'}
+							</span>
+							<span class="truncate text-[var(--color-text)]">{workflow.name}</span>
+						</span>
+						<span class="shrink-0 text-xs text-[var(--color-text-muted)]">
+							{workflow.lastRunAt ? relativeTime(workflow.lastRunAt) : 'noch nie gelaufen'}
+						</span>
+					</div>
+					<p class="mt-1 pl-5 text-xs text-[var(--color-text-muted)]">{workflow.outcome}</p>
+				</li>
+			))
+		}
+	</ul>
+	<p class="mt-3 text-xs text-[var(--color-text-muted)]">Stand: {updatedAt}</p>
+</div>
