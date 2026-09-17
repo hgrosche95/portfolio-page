@@ -1,0 +1,23 @@
+{
+  "updatedAt": "2026-09-17T07:40:54.632Z",
+  "workflows": [
+    {
+      "name": "Jobbörse-Automation",
+      "lastRunAt": "2026-09-14T21:03:43.506Z",
+      "status": "success",
+      "outcome": "3 Anzeigen geprüft, bester Treffer 5/5 bei Huzzle"
+    },
+    {
+      "name": "Wissensbasis-Ingestion",
+      "lastRunAt": "2026-09-15T07:36:27.306Z",
+      "status": "success",
+      "outcome": "0 neu, 0 aktualisiert, 4 unverändert"
+    },
+    {
+      "name": "Langfuse-Kostenwarnung",
+      "lastRunAt": "2026-09-15T07:47:25.563Z",
+      "status": "success",
+      "outcome": "0% des Free-Tier-Limits (0/50000 Units)"
+    }
+  ]
+}
