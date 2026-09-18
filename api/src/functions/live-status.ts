@@ -17,12 +17,17 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
  * CORS does not apply.
  *
  * The target URL always comes from this fixed allowlist, never from the
- * request: this is a reachability probe for two specific, known-safe URLs,
- * not a general-purpose fetch proxy that would let a caller reach arbitrary
- * hosts through this server.
+ * request: this is a reachability probe for a fixed set of specific,
+ * known-safe URLs, not a general-purpose fetch proxy that would let a
+ * caller reach arbitrary hosts through this server.
  */
 
-type ProjectSlug = 'great-galguti-game' | 'ai-trip-planer' | 'job-application-skill' | 'cocktail-orders';
+type ProjectSlug =
+  | 'great-galguti-game'
+  | 'ai-trip-planer'
+  | 'job-application-skill'
+  | 'cocktail-orders'
+  | 'agentic-rogue-like';
 
 const TARGETS: Record<ProjectSlug, string> = {
   // No /health route on this one; any response (even a 404) still proves
@@ -35,6 +40,9 @@ const TARGETS: Record<ProjectSlug, string> = {
     'https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestcentral.azurecontainerapps.io/health',
   'cocktail-orders':
     'https://cocktail-orders-dev-server.calmisland-5c2bee0b.germanywestcentral.azurecontainerapps.io/api/ping',
+  // No /health route here either; /settings is a side-effect-free GET.
+  'agentic-rogue-like':
+    'https://agentic-rogue-like-dev-api.redglacier-b100f5ea.germanywestcentral.azurecontainerapps.io/settings',
 };
 
 /** Comfortably longer than a warm response, far short of a 30-40s cold start. */
