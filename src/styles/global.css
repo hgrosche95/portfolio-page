@@ -16,10 +16,17 @@
   --color-border-strong: #b9bec7;
   --color-text: #1a1d23;
   --color-text-muted: #5a616b;
-  --color-accent: #1f8f5f;
+  /*
+   * Darkened from #1f8f5f (Hallmark audit, 2026-09-18): the old value hit
+   * only ~3.6-3.84:1 against --color-bg/--color-accent-soft, below WCAG AA's
+   * 4.5:1 for the normal-size text it's used as (eyebrows, chip labels, nav
+   * links). This value holds ~4.8-5.6:1 against both. Dark-mode accent is
+   * untouched - already ~10.9:1 there.
+   */
+  --color-accent: #19714b;
   --color-accent-soft: #e3f5ec;
   /* Accent at low alpha, for glows and hover washes in either theme. */
-  --color-accent-glow: rgb(31 143 95 / 0.12);
+  --color-accent-glow: rgb(25 113 75 / 0.12);
   /* Backdrop for the sticky header, so content blurs through it. */
   --color-bg-translucent: rgb(247 248 250 / 0.8);
 }

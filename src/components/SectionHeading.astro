@@ -1,7 +1,12 @@
 ---
 interface Props {
-	/** Monospace eyebrow above the title, e.g. a section number or file-path label. */
-	eyebrow: string;
+	/**
+	 * Optional monospace eyebrow above the title. Default OFF (Hallmark audit,
+	 * 2026-09-18): a numbered eyebrow on every section reads as a decorative
+	 * tic once none of the sections are actually ordinal steps. Reach for it
+	 * only where the section genuinely is one step in a sequence.
+	 */
+	eyebrow?: string;
 	title: string;
 	subtitle?: string;
 	/** Appended to the subtitle, but only from the `sm` breakpoint up. */
@@ -12,9 +17,13 @@ const { eyebrow, title, subtitle, desktopHint } = Astro.props;
 ---
 
 <div data-reveal>
-	<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
-		{eyebrow}
-	</p>
+	{
+		eyebrow && (
+			<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
+				{eyebrow}
+			</p>
+		)
+	}
 	<h2 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
 		{title}
 	</h2>
