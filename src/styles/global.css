@@ -1,12 +1,16 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/space-grotesk";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Headings + the nav wordmark only - body text stays on --font-sans so the
+     display face reads as a deliberate accent, not a second body font. */
+  --font-display: "Space Grotesk Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 
   --color-bg: #f7f8fa;
   --color-surface: #ffffff;
@@ -50,6 +54,12 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
 }
 
 /*
