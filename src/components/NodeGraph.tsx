@@ -79,15 +79,22 @@ const ARCH_DIAMETER = 60;
  *  never crowd their neighbour's circle. */
 const LABEL_BLOCK_HEIGHT = 46;
 
-/** Vertical distance between two stacked project rows on mobile. */
-const NODE_SPACING = 150;
+/** Project rows on mobile share two columns, so the list needs about half
+ *  the scrolling a single column would. */
+const MOBILE_COLS = 2;
+/** Horizontal distance between the two mobile columns' centres — wide
+ *  enough that a label under one column can't be mistaken for its
+ *  neighbour's. */
+const MOBILE_COL_GAP = 170;
+/** Vertical distance between two mobile rows' centres. */
+const MOBILE_ROW_GAP = 190;
 /** Horizontal distance between two depth-columns in a focused architecture. */
 const ARCH_COL_GAP = 190;
 /** Vertical distance between two siblings sharing a depth-column. */
 const ARCH_ROW_GAP = 130;
 /** Vertical distance between two stacked nodes in a focused architecture on
  *  mobile, where there's only one column. */
-const ARCH_MOBILE_GAP = 130;
+const ARCH_MOBILE_GAP = 110;
 /** Minimum clearance between two adjacent ring nodes' labels. */
 const MIN_ORBIT_GAP = 30;
 /** A ring node's effective width for spacing purposes — wider than the
@@ -176,13 +183,18 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
   const edges: Edge[] = [];
 
   if (!isDesktop) {
-    // Mobile: plain top-to-bottom stack, no ring, no infra — see useIsDesktop.
+    // Mobile: two columns instead of one long column, no ring, no infra —
+    // see useIsDesktop. Two columns roughly halves how far the page has to
+    // scroll to see every project.
     projects.forEach((project, index) => {
-      const y = index * NODE_SPACING;
+      const col = index % MOBILE_COLS;
+      const row = Math.floor(index / MOBILE_COLS);
+      const x = (col - (MOBILE_COLS - 1) / 2) * MOBILE_COL_GAP;
+      const y = row * MOBILE_ROW_GAP;
       nodes.push({
         id: project.slug,
         type: 'project',
-        position: topLeft(0, y, PROJECT_DIAMETER, PROJECT_DIAMETER),
+        position: topLeft(x, y, PROJECT_DIAMETER, PROJECT_DIAMETER),
         data: {
           label: project.label,
           sublabel: project.sublabel,
