@@ -1,4 +1,3 @@
-import type { MouseEvent } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 export type ArchitectureKind = 'frontend' | 'backend' | 'data' | 'external';
@@ -7,34 +6,30 @@ export type ProjectKind = 'fullstack' | 'agent' | 'orchestration' | 'static';
 export type GraphNodeData = {
   label: string;
   sublabel?: string;
-  kind: 'hub' | 'project' | 'architecture' | 'ring';
+  kind: 'project' | 'architecture';
   /** Architecture nodes only: drives the colour coding and the legend. */
   archKind?: ArchitectureKind;
   /** Project nodes only: what kind of thing the project architecturally is
    *  (content.config.ts `kind`), driving the border style below. Absent on
-   *  the hub and on infra, neither of which is any one project's "kind". */
+   *  infra, which isn't any one project's "kind". */
   projectKind?: ProjectKind;
-  /** Project nodes only: absent when the project declares no architecture. */
-  expanded?: boolean;
-  onToggle?: () => void;
-  /** Hub/project nodes only: true on the mobile top-to-bottom layout, so
-   *  edges connect via top/bottom handles instead of left/right ones. */
-  vertical?: boolean;
-  /** Project/infra nodes only: doesn't match the active tag filter, or a
-   *  sibling of the node currently expanded. Dimmed rather than removed, so
-   *  the graph's shape and the shared infra edges stay intact instead of
-   *  needing a re-fit on every filter or expand change. */
-  dimmed?: boolean;
-  /** Ring nodes only: the decorative orbit's diameter, in flow units. */
+  /** Project/architecture nodes: the circle's diameter in flow units — set
+   *  by NodeGraph so its own layout math (orbit spacing, column gaps) stays
+   *  the single source of truth for node size. */
   diameter?: number;
+  /** True on the mobile top-to-bottom layout and on a focused architecture's
+   *  single-column stack, so edges connect via top/bottom handles instead
+   *  of left/right ones. */
+  vertical?: boolean;
+  /** Project/infra nodes only: doesn't match the active tag filter. Dimmed
+   *  rather than removed, so the ring's shape never needs a re-fit just
+   *  because a filter changed. Never set once a project is focused — its
+   *  architecture has no tags of its own to filter. */
+  dimmed?: boolean;
   /** Infra-label architecture nodes only: overrides ARCH_STYLES' border/text
    *  colour so each infra label reads as visually distinct from the others,
-   *  matching the colour of the edges that connect projects to it. Every
-   *  project's line converges on the same docked cluster when infra is
-   *  expanded, so colour (rather than shape, already used up by `kind`) is
-   *  what lets a line be traced to its label instead of just "some line
-   *  passing near the infra node". Drawn only from tokens already in the
-   *  theme, not a new palette. */
+   *  matching the colour of the edges that connect projects to it. Drawn
+   *  only from tokens already in the theme, not a new palette. */
   accentColor?: string;
 };
 
@@ -66,104 +61,72 @@ export const PROJECT_KIND_STYLES: Record<ProjectKind, string> = {
   static: 'border-2 border-dotted border-[var(--color-border-strong)]',
 };
 
-export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData }) {
-  const isHub = data.kind === 'hub';
-  const isArchitecture = data.kind === 'architecture';
-  const isRing = data.kind === 'ring';
+/** Architecture "data" nodes render as a small rounded box, not a circle —
+ *  a store reads differently from a running component even at this size. */
+const ARCH_DATA_WIDTH = 56;
+const ARCH_DATA_HEIGHT = 40;
 
-  if (isRing) {
-    return (
-      <div
-        aria-hidden="true"
-        style={{ width: data.diameter, height: data.diameter }}
-        className="rounded-full border border-dashed border-[var(--color-border)]"
-      />
-    );
-  }
+export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData }) {
+  const isArchitecture = data.kind === 'architecture';
+  const diameter = data.diameter ?? 80;
 
   if (isArchitecture) {
+    const isData = data.archKind === 'data';
+    const targetPosition = data.vertical ? Position.Top : Position.Left;
+    const sourcePosition = data.vertical ? Position.Bottom : Position.Right;
+
     return (
       <div
-        className={[
-          'w-48 rounded border bg-[var(--color-surface)] px-3 py-1.5 font-mono text-xs shadow-sm',
-          data.archKind ? ARCH_STYLES[data.archKind] : '',
-        ].join(' ')}
-        style={data.accentColor ? { borderColor: data.accentColor, color: data.accentColor } : undefined}
+        className="relative"
+        style={isData ? { width: ARCH_DATA_WIDTH, height: ARCH_DATA_HEIGHT } : { width: diameter, height: diameter }}
       >
-        <Handle type="target" position={Position.Left} style={{ visibility: 'hidden' }} />
-        <div className="truncate" title={data.label}>
+        <div
+          className={[
+            'h-full w-full border bg-[var(--color-surface)]',
+            isData ? 'rounded-md' : 'rounded-full',
+            data.archKind ? ARCH_STYLES[data.archKind] : '',
+          ].join(' ')}
+          style={data.accentColor ? { borderColor: data.accentColor, color: data.accentColor } : undefined}
+        >
+          <Handle type="target" position={targetPosition} style={{ visibility: 'hidden' }} />
+          <Handle type="source" position={sourcePosition} style={{ visibility: 'hidden' }} />
+        </div>
+        <div
+          className="absolute left-1/2 top-full mt-1.5 w-28 -translate-x-1/2 text-center font-mono text-[11px] leading-tight text-[var(--color-text-muted)]"
+          title={data.label}
+        >
           {data.label}
         </div>
-        <Handle type="source" position={Position.Right} style={{ visibility: 'hidden' }} />
       </div>
     );
   }
-
-  // The toggle sits inside the node, which itself navigates on click — so the
-  // button must stop the click from bubbling up to React Flow's node handler.
-  const handleToggle = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    data.onToggle?.();
-  };
 
   const targetPosition = data.vertical ? Position.Top : Position.Left;
   const sourcePosition = data.vertical ? Position.Bottom : Position.Right;
 
   return (
     <div
+      style={{ width: diameter, height: diameter }}
       className={[
-        'w-64 rounded px-4 py-2 font-mono text-sm shadow-sm transition-colors',
+        'relative cursor-pointer rounded-full transition-[color,border-color,box-shadow] hover:shadow-sm',
         'bg-[var(--color-surface)] text-[var(--color-text)]',
-        isHub
-          ? 'border-2 border-solid border-[var(--color-accent)] text-[var(--color-accent)]'
-          : (data.projectKind ? PROJECT_KIND_STYLES[data.projectKind] : 'border-2 border-solid border-[var(--color-border)]'),
-        !isHub && 'group hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] cursor-pointer',
+        'hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]',
+        data.projectKind ? PROJECT_KIND_STYLES[data.projectKind] : 'border-2 border-solid border-[var(--color-border)]',
         data.dimmed ? 'opacity-35' : 'opacity-100',
       ].join(' ')}
     >
       <Handle type="target" position={targetPosition} style={{ visibility: 'hidden' }} />
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="truncate" title={data.label}>
-            {data.label}
-          </div>
-          {data.sublabel && (
-            <div className="truncate text-xs text-[var(--color-text-muted)]" title={data.sublabel}>
-              {data.sublabel}
-            </div>
-          )}
+      <Handle type="source" position={sourcePosition} style={{ visibility: 'hidden' }} />
+      <div className="absolute left-1/2 top-full mt-2 w-28 -translate-x-1/2 text-center">
+        <div className="font-display text-sm font-medium" title={data.label}>
+          {data.label}
         </div>
-        {data.onToggle && (
-          <button
-            type="button"
-            onClick={handleToggle}
-            aria-expanded={data.expanded}
-            aria-label={data.expanded ? 'Details ausblenden' : 'Details anzeigen'}
-            title={data.expanded ? 'Details ausblenden' : 'Details anzeigen'}
-            // Hidden on phones: an unfolded architecture is ~1170 units wide,
-            // which fitView would shrink past legibility on a 375px screen.
-            // The project page describes the same architecture in prose.
-            className="nodrag hidden size-7 shrink-0 place-items-center rounded border border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] sm:grid"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={[
-                'size-3.5 transition-transform',
-                data.expanded ? 'rotate-180' : '',
-              ].join(' ')}
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
+        {data.sublabel && (
+          <div className="mt-0.5 truncate font-mono text-xs text-[var(--color-text-muted)]" title={data.sublabel}>
+            {data.sublabel}
+          </div>
         )}
       </div>
-      <Handle type="source" position={sourcePosition} style={{ visibility: 'hidden' }} />
     </div>
   );
 }
