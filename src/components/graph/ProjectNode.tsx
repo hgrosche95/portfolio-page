@@ -31,6 +31,10 @@ export type GraphNodeData = {
    *  matching the colour of the edges that connect projects to it. Drawn
    *  only from tokens already in the theme, not a new palette. */
   accentColor?: string;
+  /** Project nodes only (not infra): the project's own page. The circle
+   *  itself opens its architecture on click - this makes the title text a
+   *  real link to the page, so both stay reachable from the overview. */
+  href?: string;
 };
 
 /**
@@ -118,9 +122,20 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
       <Handle type="target" position={targetPosition} style={{ visibility: 'hidden' }} />
       <Handle type="source" position={sourcePosition} style={{ visibility: 'hidden' }} />
       <div className="absolute left-1/2 top-full mt-2 w-28 -translate-x-1/2 text-center">
-        <div className="font-display text-sm font-medium" title={data.label}>
-          {data.label}
-        </div>
+        {data.href ? (
+          <a
+            href={data.href}
+            onClick={(event) => event.stopPropagation()}
+            className="font-display text-sm font-medium hover:text-[var(--color-accent)] hover:underline"
+            title={data.label}
+          >
+            {data.label}
+          </a>
+        ) : (
+          <div className="font-display text-sm font-medium" title={data.label}>
+            {data.label}
+          </div>
+        )}
         {data.sublabel && (
           <div className="mt-0.5 truncate font-mono text-xs text-[var(--color-text-muted)]" title={data.sublabel}>
             {data.sublabel}
