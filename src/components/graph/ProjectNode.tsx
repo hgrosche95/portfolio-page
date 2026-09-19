@@ -6,20 +6,20 @@ export type ProjectKind = 'fullstack' | 'agent' | 'orchestration' | 'static';
 export type GraphNodeData = {
   label: string;
   sublabel?: string;
-  kind: 'hub' | 'project' | 'architecture';
+  kind: 'project' | 'architecture';
   /** Architecture nodes only: drives the colour coding and the legend. */
   archKind?: ArchitectureKind;
   /** Project nodes only: what kind of thing the project architecturally is
    *  (content.config.ts `kind`), driving the border style below. Absent on
-   *  the hub and on infra, neither of which is any one project's "kind". */
+   *  infra, which isn't any one project's "kind". */
   projectKind?: ProjectKind;
-  /** Hub/project/architecture nodes: the circle's diameter in flow units —
-   *  set by NodeGraph so its own layout math (orbit spacing, column gaps)
-   *  stays the single source of truth for node size. */
+  /** Project/architecture nodes: the circle's diameter in flow units — set
+   *  by NodeGraph so its own layout math (orbit spacing, column gaps) stays
+   *  the single source of truth for node size. */
   diameter?: number;
-  /** Hub/project nodes only: true on the mobile top-to-bottom layout and on
-   *  a focused architecture's single-column stack, so edges connect via
-   *  top/bottom handles instead of left/right ones. */
+  /** True on the mobile top-to-bottom layout and on a focused architecture's
+   *  single-column stack, so edges connect via top/bottom handles instead
+   *  of left/right ones. */
   vertical?: boolean;
   /** Project/infra nodes only: doesn't match the active tag filter. Dimmed
    *  rather than removed, so the ring's shape never needs a re-fit just
@@ -67,7 +67,6 @@ const ARCH_DATA_WIDTH = 56;
 const ARCH_DATA_HEIGHT = 40;
 
 export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData }) {
-  const isHub = data.kind === 'hub';
   const isArchitecture = data.kind === 'architecture';
   const diameter = data.diameter ?? 80;
 
@@ -109,12 +108,10 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
     <div
       style={{ width: diameter, height: diameter }}
       className={[
-        'relative rounded-full transition-[color,border-color,box-shadow] hover:shadow-sm',
+        'relative cursor-pointer rounded-full transition-[color,border-color,box-shadow] hover:shadow-sm',
         'bg-[var(--color-surface)] text-[var(--color-text)]',
-        isHub
-          ? 'border-2 border-solid border-[var(--color-accent)] text-[var(--color-accent)]'
-          : (data.projectKind ? PROJECT_KIND_STYLES[data.projectKind] : 'border-2 border-solid border-[var(--color-border)]'),
-        !isHub && 'cursor-pointer hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]',
+        'hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]',
+        data.projectKind ? PROJECT_KIND_STYLES[data.projectKind] : 'border-2 border-solid border-[var(--color-border)]',
         data.dimmed ? 'opacity-35' : 'opacity-100',
       ].join(' ')}
     >

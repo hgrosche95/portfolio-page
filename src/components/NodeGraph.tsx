@@ -63,8 +63,6 @@ function withDimming(nodes: Node<GraphNodeData>[], projects: GraphProject[], fil
   const infraLabels = infraLabelsFor(projects);
 
   return nodes.map((node) => {
-    if (node.id === 'hub') return node;
-
     const tags = node.id === 'infra' ? infraLabels : techStackBySlug.get(node.id);
     const dimmed = !!tags && !tags.some((tag) => filterTags.includes(tag));
 
@@ -74,7 +72,6 @@ function withDimming(nodes: Node<GraphNodeData>[], projects: GraphProject[], fil
 
 /** Circle diameters, in flow units — the single source both ProjectNode's
  *  rendering and this file's own layout math read from. */
-const HUB_DIAMETER = 96;
 const PROJECT_DIAMETER = 80;
 const ARCH_DIAMETER = 60;
 /** Extra vertical room a node's label (rendered below the circle, not
@@ -82,8 +79,7 @@ const ARCH_DIAMETER = 60;
  *  never crowd their neighbour's circle. */
 const LABEL_BLOCK_HEIGHT = 46;
 
-/** Vertical distance between two collapsed project rows on mobile, and
- *  between the hub and the first one. */
+/** Vertical distance between two stacked project rows on mobile. */
 const NODE_SPACING = 150;
 /** Horizontal distance between two depth-columns in a focused architecture. */
 const ARCH_COL_GAP = 190;
@@ -169,35 +165,20 @@ function topLeft(centerX: number, centerY: number, width: number, height: number
 }
 
 /**
- * The hub-and-ring overview: every project on one ring around a central
- * hub, infra (if any) docked at a fixed spot below it. Every project always
- * has a visible spoke back to the hub — there's no "pulled out" state to
- * distinguish here any more, since clicking a project now swaps the whole
- * view to its architecture (see buildFocusedGraph) instead of fanning it
- * out in place.
+ * The overview: on mobile, a plain top-to-bottom stack; on desktop, every
+ * project shares one ring, with infra (if any) docked at a fixed spot below
+ * it. No node connects to any other here — this is a set of equally-weighted
+ * projects, not a hub-and-spoke structure. Clicking one swaps the whole view
+ * to its architecture (see buildFocusedGraph) instead of fanning out in place.
  */
 function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nodes: Node<GraphNodeData>[]; edges: Edge[] } {
-  const nodes: Node<GraphNodeData>[] = [
-    {
-      id: 'hub',
-      type: 'project',
-      position: topLeft(0, 0, HUB_DIAMETER, HUB_DIAMETER),
-      data: {
-        label: 'Henrik',
-        sublabel: `${projects.length} Projekte`,
-        kind: 'hub',
-        diameter: HUB_DIAMETER,
-        vertical: !isDesktop,
-      },
-      draggable: false,
-    },
-  ];
+  const nodes: Node<GraphNodeData>[] = [];
   const edges: Edge[] = [];
 
   if (!isDesktop) {
     // Mobile: plain top-to-bottom stack, no ring, no infra — see useIsDesktop.
     projects.forEach((project, index) => {
-      const y = (index + 1) * NODE_SPACING;
+      const y = index * NODE_SPACING;
       nodes.push({
         id: project.slug,
         type: 'project',
@@ -214,16 +195,14 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
         ariaLabel: project.architecture ? `Architektur von ${project.label} öffnen` : `Projekt ${project.label} öffnen`,
         ariaRole: 'button',
       });
-      edges.push({ id: `hub-${project.slug}`, source: 'hub', target: project.slug });
     });
 
     return { nodes, edges };
   }
 
-  // Desktop: projects share one ring around the hub. Infra sits on its own
-  // fixed spot below the ring instead of taking a ring slot: it isn't a
-  // project like the others, so it shouldn't read as an equally-weighted
-  // planet among them.
+  // Desktop: projects share one ring. Infra sits on its own fixed spot below
+  // the ring instead of taking a slot: it isn't a project like the others,
+  // so it shouldn't read as an equally-weighted planet among them.
   const radius = orbitRadius(projects.length);
 
   projects.forEach((project, index) => {
@@ -244,7 +223,6 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
       ariaLabel: project.architecture ? `Architektur von ${project.label} öffnen` : `Projekt ${project.label} öffnen`,
       ariaRole: 'button',
     });
-    edges.push({ id: `hub-${project.slug}`, source: 'hub', target: project.slug });
   });
 
   const infraLabels = infraLabelsFor(projects);
@@ -264,7 +242,6 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
       ariaLabel: 'Geteilte Infrastruktur anzeigen',
       ariaRole: 'button',
     });
-    edges.push({ id: 'hub-infra', source: 'hub', target: 'infra' });
   }
 
   return { nodes, edges };
@@ -512,9 +489,8 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
 
   // Mouse: a direct click handler, fires exactly once per click. Architecture
   // nodes aren't clickable (selectable/focusable are both false on them), so
-  // this only ever fires for hub/project/infra in the overview.
+  // this only ever fires for a project/infra node in the overview.
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
-    if (node.id === 'hub') return;
     if (node.id === 'infra') {
       setFocusedId('infra');
       return;
@@ -539,7 +515,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     if (focusedId) return; // architecture nodes have nothing to activate
     const nodeEl = (event.target as HTMLElement).closest<HTMLElement>('[data-id]');
     const id = nodeEl?.dataset.id;
-    if (!id || id === 'hub') return;
+    if (!id) return;
     event.preventDefault();
     if (id === 'infra') {
       setFocusedId('infra');
@@ -558,7 +534,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
       ? `Geteilte Infrastruktur — ${infraLabels.length} Dienste.`
       : focusedProject?.architecture
         ? `${focusedProject.label} — ${focusedProject.architecture.nodes.length} Komponenten, ${focusedProject.architecture.edges.length} Verbindungen.`
-        : 'Projekte im Ring um den Hub — Klick auf einen Knoten öffnet dessen Architektur.';
+        : 'Projekte im Ring — Klick auf einen Knoten öffnet dessen Architektur.';
 
   return (
     <div>
