@@ -1,4 +1,6 @@
 ---
+import { getCollection } from 'astro:content';
+import CommandSearch from './CommandSearch.astro';
 import ThemeToggle from './ThemeToggle.astro';
 
 // Logo + every link + the theme toggle does not fit on a 375px viewport, so the
@@ -8,6 +10,18 @@ const navLinks = [
 	{ href: '/#erfahrung', label: 'werdegang', mobile: false },
 	{ href: '/#kontakt', label: 'kontakt', mobile: true },
 ];
+
+// Fetched here rather than passed in as a prop: Header renders on every page
+// (project detail pages included), and the search has to work from all of
+// them, not just the homepage that already loads this collection for the
+// graph. Same "one new file is the only step" principle as the rest of the
+// site - this needs no wiring anywhere else when a project is added.
+const searchProjects = (await getCollection('projects')).map((entry) => ({
+	slug: entry.id,
+	title: entry.data.title,
+	summary: entry.data.summary,
+	tech: entry.data.techStack,
+}));
 ---
 
 <header
@@ -34,6 +48,7 @@ const navLinks = [
 					</a>
 				))
 			}
+			<CommandSearch projects={searchProjects} />
 			<ThemeToggle />
 		</nav>
 	</div>
