@@ -85,7 +85,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
     return (
       <div
         className={[
-          'w-48 rounded border bg-[var(--color-surface)] px-3 py-1.5 font-mono text-xs shadow-sm',
+          'w-48 rounded border bg-[var(--color-surface)] px-3 py-1.5 font-mono text-xs',
           data.archKind ? ARCH_STYLES[data.archKind] : '',
         ].join(' ')}
         style={data.accentColor ? { borderColor: data.accentColor, color: data.accentColor } : undefined}
@@ -112,7 +112,7 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
   return (
     <div
       className={[
-        'w-64 rounded px-4 py-2 font-mono text-sm shadow-sm transition-colors',
+        'w-64 rounded px-4 py-2 text-sm transition-[color,background-color,border-color,box-shadow] hover:shadow-sm',
         'bg-[var(--color-surface)] text-[var(--color-text)]',
         isHub
           ? 'border-2 border-solid border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -124,11 +124,11 @@ export default function ProjectNode({ data }: NodeProps & { data: GraphNodeData 
       <Handle type="target" position={targetPosition} style={{ visibility: 'hidden' }} />
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
-          <div className="truncate" title={data.label}>
+          <div className="truncate font-display font-medium" title={data.label}>
             {data.label}
           </div>
           {data.sublabel && (
-            <div className="truncate text-xs text-[var(--color-text-muted)]" title={data.sublabel}>
+            <div className="truncate font-mono text-xs text-[var(--color-text-muted)]" title={data.sublabel}>
               {data.sublabel}
             </div>
           )}

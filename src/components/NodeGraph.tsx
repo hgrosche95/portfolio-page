@@ -663,7 +663,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
     <div>
       {isDesktop && <KindLegend />}
       <div
-        className="static-flow h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
+        className="static-flow project-graph h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
         style={
           {
             '--graph-height-mobile': `${mobileHeight}px`,

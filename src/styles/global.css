@@ -249,6 +249,17 @@ body::after {
   touch-action: pan-y !important;
 }
 
+/*
+ * Thinner, theme-coloured connector lines for the project graph only - xyflow's
+ * default edge stroke is a flat grey that reads as unstyled next to the rest
+ * of the page. Scoped to .project-graph rather than .static-flow so the
+ * unrelated deploy-pipeline graphic keeps its own look.
+ */
+.project-graph .react-flow__edge-path {
+  stroke: var(--color-border-strong);
+  stroke-width: 1.25px;
+}
+
 .project-content code {
   border-radius: 0.25rem;
   background-color: var(--color-surface-raised);
