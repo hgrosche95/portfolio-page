@@ -202,6 +202,7 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
           projectKind: project.kind,
           diameter: PROJECT_DIAMETER,
           vertical: true,
+          href: `/projects/${project.slug}`,
         },
         draggable: false,
         ariaLabel: project.architecture ? `Architektur von ${project.label} öffnen` : `Projekt ${project.label} öffnen`,
@@ -230,6 +231,7 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
         kind: 'project',
         projectKind: project.kind,
         diameter: PROJECT_DIAMETER,
+        href: `/projects/${project.slug}`,
       },
       draggable: false,
       ariaLabel: project.architecture ? `Architektur von ${project.label} öffnen` : `Projekt ${project.label} öffnen`,
@@ -525,6 +527,9 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   const handleContainerKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     if (focusedId) return; // architecture nodes have nothing to activate
+    // The title link handles its own Enter activation; intercepting here
+    // would open the architecture instead of following the link.
+    if ((event.target as HTMLElement).closest('a')) return;
     const nodeEl = (event.target as HTMLElement).closest<HTMLElement>('[data-id]');
     const id = nodeEl?.dataset.id;
     if (!id) return;
