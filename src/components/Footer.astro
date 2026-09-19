@@ -3,12 +3,19 @@ const year = new Date().getFullYear();
 ---
 
 <footer class="border-t border-[var(--color-border)]" data-xray="Footer.astro · statisch" data-xray-kind="static">
-	<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-6 font-mono text-xs text-[var(--color-text-muted)]">
-		<span>&copy; {year} Henrik Grosche</span>
-		<nav class="flex gap-4">
-			<a href="/impressum" class="hover:text-[var(--color-accent)]">impressum</a>
-			<a href="/datenschutz" class="hover:text-[var(--color-accent)]">datenschutz</a>
-			<a href="https://github.com/hgrosche95" class="hover:text-[var(--color-accent)]">github</a>
-		</nav>
+	<div class="mx-auto max-w-5xl px-4 py-10 sm:py-14">
+		<p class="max-w-xl font-display text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
+			Diese Seite baut, testet und deployt sich bei jedem Push selbst.
+		</p>
+		<div
+			class="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] pt-4 font-mono text-xs text-[var(--color-text-muted)]"
+		>
+			<span>henrik<span class="text-[var(--color-accent)]">.</span>grosche &middot; &copy; {year}</span>
+			<nav class="flex gap-4">
+				<a href="/impressum" class="hover:text-[var(--color-accent)]">impressum</a>
+				<a href="/datenschutz" class="hover:text-[var(--color-accent)]">datenschutz</a>
+				<a href="https://github.com/hgrosche95" class="hover:text-[var(--color-accent)]">github</a>
+			</nav>
+		</div>
 	</div>
 </footer>
