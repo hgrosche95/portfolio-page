@@ -222,8 +222,6 @@ function buildGraph(
     }
   }
 
-  const lastY = (projects.length - 1) * NODE_SPACING;
-
   const nodes: Node<GraphNodeData>[] = [
     {
       id: 'hub',
@@ -294,7 +292,11 @@ function buildGraph(
     // footprint is radius*2, not the fixed NODE_WIDTH/NODE_HEIGHT nodeTopLeft
     // assumes, so it needs its own top-left math.
     position: { x: -radius, y: -radius },
-    data: { kind: 'ring', diameter: radius * 2 },
+    // label is required on GraphNodeData because the hub/project/architecture
+    // kinds all render it - the ring is the one kind that never does (see
+    // ProjectNode's isRing branch), so this is a real value only to satisfy
+    // that shared type, not something ever shown.
+    data: { kind: 'ring', label: '', diameter: radius * 2 },
     style: { width: radius * 2, height: radius * 2 },
     draggable: false,
     selectable: false,
