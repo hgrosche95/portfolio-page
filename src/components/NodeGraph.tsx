@@ -433,15 +433,28 @@ function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
     // fitBounds to our own label-inclusive box (see graphBounds) rather
     // than fitView's automatic one, which only knows each node's own
     // rendered circle and would let the bottom row's label poke past the
-    // canvas's overflow:hidden edge. This has to be the container's only
-    // animation: an earlier version also transitioned the container's CSS
-    // height, which raced this fitBounds call (it measured the container
-    // mid-transition, animated to fit that in-between size, then a second
-    // corrective fit snapped it the rest of the way) - visibly growing too
-    // large before jumping back down. The container now resizes instantly
-    // (no CSS transition - see the className below) so this is the only
-    // thing animating, and there's nothing left to correct afterwards.
-    fitBounds(graphBounds(nodes), { padding: 0.1, duration: 300 });
+    // canvas's overflow:hidden edge.
+    //
+    // The container itself resizes synchronously with this render (no CSS
+    // transition on its height - see the className below), but React Flow
+    // still learns its container's new pixel size from a ResizeObserver,
+    // which reports asynchronously, after this effect already ran. Calling
+    // fitBounds here measures the container before that update lands, so it
+    // fits our bounds against a stale (often much taller, pre-resize) size
+    // - which is a *smaller* effective zoom than correct, and the real
+    // content then overflows the actual, already-shrunk container. A
+    // double rAF defers the call to after the browser's next layout pass,
+    // by which point the observer has caught up.
+    let frame2 = 0;
+    const frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
+        fitBounds(graphBounds(nodes), { padding: 0.1, duration: 200 });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
+    };
     // Re-fit whenever the visible layout actually changes (overview vs. a
     // focused architecture, or a desktop/mobile switch) - not on every
     // render, since `nodes`/`edges` are rebuilt fresh each time regardless.
