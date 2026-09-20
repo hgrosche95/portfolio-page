@@ -88,12 +88,15 @@ const MOBILE_COLS = 2;
 const MOBILE_COL_GAP = 170;
 /** Vertical distance between two mobile rows' centres. */
 const MOBILE_ROW_GAP = 190;
-/** Horizontal distance between two depth-columns in a focused architecture. */
+/** Horizontal distance between two depth-columns in a focused architecture
+ *  on desktop. */
 const ARCH_COL_GAP = 190;
-/** Vertical distance between two siblings sharing a depth-column. */
+/** Distance between two siblings at the same depth: vertical on desktop
+ *  (they share a column), horizontal on mobile (they share a row). */
 const ARCH_ROW_GAP = 130;
-/** Vertical distance between two stacked nodes in a focused architecture on
- *  mobile, where there's only one column. */
+const ARCH_MOBILE_SIBLING_GAP = 140;
+/** Vertical distance between two depth-rows in a focused architecture on
+ *  mobile. */
 const ARCH_MOBILE_GAP = 110;
 /** Minimum clearance between two adjacent ring nodes' labels. */
 const MIN_ORBIT_GAP = 30;
@@ -264,37 +267,34 @@ function buildOverviewGraph(projects: GraphProject[], isDesktop: boolean): { nod
 /**
  * One project's (or infra's) architecture, laid out on its own — this is
  * the entire graph while a node is focused, not a fan-out alongside the
- * ring. Desktop groups nodes into depth-columns, left to right; mobile has
- * only room for one column, so nodes stack top to bottom ordered by depth
- * instead.
+ * ring. Nodes at the same depth (nothing between them in the dependency
+ * chain) are siblings and get spread out side by side; the depth itself
+ * runs left-to-right on desktop and top-to-bottom on mobile. Without that
+ * sibling spread, two things pointing into the same node (or one node
+ * fanning out into several) would all land on the same axis and read as a
+ * single straight line instead of a branch.
  */
 function buildFocusedGraph(architecture: Architecture, isDesktop: boolean): { nodes: Node<GraphNodeData>[]; edges: Edge[] } {
   const depths = computeDepths(architecture);
 
-  const centers = new Map<string, { x: number; y: number }>();
+  const rowsByDepth = new Map<number, number>();
+  for (const node of architecture.nodes) {
+    const depth = depths.get(node.id) ?? 0;
+    rowsByDepth.set(depth, (rowsByDepth.get(depth) ?? 0) + 1);
+  }
 
-  if (isDesktop) {
-    const rowsByColumn = new Map<number, number>();
-    for (const node of architecture.nodes) {
-      const depth = depths.get(node.id) ?? 0;
-      rowsByColumn.set(depth, (rowsByColumn.get(depth) ?? 0) + 1);
-    }
-    const placed = new Map<number, number>();
-    for (const node of architecture.nodes) {
-      const depth = depths.get(node.id) ?? 0;
-      const row = placed.get(depth) ?? 0;
-      placed.set(depth, row + 1);
-      const rowsInColumn = rowsByColumn.get(depth) ?? 1;
-      centers.set(node.id, {
-        x: depth * ARCH_COL_GAP,
-        y: (row - (rowsInColumn - 1) / 2) * ARCH_ROW_GAP,
-      });
-    }
-  } else {
-    const ordered = [...architecture.nodes].sort((a, b) => (depths.get(a.id) ?? 0) - (depths.get(b.id) ?? 0));
-    ordered.forEach((node, index) => {
-      centers.set(node.id, { x: 0, y: index * ARCH_MOBILE_GAP });
-    });
+  const centers = new Map<string, { x: number; y: number }>();
+  const placed = new Map<number, number>();
+  for (const node of architecture.nodes) {
+    const depth = depths.get(node.id) ?? 0;
+    const row = placed.get(depth) ?? 0;
+    placed.set(depth, row + 1);
+    const siblingCount = rowsByDepth.get(depth) ?? 1;
+    const siblingOffset = (row - (siblingCount - 1) / 2) * (isDesktop ? ARCH_ROW_GAP : ARCH_MOBILE_SIBLING_GAP);
+    centers.set(
+      node.id,
+      isDesktop ? { x: depth * ARCH_COL_GAP, y: siblingOffset } : { x: siblingOffset, y: depth * ARCH_MOBILE_GAP },
+    );
   }
 
   const nodes: Node<GraphNodeData>[] = architecture.nodes.map((node) => {
