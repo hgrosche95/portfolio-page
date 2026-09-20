@@ -433,18 +433,15 @@ function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
     // fitBounds to our own label-inclusive box (see graphBounds) rather
     // than fitView's automatic one, which only knows each node's own
     // rendered circle and would let the bottom row's label poke past the
-    // canvas's overflow:hidden edge.
-    const bounds = graphBounds(nodes);
-    fitBounds(bounds, { padding: 0.1, duration: 300 });
-    // The container's own height animates via a CSS transition (see the
-    // `transition-[height]` class below), which this effect's own fitBounds
-    // call above races: it measures the container's pixel size before that
-    // transition has settled, so it fits to a size the container is still
-    // mid-way through leaving. Re-fitting once the transition has had time
-    // to finish corrects for that - snapped, not animated again, since the
-    // camera is already close to correct by then.
-    const settle = setTimeout(() => fitBounds(bounds, { padding: 0.1, duration: 0 }), 320);
-    return () => clearTimeout(settle);
+    // canvas's overflow:hidden edge. This has to be the container's only
+    // animation: an earlier version also transitioned the container's CSS
+    // height, which raced this fitBounds call (it measured the container
+    // mid-transition, animated to fit that in-between size, then a second
+    // corrective fit snapped it the rest of the way) - visibly growing too
+    // large before jumping back down. The container now resizes instantly
+    // (no CSS transition - see the className below) so this is the only
+    // thing animating, and there's nothing left to correct afterwards.
+    fitBounds(graphBounds(nodes), { padding: 0.1, duration: 300 });
     // Re-fit whenever the visible layout actually changes (overview vs. a
     // focused architecture, or a desktop/mobile switch) - not on every
     // render, since `nodes`/`edges` are rebuilt fresh each time regardless.
@@ -614,7 +611,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
           </button>
         )}
         <div
-          className="static-flow project-graph h-(--graph-height-mobile) transition-[height] duration-300 sm:h-(--graph-height-desktop)"
+          className="static-flow project-graph h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
           style={
             {
               '--graph-height-mobile': `${mobileHeight}px`,
