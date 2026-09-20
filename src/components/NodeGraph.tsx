@@ -92,9 +92,14 @@ const MOBILE_ROW_GAP = 190;
  *  on desktop. */
 const ARCH_COL_GAP = 190;
 /** Distance between two siblings at the same depth: vertical on desktop
- *  (they share a column), horizontal on mobile (they share a row). */
+ *  (they share a column), horizontal on mobile (they share a row, wrapping
+ *  onto another one past MOBILE_ARCH_COLS). */
 const ARCH_ROW_GAP = 130;
 const ARCH_MOBILE_SIBLING_GAP = 140;
+/** Siblings at the same depth share at most this many columns on mobile
+ *  before wrapping - more than that and fitView has to zoom out to fit the
+ *  width, which leaves the container mostly empty top and bottom instead. */
+const MOBILE_ARCH_COLS = 2;
 /** Vertical distance between two depth-rows in a focused architecture on
  *  mobile. */
 const ARCH_MOBILE_GAP = 110;
@@ -284,17 +289,42 @@ function buildFocusedGraph(architecture: Architecture, isDesktop: boolean): { no
   }
 
   const centers = new Map<string, { x: number; y: number }>();
-  const placed = new Map<number, number>();
-  for (const node of architecture.nodes) {
-    const depth = depths.get(node.id) ?? 0;
-    const row = placed.get(depth) ?? 0;
-    placed.set(depth, row + 1);
-    const siblingCount = rowsByDepth.get(depth) ?? 1;
-    const siblingOffset = (row - (siblingCount - 1) / 2) * (isDesktop ? ARCH_ROW_GAP : ARCH_MOBILE_SIBLING_GAP);
-    centers.set(
-      node.id,
-      isDesktop ? { x: depth * ARCH_COL_GAP, y: siblingOffset } : { x: siblingOffset, y: depth * ARCH_MOBILE_GAP },
-    );
+
+  if (isDesktop) {
+    const placed = new Map<number, number>();
+    for (const node of architecture.nodes) {
+      const depth = depths.get(node.id) ?? 0;
+      const row = placed.get(depth) ?? 0;
+      placed.set(depth, row + 1);
+      const siblingCount = rowsByDepth.get(depth) ?? 1;
+      centers.set(node.id, { x: depth * ARCH_COL_GAP, y: (row - (siblingCount - 1) / 2) * ARCH_ROW_GAP });
+    }
+  } else {
+    // A depth with more than two siblings wraps onto extra sub-rows instead
+    // of spreading arbitrarily wide - four siblings in one row (Run-Engine's
+    // fan-out, say) would force fitView to zoom out to fit the width, which
+    // shrinks everything and leaves the container mostly empty top/bottom.
+    const depthOrder = [...rowsByDepth.keys()].sort((a, b) => a - b);
+    const yByDepth = new Map<number, number>();
+    let cursorY = 0;
+    for (const depth of depthOrder) {
+      yByDepth.set(depth, cursorY);
+      const subRows = Math.ceil((rowsByDepth.get(depth) ?? 1) / MOBILE_ARCH_COLS);
+      cursorY += subRows * ARCH_MOBILE_GAP;
+    }
+    const placed = new Map<number, number>();
+    for (const node of architecture.nodes) {
+      const depth = depths.get(node.id) ?? 0;
+      const indexInDepth = placed.get(depth) ?? 0;
+      placed.set(depth, indexInDepth + 1);
+      const cols = Math.min(rowsByDepth.get(depth) ?? 1, MOBILE_ARCH_COLS);
+      const col = indexInDepth % MOBILE_ARCH_COLS;
+      const subRow = Math.floor(indexInDepth / MOBILE_ARCH_COLS);
+      centers.set(node.id, {
+        x: (col - (cols - 1) / 2) * ARCH_MOBILE_SIBLING_GAP,
+        y: (yByDepth.get(depth) ?? 0) + subRow * ARCH_MOBILE_GAP,
+      });
+    }
   }
 
   const nodes: Node<GraphNodeData>[] = architecture.nodes.map((node) => {
@@ -460,51 +490,45 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
   const infraLabels = infraLabelsFor(projects);
   const infraAccentOf = new Map(infraLabels.map((label, index) => [label, INFRA_ACCENTS[index % INFRA_ACCENTS.length]]));
 
-  let builtNodes: Node<GraphNodeData>[];
-  let edges: Edge[];
-
-  if (focusedId === 'infra') {
-    const infraArchitecture: Architecture = {
-      nodes: infraLabels.map((label) => ({ id: label, label, kind: 'external' })),
-      edges: [],
-    };
-    const built = buildFocusedGraph(infraArchitecture, isDesktop);
-    builtNodes = built.nodes.map((node) => ({ ...node, data: { ...node.data, accentColor: infraAccentOf.get(node.id) } }));
-    edges = built.edges;
-  } else if (focusedProject?.architecture) {
-    ({ nodes: builtNodes, edges } = buildFocusedGraph(focusedProject.architecture, isDesktop));
-  } else {
-    ({ nodes: builtNodes, edges } = buildOverviewGraph(projects, isDesktop));
+  // The current focus state's nodes, at whichever breakpoint is asked for -
+  // shared by the actual render below and by both height calculations, so
+  // a resize crossing the sm breakpoint always has the right height ready
+  // for its new layout instead of momentarily reusing the old one's.
+  function buildForBreakpoint(desktop: boolean): { nodes: Node<GraphNodeData>[]; edges: Edge[] } {
+    if (focusedId === 'infra') {
+      const infraArchitecture: Architecture = {
+        nodes: infraLabels.map((label) => ({ id: label, label, kind: 'external' })),
+        edges: [],
+      };
+      const built = buildFocusedGraph(infraArchitecture, desktop);
+      return { nodes: built.nodes.map((node) => ({ ...node, data: { ...node.data, accentColor: infraAccentOf.get(node.id) } })), edges: built.edges };
+    }
+    if (focusedProject?.architecture) {
+      return buildFocusedGraph(focusedProject.architecture, desktop);
+    }
+    return buildOverviewGraph(projects, desktop);
   }
 
+  const { nodes: builtNodes, edges } = buildForBreakpoint(isDesktop);
   const nodes = focusedId ? builtNodes : withDimming(builtNodes, projects, filterTags);
 
-  // Sized from the tallest of every reachable state (the overview, plus each
-  // project's own architecture and infra's) rather than just the current
-  // one, so the container never resizes - and shoves the rest of the page
-  // around - when switching views. A borderless canvas with spare room just
-  // reads as page whitespace, not a mis-sized box, so this costs nothing
-  // visually.
-  const desktopHeight = Math.max(
-    graphHeight(buildOverviewGraph(projects, true).nodes),
-    ...(infraLabels.length > 0
-      ? [graphHeight(buildFocusedGraph({ nodes: infraLabels.map((label) => ({ id: label, label, kind: 'external' })), edges: [] }, true).nodes)]
-      : []),
-    ...projects
-      .filter((project) => project.architecture)
-      .map((project) => graphHeight(buildFocusedGraph(project.architecture!, true).nodes)),
-  );
-  const mobileHeight = Math.max(
-    graphHeight(buildOverviewGraph(projects, false).nodes),
-    ...projects
-      .filter((project) => project.architecture)
-      .map((project) => graphHeight(buildFocusedGraph(project.architecture!, false).nodes)),
-  );
+  // Sized from the current state alone - an architecture with only a
+  // handful of nodes is usually much shorter than the ring/grid overview,
+  // and forcing it into a container tall enough for the overview (or for
+  // another project's deeper architecture) just left most of that height
+  // as empty top/bottom margin. The container transitions its height (see
+  // the className below) so switching states resizes smoothly instead of
+  // jumping.
+  const desktopHeight = graphHeight(isDesktop ? nodes : buildForBreakpoint(true).nodes);
+  const mobileHeight = graphHeight(!isDesktop ? nodes : buildForBreakpoint(false).nodes);
 
   // Mouse: a direct click handler, fires exactly once per click. Architecture
-  // nodes aren't clickable (selectable/focusable are both false on them), so
-  // this only ever fires for a project/infra node in the overview.
+  // nodes render with selectable/focusable both false, but React Flow still
+  // calls onNodeClick for them - without this guard, a click on one (its id
+  // is an architecture-local id like "api", never a project slug) fell
+  // through to goToProject and 404'd on /projects/api.
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
+    if (focusedId) return;
     if (node.id === 'infra') {
       setFocusedId('infra');
       return;
@@ -568,7 +592,7 @@ export default function NodeGraph({ projects }: NodeGraphProps) {
           </button>
         )}
         <div
-          className="static-flow project-graph h-(--graph-height-mobile) sm:h-(--graph-height-desktop)"
+          className="static-flow project-graph h-(--graph-height-mobile) transition-[height] duration-300 sm:h-(--graph-height-desktop)"
           style={
             {
               '--graph-height-mobile': `${mobileHeight}px`,
