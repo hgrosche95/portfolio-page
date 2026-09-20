@@ -366,7 +366,17 @@ function nodeFootprint(node: Node<GraphNodeData>): { width: number; height: numb
   return { width: diameter, height: diameter + LABEL_BLOCK_HEIGHT };
 }
 
-function graphExtent(nodes: Node<GraphNodeData>[]): { width: number; height: number } {
+/**
+ * The graph's true bounding box, label overhang included - unlike React
+ * Flow's own automatic fitView bounds, which only know each node's
+ * rendered DOM size (the circle itself, since the label below it is an
+ * absolutely-positioned child that doesn't enlarge its parent's measured
+ * box). Fitting to that node-only box left the bottom row's labels
+ * poking past the canvas's own overflow:hidden edge while the top still
+ * carried slack, since the box's estimated aspect never quite matched
+ * the actual content. GraphCanvas fits to this box explicitly instead.
+ */
+function graphBounds(nodes: Node<GraphNodeData>[]): { x: number; y: number; width: number; height: number } {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -378,7 +388,12 @@ function graphExtent(nodes: Node<GraphNodeData>[]): { width: number; height: num
     maxX = Math.max(maxX, node.position.x + width);
     maxY = Math.max(maxY, node.position.y + height);
   }
-  return { width: maxX - minX, height: maxY - minY };
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function graphExtent(nodes: Node<GraphNodeData>[]): { width: number; height: number } {
+  const { width, height } = graphBounds(nodes);
+  return { width, height };
 }
 
 /**
@@ -412,17 +427,24 @@ interface GraphCanvasProps {
  * move fit the new layout instead of hard-cutting to it.
  */
 function GraphCanvas({ nodes, edges, onNodeClick }: GraphCanvasProps) {
-  const { fitView } = useReactFlow();
+  const { fitBounds } = useReactFlow();
 
   useEffect(() => {
-    // The container's height is shared across every reachable state (see
-    // desktopHeight) so switching views never resizes it — but that means a
-    // state simpler than the one that sized the container has room to
-    // spare, and fitView fills that room by zooming in past 1:1 rather than
-    // leaving it as slack. Capping at 1 keeps that spare room as
-    // whitespace instead, which is what it already reads as everywhere
-    // else on this page (see graphHeight).
-    fitView({ padding: 0.15, duration: 300, maxZoom: 1 });
+    // fitBounds to our own label-inclusive box (see graphBounds) rather
+    // than fitView's automatic one, which only knows each node's own
+    // rendered circle and would let the bottom row's label poke past the
+    // canvas's overflow:hidden edge.
+    const bounds = graphBounds(nodes);
+    fitBounds(bounds, { padding: 0.1, duration: 300 });
+    // The container's own height animates via a CSS transition (see the
+    // `transition-[height]` class below), which this effect's own fitBounds
+    // call above races: it measures the container's pixel size before that
+    // transition has settled, so it fits to a size the container is still
+    // mid-way through leaving. Re-fitting once the transition has had time
+    // to finish corrects for that - snapped, not animated again, since the
+    // camera is already close to correct by then.
+    const settle = setTimeout(() => fitBounds(bounds, { padding: 0.1, duration: 0 }), 320);
+    return () => clearTimeout(settle);
     // Re-fit whenever the visible layout actually changes (overview vs. a
     // focused architecture, or a desktop/mobile switch) - not on every
     // render, since `nodes`/`edges` are rebuilt fresh each time regardless.
