@@ -1,0 +1,20 @@
+# Weekly update PRs instead of finding vulnerabilities only at the next review.
+# Minor and patch updates are grouped into one PR per ecosystem; major updates
+# come separately because they usually need code changes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directories: [/, /api]
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
