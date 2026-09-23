@@ -2,7 +2,7 @@
 title: "Great Galguti Game"
 summary: "Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen — mit Nutzerkonten, serverseitig validierten Zügen und Live-Spielstand über mehrere Clients hinweg."
 githubRepo: "great_galguti_game"
-techStack: ["TypeScript", "React", "Node.js", "WebSocket", "PostgreSQL", "Prisma", "Docker", "Azure"]
+techStack: ["TypeScript", "React", "Node.js", "WebSocket", "PostgreSQL", "Prisma", "JWT", "Vitest", "Docker", "Azure", "GitHub Actions"]
 order: 1
 kind: fullstack
 liveUrl: "https://blue-sea-08b19cb0f.7.azurestaticapps.net/"
@@ -29,6 +29,6 @@ Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Za
 
 **Warum so gebaut:** Das Repo ist ein Monorepo aus drei unabhängigen Teilprojekten: reine Spiellogik (`src/`, ohne Laufzeit-Abhängigkeiten, mit Vitest getestet), ein Node/Express-Server mit WebSockets für den Live-Betrieb sowie Prisma/PostgreSQL für Accounts, und ein React-19-Frontend. Der Server importiert die Spiellogik aus `src/` direkt, statt sie zu duplizieren. Das heißt, dieselben Funktionen entscheiden, ob ein Zug gültig ist, egal ob im Test, im Bot oder live im Spiel.
 
-**Technisch interessant:** Der Server validiert jeden Zug serverseitig gegen die tatsächliche Hand des Spielers, statt dem Client zu vertrauen. Das schützt vor Betrug mittels eines manipulierten WebSocket-Clients. Jeder Client bekommt außerdem nur seine eigene Hand plus die Kartenanzahl der Gegner übermittelt, aber nie deren tatsächliche Karten. Verdeckte Informationen werden also serverseitig durchgesetzt, nicht nur im UI versteckt. Auth über WebSocket läuft über ein Handshake-Muster mit Timeout, weil Browser beim WS-Handshake keine eigenen Header setzen können.
+**Technisch interessant:** Der Server validiert jeden Zug serverseitig gegen die tatsächliche Hand des Spielers, statt dem Client zu vertrauen. Das schützt vor Betrug mittels eines manipulierten WebSocket-Clients. Jeder Client bekommt außerdem nur seine eigene Hand plus die Kartenanzahl der Gegner übermittelt, aber nie deren tatsächliche Karten. Verdeckte Informationen werden also serverseitig durchgesetzt, nicht nur im UI versteckt. Auth über WebSocket läuft über ein Handshake-Muster mit Timeout, weil Browser beim WS-Handshake keine eigenen Header setzen können. Ungültige Nachrichten, ein Beitritt mitten in einer Partie oder ein Neustart-Befehl während des Spiels können den Server nicht mehr zum Absturz bringen; das decken eigene Robustheitstests ab. Die Auth-Routen haben ein Rate-Limit gegen Passwort-Raten.
 
-**Deployment:** Frontend auf Azure Static Web Apps (inkl. PR-Preview-Umgebungen), der Server als Docker-Container auf Azure Container Apps (OIDC-Deploy statt gespeicherter Zugangsdaten), Datenbank auf Azure Database for PostgreSQL. `main` ist geschützt und verlangt grünes CI (Typecheck + Tests über alle drei Teilprojekte) vor jedem Merge.
+**Deployment:** Frontend auf Azure Static Web Apps (inkl. PR-Preview-Umgebungen), der Server als Docker-Container auf Azure Container Apps (OIDC-Deploy statt gespeicherter Zugangsdaten), Datenbank auf Neon (verwaltetes Postgres). `main` ist geschützt und verlangt grünes CI (Typecheck + Tests über alle drei Teilprojekte) vor jedem Merge.
