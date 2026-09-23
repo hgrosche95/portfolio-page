@@ -1,8 +1,8 @@
 ---
 title: "Agentic Roguelike"
-summary: "Roguelike, dessen Run-Inhalt nicht aus einer festen Drop-Tabelle kommt, sondern von einem LLM-Agenten erzeugt und durch ein Balance-Budget im Tool-Schema eingegrenzt wird — spielbar im Terminal oder im Browser."
+summary: "Roguelike, dessen Run-Inhalt nicht aus einer festen Drop-Tabelle kommt, sondern von einem LLM-Agenten erzeugt und durch ein Balance-Budget im Tool-Schema eingegrenzt wird — spielbar im Terminal oder im Browser. Der Cloud-Agent lässt sich per Konfiguration gegen ein selbst destilliertes 1,5B-Modell tauschen, das lokal läuft und gegen die Cloud-Baseline durchgemessen ist."
 githubRepo: "agentic-rogue-like"
-techStack: ["Python", "Pydantic", "LangGraph", "Groq", "FastAPI", "React", "Vite", "TypeScript", "pytest", "uv", "ruff", "Docker", "Azure", "GitHub Actions"]
+techStack: ["Python", "Pydantic", "LangGraph", "Groq", "LoRA/QLoRA", "Hugging Face", "Ollama", "llama.cpp", "FastAPI", "React", "Vite", "TypeScript", "pytest", "uv", "ruff", "Docker", "Azure", "GitHub Actions"]
 order: 2
 kind: agent
 liveUrl: "https://witty-rock-0f2836f0f.6.azurestaticapps.net/"
@@ -16,7 +16,9 @@ architecture:
     - { id: engine, label: "Run-Engine", kind: backend }
     - { id: mapgen, label: "Prozedurale Node-Map", kind: backend }
     - { id: combat, label: "Kartenbasierter Kampf", kind: backend }
-    - { id: agent, label: "Encounter-Agent (Groq)", kind: external }
+    - { id: agent, label: "Encounter-Agent (LangGraph)", kind: backend }
+    - { id: groq, label: "Groq · gpt-oss-20b (Cloud)", kind: external }
+    - { id: localmodel, label: "Fine-Tune · Qwen2.5-1.5B (lokal, Ollama)", kind: external }
     - { id: models, label: "Pydantic-Modelle", kind: data }
   edges:
     - [cli, engine]
@@ -25,6 +27,8 @@ architecture:
     - [engine, mapgen]
     - [engine, combat]
     - [engine, agent]
+    - [agent, groq]
+    - [agent, localmodel]
     - [engine, models]
 ---
 
@@ -41,6 +45,10 @@ Ein Roguelike in der Tradition von Slay the Spire und FTL, bei dem der Inhalt ei
 
 **Technisch interessant:** Der Zustand eines Durchgangs liegt als Pydantic-Modell vor (`RunState`, `PlayerState`, `MapNode`, `Enemy`); dasselbe Schema dient später als Tool-Schema für den Agenten. Damit validiert dieselbe Typdefinition sowohl das Spiel als auch das, was das Sprachmodell zurückgeben darf; eine ungültige Agenten-Antwort scheitert an der Modellvalidierung statt im Spielzustand zu landen. Der Kampf ist kartenbasiert statt würfelbasiert: kein Energie-System, sondern ein Feld mit 5 Slots als Ressource. Aktionskarten (Angriff, Block, Heilung) brauchen einen freien Slot, wirken sofort und wandern in den Friedhof; permanente Karten belegen ihren Slot dauerhaft und wirken positionsabhängig, etwa "Aktionskarten rechts von mir sind 25% effektiver". Nicht gespielte Handkarten verfallen nicht, sondern bleiben für die nächste Runde erhalten. Terminal und Tests lösen Kämpfe automatisiert (erste bezahlbare Karte in den ersten freien Slot), das Web-UI spielt interaktiv Karte für Karte über eigene Endpunkte. Die Engine, die prozedurale Map-Generierung und der Kampf sind je eigene Module mit eigenen pytest-Suites, sodass sich die Balance des Spiels unabhängig vom Agenten prüfen lässt.
 
+**Eigenes Modell statt Cloud-API:** Der Encounter-Agent lässt sich per Umgebungsvariable von Groqs Cloud-Modell auf ein selbst fein-getuntes Qwen2.5-1.5B umschalten, das quantisiert (GGUF, 935 MB) lokal über Ollama läuft — ohne API-Schlüssel, Netzwerk oder Tageslimit. Interessanter als das Modell ist dabei die Reihenfolge: Zuerst entstand ein eigener Eval-Harness, der den echten Produktions-Graphen gegen ein Held-out-Testset laufen lässt und vier Dinge misst, nämlich strukturelle Gültigkeit, Budget-Einhaltung, Diversität sowie Kosten und Latenz aus tatsächlich gemessenen Tokenzahlen. Erst damit wurde die Groq-Baseline über 310 Aufrufe festgeschrieben, dann 296 Trainingsbeispiele aus Groq destilliert und per QLoRA auf einer kostenlosen Colab-T4 trainiert. Das Messinstrument stand also, bevor es etwas zu messen gab, sonst hätte man dem Vergleich am Ende nicht trauen können.
+
+Der erste Trainingslauf scheiterte: Nur 23 bis 36 Prozent der Antworten waren schemakonform, und fast immer fehlte dasselbe JSON-Feld. Quantisierung, Prompt-Template, Trainingsdaten und Sampling-Temperatur ließen sich einzeln als Ursache ausschließen, unter anderem indem das unveränderte Basismodell dieselbe Messung durchlief und dabei 0 Prozent erreichte. Übrig blieb ein Trainingsfehler, den ein Blick in den Quellcode von `trl` bestätigte: Der Verlust wurde über die gesamte Sequenz gerechnet, zu rund 70 Prozent also über den in jedem Beispiel nahezu identischen Prompt. Der zweite Lauf behebt genau das und erreicht 100 Prozent gültige Antworten über 604 Aufrufe, auf nie gesehenen Settings ebenso wie auf bekannten. Er handelt sich dabei allerdings eine neue Schwäche ein: Die Antwortvielfalt bricht ein, im untersten Schwierigkeitsgrad hatten alle 75 generierten Gegner denselben HP-Wert. Dieser Zielkonflikt steht samt Zahlen in `training/RESULTS.md`, zusammen mit der Einordnung, dass der Kostenvorteil des lokalen Modells nur lokal gilt: In der Azure-Umgebung müsste für das Modell dauerhaft eine Instanz laufen, was die Rechnung gegenüber Groqs Centbeträgen umkehren würde. Deshalb bleibt der Cloud-Agent die Voreinstellung und der Wechsel eine Konfigurationsfrage.
+
 **Deployment:** Backend als Azure Container App (Image über GHCR), Frontend als Azure Static Web App, beide über GitHub Actions bei jedem Push ausgerollt. Die Frontend-Build-Umgebungsvariable für die API-URL wird dabei erst gesetzt, nachdem der Backend-Deploy-Schritt die tatsächliche Container-App-URL dieses Runs kennt, da Vite sie zur Build-Zeit fest in das Bundle einbettet.
 
-**Aktueller Stand:** Der deterministische Kern ist fertig und über beide Frontends vollständig spielbar: eine prozedural erzeugte Node-Map, kartenbasierter Kampf, Event-, Rast- und Shop-Auflösung sowie Sieg- und Niederlagebedingungen, jeweils mit Tests. Der Encounter-Agent ist echt verdrahtet: Ein LangGraph-Agent generiert Gegner über constrained Tool-Calls gegen ein Etagen-Budget, mit Retry bei Budget-Verstoß. Er läuft über Groq, ist aber standardmäßig aus (`ENCOUNTER_AGENT_ENABLED=1`) und fällt auf den statischen Content-Pool zurück, falls die API zum LLM nicht erreichbar ist oder das Budget auch nach drei Versuchen nicht getroffen wird, statt den Run abzubrechen. Das ist bereits in einem echten Lauf beobachtet und zusätzlich per `monkeypatch` deterministisch getestet, damit die Test-Suite schnell und ohne Netzwerkzugriff bleibt. Relikte und Events als weitere agentengenerierte Content-Typen fehlen noch, danach folgen ein Narrator-Agent (verpackt Ergebnisse in Flavor-Text) und ein Difficulty-Agent (passt künftige Budgets an den Run-Verlauf an). Ziel des Projekts ist es, Agentic AI in Python praktisch aufzubauen (LangGraph, Tool-Calling, Validierung strukturierter Ausgaben), als Gegenstück zum TypeScript/NestJS-Agenten im AI Trip Planner.
+**Aktueller Stand:** Der deterministische Kern ist fertig und über beide Frontends vollständig spielbar: eine prozedural erzeugte Node-Map, kartenbasierter Kampf, Event-, Rast- und Shop-Auflösung sowie Sieg- und Niederlagebedingungen, jeweils mit Tests. Der Encounter-Agent ist echt verdrahtet: Ein LangGraph-Agent generiert Gegner über constrained Tool-Calls gegen ein Etagen-Budget, mit Retry bei Budget-Verstoß. Er läuft wahlweise über Groq oder das lokal servierte Fine-Tune, ist aber standardmäßig aus (`ENCOUNTER_AGENT_ENABLED=1`) und fällt auf den statischen Content-Pool zurück, falls das Modell nicht erreichbar ist oder das Budget auch nach drei Versuchen nicht getroffen wird, statt den Run abzubrechen. Das ist bereits in einem echten Lauf beobachtet und zusätzlich per `monkeypatch` deterministisch getestet, damit die Test-Suite schnell und ohne Netzwerkzugriff bleibt. Relikte und Events als weitere agentengenerierte Content-Typen fehlen noch, danach folgen ein Narrator-Agent (verpackt Ergebnisse in Flavor-Text) und ein Difficulty-Agent (passt künftige Budgets an den Run-Verlauf an). Ziel des Projekts ist es, Agentic AI in Python praktisch aufzubauen (LangGraph, Tool-Calling, Validierung strukturierter Ausgaben), als Gegenstück zum TypeScript/NestJS-Agenten im AI Trip Planner.
