@@ -124,26 +124,29 @@ const skillGroups = [
 >
 	<div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
 		<div data-reveal>
-			<div class="flex items-center gap-3">
+			<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
+				Full-Stack-Entwickler · Düsseldorf
+			</p>
+			{/* Name and portrait as one unit. The photo is portrait (3:4) and about as
+			    tall as the two-line name, so the two read as a pair, not as a
+			    thumbnail next to a heading. */}
+			<div class="mt-5 flex items-center gap-5 sm:gap-6">
+				<h1
+					class="font-sans text-5xl leading-[0.95] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl"
+				>
+					{/* Plex Sans rather than the display face: the name reads as a plain,
+					    confident statement; Bricolage stays for section headings. */}
+					Henrik<br />Grosche
+				</h1>
 				<img
 					src="/profile.webp"
 					alt="Porträtfoto von Henrik Grosche"
 					width="96"
-					height="96"
+					height="128"
 					fetchpriority="high"
-					class="size-20 rounded-xl border border-[var(--color-border-strong)] object-cover sm:size-24"
+					class="h-[6.5rem] w-[4.875rem] shrink-0 rounded-xl border border-[var(--color-border-strong)] object-cover object-top sm:h-32 sm:w-24"
 				/>
-				<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
-					Full-Stack-Entwickler · Düsseldorf
-				</p>
 			</div>
-			<h1
-				class="mt-6 font-sans text-5xl leading-[0.95] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl"
-			>
-				{/* Plex Sans rather than the display face: the name reads as a plain,
-				    confident statement; Bricolage stays for section headings. */}
-				Henrik<br />Grosche
-			</h1>
 			<p class="mt-4 text-lg leading-snug text-[var(--color-text)] sm:text-xl">
 				Ich baue Systeme und verbinde sie zu automatisierten Workflows, zunehmend mit{' '}
 				<span class="whitespace-nowrap">KI-Agenten</span>, die man messen und kontrollieren kann.
