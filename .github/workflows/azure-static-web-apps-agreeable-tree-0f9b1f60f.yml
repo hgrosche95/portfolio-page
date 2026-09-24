@@ -12,8 +12,11 @@ on:
 # Never run two deploys at once: Azure rejects parallel infrastructure
 # deployments (DeploymentActive). A second run waits instead of failing; if
 # one is already waiting, the newest replaces it (it contains all commits).
+# Group push and PR events separately: when a PR is closed, GitHub sets
+# github.ref to the base branch. With github.ref alone the cleanup job landed
+# in the same group as the main deploy and replaced it.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
