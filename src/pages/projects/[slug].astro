@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Schematic from '../../components/Schematic.astro';
 import githubStats from '../../data/github-stats.json';
 
 export async function getStaticPaths() {
@@ -114,7 +115,18 @@ const lastPushed = stats
 			</a>
 		</div>
 
-		<div class="project-content mt-8 max-w-none space-y-5 text-base leading-relaxed text-[var(--color-text-muted)]">
+		{
+			entry.data.architecture?.lanes && (
+				<section class="mt-10" aria-labelledby="schematic-title">
+					<h2 id="schematic-title" class="mb-4 text-xl font-semibold tracking-tight text-[var(--color-text)]">
+						So hängt es zusammen
+					</h2>
+					<Schematic architecture={entry.data.architecture} />
+				</section>
+			)
+		}
+
+		<div class="project-content mt-8max-w-none space-y-5 text-base leading-relaxed text-[var(--color-text-muted)]">
 			<Content />
 		</div>
 

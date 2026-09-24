@@ -1,0 +1,180 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { layoutSchematic, NODE_HEIGHT } from '../lib/schematic';
+
+type Architecture = NonNullable<CollectionEntry<'projects'>['data']['architecture']>;
+
+interface Props {
+	architecture: Architecture;
+}
+
+const { architecture } = Astro.props;
+// The schema guarantees lane + row on every node once `lanes` is set, and
+// the page only renders this component when it is.
+const lanes = architecture.lanes ?? [];
+const layout = layoutSchematic({
+	lanes,
+	nodes: architecture.nodes.map((node) => ({ id: node.id, lane: node.lane ?? 0, row: node.row ?? 0 })),
+	edges: architecture.edges,
+});
+
+/** Schema kind → border style. Same four kinds the homepage graph uses. */
+const kindClass = {
+	frontend: 'k-client',
+	backend: 'k-service',
+	external: 'k-external',
+	data: 'k-data',
+} as const;
+
+const TEXT_INSET = 12;
+const top = -30;
+const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
+---
+
+<figure class="schematic" data-xray="Schematic.astro · statisches SVG" data-xray-kind="static">
+	<div class="canvas">
+		<svg viewBox={viewBox} role="img" aria-label={`Architektur: ${architecture.nodes.map((node) => node.label).join(', ')}`}>
+			{
+				layout.lanes.map((lane) => (
+					<text class="lane-title" x={lane.x} y={-12}>
+						{lane.title}
+					</text>
+				))
+			}
+			{layout.dividers.map((x) => <line class="divider" x1={x} y1={-24} x2={x} y2={layout.height + 8} />)}
+			{layout.wires.map((wire) => <path class="wire" data-wire={wire.key} d={wire.d} />)}
+			{layout.wires.flatMap((wire) => wire.vias.map((via) => <circle class="via" cx={via.x} cy={via.y} r="2.4" />))}
+			{
+				architecture.nodes.map((node) => {
+					const box = layout.boxes[node.id];
+					return (
+						<g class:list={['node', kindClass[node.kind]]} data-node={node.id}>
+							<rect x={box.x} y={box.y} width={layout.nodeWidth} height={NODE_HEIGHT} rx="6" />
+							<text x={box.x + TEXT_INSET} y={box.y + 22}>
+								{node.label}
+							</text>
+							{node.sub && (
+								<text class="sub" x={box.x + TEXT_INSET} y={box.y + 39}>
+									{node.sub}
+								</text>
+							)}
+						</g>
+					);
+				})
+			}
+		</svg>
+	</div>
+	<figcaption class="legend">
+		<span><i class="k-client"></i>Client / Aufrufer</span>
+		<span><i class="k-service"></i>eigener Dienst</span>
+		<span><i class="k-external"></i>externer Dienst</span>
+		<span><i class="k-data"></i>Daten</span>
+	</figcaption>
+</figure>
+
+<style>
+	.schematic {
+		margin: 0;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 0.75rem;
+		background-color: var(--color-surface);
+		overflow: hidden;
+	}
+
+	/* The diagram keeps a readable minimum size and scrolls on its own on a
+	   phone, instead of shrinking the labels to nothing or widening the page. */
+	.canvas {
+		overflow-x: auto;
+		padding: 1rem 0.875rem 0.5rem;
+	}
+
+	svg {
+		display: block;
+		width: 100%;
+		min-width: 640px;
+		height: auto;
+	}
+
+	.lane-title {
+		font: 10.5px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		fill: var(--color-text-muted);
+	}
+
+	.divider {
+		stroke: var(--color-border);
+		stroke-dasharray: 2 4;
+	}
+
+	.wire {
+		fill: none;
+		stroke: var(--color-border-strong);
+		stroke-width: 1.4;
+	}
+
+	.via {
+		fill: var(--color-border-strong);
+	}
+
+	.node rect {
+		fill: var(--color-bg);
+		stroke: var(--color-border-strong);
+	}
+
+	.node text {
+		font: 12px var(--font-mono);
+		fill: var(--color-text);
+	}
+
+	.node text.sub {
+		font-size: 10px;
+		fill: var(--color-text-muted);
+	}
+
+	.k-client rect {
+		stroke: var(--color-text);
+	}
+
+	.k-external rect {
+		stroke-dasharray: 4 3;
+	}
+
+	.k-data rect {
+		fill: var(--color-accent-soft);
+		stroke: var(--color-accent);
+	}
+
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem 1.125rem;
+		border-top: 1px dashed var(--color-border-strong);
+		padding: 0.625rem 0.875rem;
+		font: 11px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.legend i {
+		display: inline-block;
+		width: 18px;
+		height: 10px;
+		margin-right: 6px;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 2px;
+		vertical-align: -1px;
+	}
+
+	.legend i.k-client {
+		border-color: var(--color-text);
+	}
+
+	.legend i.k-external {
+		border-style: dashed;
+	}
+
+	.legend i.k-data {
+		border-color: var(--color-accent);
+		background-color: var(--color-accent-soft);
+	}
+</style>
