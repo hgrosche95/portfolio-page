@@ -384,3 +384,73 @@ body::after {
   font-family: var(--font-mono);
   font-size: 0.875em;
 }
+
+/* Tailwind's reset strips list markers; the short-version bullet lists need them back. */
+.project-content ul {
+  display: grid;
+  gap: 0.4rem;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.project-content ul > li {
+  position: relative;
+}
+
+/* A small copper pad as the bullet, matching the headings' solder pads. */
+.project-content ul > li::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: -1.05rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+}
+
+/*
+ * Long write-ups: a short version stays visible, the full text is one click
+ * away instead of gone. Plain <details>, so it opens without JavaScript and
+ * the browser's find-in-page still reaches the folded text.
+ */
+.project-content details.more {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+
+.project-content details.more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-accent);
+}
+
+.project-content details.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.project-content details.more > summary::before {
+  content: "+";
+  font-size: 1rem;
+  transition: transform 0.2s;
+}
+
+.project-content details.more[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+/* The page's space-y-5 only reaches direct children, not the folded ones. */
+.project-content details.more > * + * {
+  margin-top: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-content details.more > summary::before {
+    transition: none;
+  }
+}
