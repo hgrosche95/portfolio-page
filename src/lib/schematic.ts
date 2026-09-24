@@ -18,6 +18,8 @@ const MIN_LANE_GAP = 42;
 const WIRE_SPACING = 10;
 
 export interface SchematicInput {
+  /** Drawing width in SVG units; defaults to VIEW_WIDTH. Narrower for compact spots like the hero. */
+  width?: number;
   lanes: string[];
   nodes: { id: string; lane: number; row: number }[];
   edges: [string, string][];
@@ -78,9 +80,10 @@ function needsElbow(a: Box, b: Box) {
 }
 
 export function layoutSchematic(input: SchematicInput): SchematicLayout {
+  const width = input.width ?? VIEW_WIDTH;
   const laneCount = input.lanes.length;
-  const nodeWidth = round(Math.min(MAX_NODE_WIDTH, (VIEW_WIDTH - (laneCount - 1) * MIN_LANE_GAP) / laneCount));
-  const laneStep = laneCount > 1 ? (VIEW_WIDTH - nodeWidth) / (laneCount - 1) : 0;
+  const nodeWidth = round(Math.min(MAX_NODE_WIDTH, (width - (laneCount - 1) * MIN_LANE_GAP) / laneCount));
+  const laneStep = laneCount > 1 ? (width - nodeWidth) / (laneCount - 1) : 0;
 
   const boxes: Record<string, Box> = {};
   let height = 0;
@@ -106,7 +109,7 @@ export function layoutSchematic(input: SchematicInput): SchematicLayout {
   }
 
   const layout: SchematicLayout = {
-    width: VIEW_WIDTH,
+    width,
     height: round(height),
     nodeWidth,
     laneStep,

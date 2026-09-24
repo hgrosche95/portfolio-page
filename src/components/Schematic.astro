@@ -6,14 +6,25 @@ type Architecture = NonNullable<CollectionEntry<'projects'>['data']['architectur
 
 interface Props {
 	architecture: Architecture;
+	/** Drawing width in SVG units, see layoutSchematic. */
+	width?: number;
+	/**
+	 * Diagram and scenario switch only: no legend, no component details, and
+	 * the step list kept for screen readers but not shown. For the hero,
+	 * where the picture has to carry the point on its own.
+	 */
+	compact?: boolean;
+	/** Text in front of the scenario buttons. */
+	scenarioLabel?: string;
 }
 
-const { architecture } = Astro.props;
+const { architecture, width, compact = false, scenarioLabel = 'Ablauf:' } = Astro.props;
 // The schema guarantees lane + row on every node once `lanes` is set, and
 // the page only renders this component when it is.
 const lanes = architecture.lanes ?? [];
 const scenarios = architecture.scenarios ?? [];
 const layout = layoutSchematic({
+	width,
 	lanes,
 	nodes: architecture.nodes.map((node) => ({ id: node.id, lane: node.lane ?? 0, row: node.row ?? 0 })),
 	edges: architecture.edges,
@@ -58,11 +69,16 @@ const top = -30;
 const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 ---
 
-<figure class="schematic" data-schematic data-xray="Schematic.astro · statisches SVG + Inline-Skript" data-xray-kind="static">
+<figure
+	class:list={['schematic', { compact }]}
+	data-schematic
+	data-xray="Schematic.astro · statisches SVG + Inline-Skript"
+	data-xray-kind="static"
+>
 	{
 		scenarios.length > 0 && (
 			<div class="head" data-scenario-buttons hidden>
-				<span>Ablauf:</span>
+				<span>{scenarioLabel}</span>
 				{scenarios.map((scenario, i) => (
 					<button type="button" data-play={i} aria-pressed={i === 0 ? 'true' : 'false'}>
 						{scenario.name}
@@ -115,29 +131,35 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 					<path class="probe" data-probe d="M0 0"></path>
 				</svg>
 			</div>
-			<div class="legend">
-				{
-					Object.values(kinds).map((kind) => (
-						<span>
-							<i class={kind.className} />
-							{kind.label}
-						</span>
-					))
-				}
-			</div>
+			{
+				!compact && (
+					<div class="legend">
+						{Object.values(kinds).map((kind) => (
+							<span>
+								<i class={kind.className} />
+								{kind.label}
+							</span>
+						))}
+					</div>
+				)
+			}
 			{/* Under the diagram rather than beside it: on wide screens this
 			    fills the space next to the (taller) step list. */}
-			<div class="component" data-component hidden aria-live="polite">
-				<h3>Komponente</h3>
-				<p class="name" data-c="label"></p>
-				<p class="meta" data-c="meta"></p>
-				<p class="description" data-c="description"></p>
-			</div>
+			{
+				!compact && (
+					<div class="component" data-component hidden aria-live="polite">
+						<h3>Komponente</h3>
+						<p class="name" data-c="label"></p>
+						<p class="meta" data-c="meta"></p>
+						<p class="description" data-c="description"></p>
+					</div>
+				)
+			}
 		</div>
 
 		{
 			scenarios.length > 0 && (
-				<div class="side">
+				<div class:list={['side', { 'sr-only': compact }]}>
 					{/* Without JS every scenario is simply a readable list. */}
 					{scenarioSteps.map((steps, i) => (
 						<section class="steps" data-scenario={i}>
@@ -160,9 +182,12 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 </figure>
 
 <script is:inline>
-	(function () {
-		const figure = document.querySelector('[data-schematic]');
-		if (!figure || figure.dataset.ready) return;
+	// Emitted once per component instance, so every copy of this script
+	// wires up all schematics on the page and the ready flag keeps a second
+	// copy from doing it twice (the homepage hero and a project page could
+	// in principle share a page).
+	document.querySelectorAll('[data-schematic]').forEach(function (figure) {
+		if (figure.dataset.ready) return;
 		figure.dataset.ready = 'true';
 
 		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -229,6 +254,8 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 			buttons.forEach(function (button, i) {
 				button.setAttribute('aria-pressed', String(i === index));
 			});
+			// Lets the surrounding page react, e.g. the hero's metrics.
+			figure.dispatchEvent(new CustomEvent('schematic:play', { detail: { index: index } }));
 			panels.forEach(function (panel, i) {
 				panel.hidden = i !== index;
 			});
@@ -313,7 +340,7 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 			});
 		});
 		play(current);
-	})();
+	});
 </script>
 
 <style>
@@ -632,6 +659,27 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 			border-top: 0;
 			border-left: 1px dashed var(--color-border-strong);
 		}
+	}
+
+	/* Compact: always shown whole, scaled to fit - in the hero the rightmost
+	   column (the swappable model) is the point, so it must never scroll out
+	   of view. Slightly larger text makes up for the scaling on phones. The
+	   screen-reader-only step list must not claim a grid column; higher
+	   specificity than the container query. */
+	.compact .body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.compact svg {
+		min-width: 0;
+	}
+
+	.compact .node text {
+		font-size: 13px;
+	}
+
+	.compact .node text.sub {
+		font-size: 11px;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

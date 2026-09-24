@@ -36,6 +36,14 @@ describe('layoutSchematic', () => {
     expect(four.nodeWidth).toBeLessThan(three.nodeWidth);
   });
 
+  it('fits a narrower drawing when given a width, with narrower boxes', () => {
+    const wide = layoutSchematic(threeLanes);
+    const narrow = layoutSchematic({ ...threeLanes, width: 520 });
+    expect(narrow.width).toBe(520);
+    expect(narrow.nodeWidth).toBeLessThan(wide.nodeWidth);
+    expect(narrow.boxes.db.x + narrow.nodeWidth).toBeCloseTo(520);
+  });
+
   it('is exactly as tall as its lowest box', () => {
     const layout = layoutSchematic(threeLanes);
     expect(layout.height).toBeCloseTo(1.3 * ROW_PITCH + NODE_HEIGHT);
