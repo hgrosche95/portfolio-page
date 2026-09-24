@@ -8,6 +8,20 @@ kind: agent
 liveUrl: "https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestcentral.azurecontainerapps.io/health"
 liveLabel: "API-Health-Check ansehen"
 liveStatusCheck: true
+hosting: "Container Apps · Bicep"
+decisions:
+  - topic: "Zugang"
+    rejected: ["nur MCP", "nur REST"]
+    chosen: "MCP für Claude, REST für n8n"
+    reason: "MCP, wo ein Modell die Tools selbst entdeckt. REST, wo der Ablauf ohnehin feststeht."
+  - topic: "Leitplanken"
+    rejected: ["nur eine Prompt-Regel"]
+    chosen: "Validierungs-Loop mit Retry"
+    reason: "Das Modell erfand trotz Regel gelegentlich Zahlen. Der Loop prüft deterministisch, höchstens dreimal."
+  - topic: "Deploy-Rechte"
+    rejected: ["subscription-weit"]
+    chosen: "eigene Resource Group"
+    reason: "Die Federated Credential darf genau diese eine Gruppe verwalten, sonst nichts."
 architecture:
   lanes: ["Aufrufer", "Dienst", "Extern"]
   nodes:

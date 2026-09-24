@@ -8,6 +8,16 @@ kind: fullstack
 liveUrl: "https://blue-sea-08b19cb0f.7.azurestaticapps.net/"
 liveLabel: "Jetzt spielen"
 liveStatusCheck: true
+hosting: "Static Web Apps · Container Apps · Neon"
+decisions:
+  - topic: "Spiellogik"
+    rejected: ["im Server duplizieren"]
+    chosen: "als eigenes Paket importieren"
+    reason: "Test, Bot und Live-Spiel entscheiden mit derselben Funktion, ob ein Zug gültig ist."
+  - topic: "Verdeckte Karten"
+    rejected: ["nur im UI verstecken"]
+    chosen: "serverseitig zurückhalten"
+    reason: "Jeder Client bekommt nur die eigene Hand. Ein manipulierter WebSocket-Client sieht trotzdem keine fremden Karten."
 architecture:
   lanes: ["Clients", "Server", "Daten"]
   nodes:

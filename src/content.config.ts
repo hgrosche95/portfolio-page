@@ -70,6 +70,23 @@ const projects = defineCollection({
      * in sync by hand when this flag changes.
      */
     liveStatusCheck: z.boolean().optional(),
+    /** Where it runs, one line for the project page's data sheet. */
+    hosting: z.string().optional(),
+    /**
+     * Architecture decisions shown beside the write-up: what was chosen, what
+     * was considered and dropped, and why. Structured rather than prose so
+     * the rejected options can be shown as such, not buried in a sentence.
+     */
+    decisions: z
+      .array(
+        z.object({
+          topic: z.string(),
+          rejected: z.array(z.string()).default([]),
+          chosen: z.string(),
+          reason: z.string(),
+        }),
+      )
+      .optional(),
     /**
      * Optional internal architecture, unfolded from the project's node in the
      * homepage graph. Kept here rather than in the component so that adding a

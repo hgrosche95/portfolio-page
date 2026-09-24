@@ -5,6 +5,24 @@ githubRepo: "portfolio-page"
 techStack: ["Astro", "TypeScript", "React", "Tailwind CSS", "MDX", "Azure", "GitHub Actions"]
 order: 6
 kind: static
+hosting: "Static Web Apps · Free Tier"
+decisions:
+  - topic: "Framework"
+    rejected: ["Next.js", "Vanilla + Vite"]
+    chosen: "Astro mit React-Islands"
+    reason: "Fast alles ist statischer Inhalt. React lädt nur dort, wo es interaktiv wird."
+  - topic: "Pipeline-Grafik"
+    rejected: ["echter Live-Ticker"]
+    chosen: "echte Daten, als Animation abgespielt"
+    reason: "Deploys sind selten. Ein Ticker stünde meistens still."
+  - topic: "Demo-Status"
+    rejected: ["Fetch aus dem Browser"]
+    chosen: "Azure Function, server-to-server"
+    reason: "Im Browser blockt CORS, und eine Ablehnung sieht aus wie ein toter Server. Ziel-URLs kommen nur aus einer Allowlist."
+  - topic: "Domain"
+    rejected: ["DuckDNS", ".tk / .ml"]
+    chosen: "is-a.dev"
+    reason: "Kostenlos, aber gedacht für Entwickler-Portfolios, statt nach Heimserver oder Spam-Ruf auszusehen."
 architecture:
   lanes: ["Build & Browser", "Azure", "Extern"]
   nodes:

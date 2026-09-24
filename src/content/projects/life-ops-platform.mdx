@@ -5,6 +5,20 @@ githubRepo: "life-ops-platform"
 techStack: ["n8n", "Docker", "Bicep", "GitHub Actions"]
 order: 7
 kind: orchestration
+hosting: "n8n lokal · Dienste auf Azure"
+decisions:
+  - topic: "Zugang"
+    rejected: ["überall MCP"]
+    chosen: "MCP für Claude, REST für n8n"
+    reason: "Feste Workflows brauchen keine Tool-Entdeckung. MCP wäre dort nur Overhead."
+  - topic: "Wissensbasis"
+    rejected: ["eine Vektordatenbank pro Dienst"]
+    chosen: "eine Instanz mit collection-Feld"
+    reason: "Getrennt wird über den Filter in der SQL-Abfrage, nie vermischt."
+  - topic: "Zustand"
+    rejected: ["fragilen State reparieren"]
+    chosen: "zustandslos + Hash-Vergleich"
+    reason: "n8n persistierte Static Data zwischen Läufen nicht, belegt über sechs Produktionsläufe. Der Hash-Vergleich war ohnehin schon da."
 architecture:
   lanes: ["Aufrufer", "Dienste", "Geteilt"]
   nodes:

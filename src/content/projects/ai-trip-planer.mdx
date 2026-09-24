@@ -8,6 +8,20 @@ kind: agent
 liveUrl: "https://witty-pond-0504bdc0f.7.azurestaticapps.net"
 liveLabel: "Live-Demo öffnen"
 liveStatusCheck: true
+hosting: "Bicep · Container Apps · Neon"
+decisions:
+  - topic: "Wissenssuche"
+    rejected: ["feste Vorschaltsuche"]
+    chosen: "Suche als Tool"
+    reason: "Das Modell entscheidet, wann eine Faktenfrage vorliegt, statt jede Nachricht durch die Suche zu schicken."
+  - topic: "Sprachgrenze"
+    rejected: ["RAG als Bibliothek im Node-Backend"]
+    chosen: "eigener FastAPI-Service"
+    reason: "Das Embedding-Ökosystem lebt in Python, die Agent-Logik in TypeScript. Dazwischen liegt eine dokumentierte HTTP-Schnittstelle."
+  - topic: "Löschen"
+    rejected: ["als MCP-Tool"]
+    chosen: "nur per REST"
+    reason: "Kein Modell soll autonom und unwiderruflich Daten löschen können."
 architecture:
   lanes: ["Clients", "Dienste", "Extern & Daten"]
   nodes:

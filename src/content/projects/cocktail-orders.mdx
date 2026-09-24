@@ -8,6 +8,16 @@ kind: fullstack
 liveUrl: "https://kind-ground-07fd6390f.6.azurestaticapps.net/"
 liveLabel: "Live testen"
 liveStatusCheck: true
+hosting: "Bicep · Container Apps"
+decisions:
+  - topic: "LLM-Einsatz"
+    rejected: ["offener Chat"]
+    chosen: "ein Aufruf, Bestätigung im Formular"
+    reason: "Der Freitext wird zugeordnet, bestellt wird immer über das normale Formular, nie direkt aus dem Freitext."
+  - topic: "Synchronisierung"
+    rejected: ["vollen State über den Socket"]
+    chosen: "Signal + REST"
+    reason: "Ein Roundtrip mehr, dafür deutlich einfacher und weniger fehleranfällig."
 architecture:
   lanes: ["Clients", "Server", "Extern & Daten"]
   nodes:

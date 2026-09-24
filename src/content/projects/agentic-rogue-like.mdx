@@ -8,6 +8,20 @@ kind: agent
 liveUrl: "https://witty-rock-0f2836f0f.6.azurestaticapps.net/"
 liveLabel: "Jetzt spielen"
 liveStatusCheck: true
+hosting: "Container Apps · Static Web Apps"
+decisions:
+  - topic: "Reihenfolge"
+    rejected: ["Agent zuerst"]
+    chosen: "Kern-Loop ohne LLM zuerst"
+    reason: "Die Balance ist prüfbar, bevor ein Modell Inhalte erzeugt, und die Grenze zwischen KI und fester Spiellogik bleibt sichtbar."
+  - topic: "Messen"
+    rejected: ["erst trainieren, dann messen"]
+    chosen: "Eval-Harness vor dem Fine-Tuning"
+    reason: "Die Groq-Baseline über 310 Aufrufe stand fest, bevor es etwas zu vergleichen gab. Sonst hätte man dem Vergleich nicht trauen können."
+  - topic: "Standardmodell"
+    rejected: ["lokales Modell in Azure"]
+    chosen: "Groq bleibt Standard"
+    reason: "Eine dauerhaft laufende Instanz würde die Kostenrechnung umkehren. Der Wechsel bleibt eine Konfigurationsfrage."
 architecture:
   lanes: ["Clients", "Schnittstelle", "Spielkern", "KI"]
   nodes:
