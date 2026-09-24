@@ -71,85 +71,89 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 			</div>
 		)
 	}
-	<div class="canvas">
-		<svg viewBox={viewBox} role="img" aria-label={`Architektur: ${architecture.nodes.map((node) => node.label).join(', ')}`}>
-			{
-				layout.lanes.map((lane) => (
-					<text class="lane-title" x={lane.x} y={-12}>
-						{lane.title}
-					</text>
-				))
-			}
-			{layout.dividers.map((x) => <line class="divider" x1={x} y1={-24} x2={x} y2={layout.height + 8} />)}
-			{layout.wires.map((wire) => <path class="wire" data-wire={wire.key} d={wire.d} />)}
-			{layout.wires.flatMap((wire) => wire.vias.map((via) => <circle class="via" cx={via.x} cy={via.y} r="2.4" />))}
-			{
-				architecture.nodes.map((node) => {
-					const box = layout.boxes[node.id];
-					return (
-						<g
-							class:list={['node', kinds[node.kind].className]}
-							data-node={node.id}
-							data-label={node.label}
-							data-meta={[node.sub, kinds[node.kind].label].filter(Boolean).join(' · ')}
-							data-description={node.description ?? ''}
-						>
-							{/* Native tooltip, so the description is reachable even without JS. */}
-							{node.description && <title>{`${node.label}: ${node.description}`}</title>}
-							<rect x={box.x} y={box.y} width={layout.nodeWidth} height={NODE_HEIGHT} rx="6" />
-							<text x={box.x + TEXT_INSET} y={box.y + 22}>
-								{node.label}
+	<div class="body">
+		<div class="stage">
+			<div class="canvas">
+				<svg viewBox={viewBox} role="img" aria-label={`Architektur: ${architecture.nodes.map((node) => node.label).join(', ')}`}>
+					{
+						layout.lanes.map((lane) => (
+							<text class="lane-title" x={lane.x} y={-12}>
+								{lane.title}
 							</text>
-							{node.sub && (
-								<text class="sub" x={box.x + TEXT_INSET} y={box.y + 39}>
-									{node.sub}
-								</text>
-							)}
-						</g>
-					);
-				})
-			}
-			<circle class="packet" data-packet r="4" cx="-40" cy="-40"></circle>
-			<path class="probe" data-probe d="M0 0"></path>
-		</svg>
-	</div>
-	<figcaption class="legend">
-		{
-			Object.values(kinds).map((kind) => (
-				<span>
-					<i class={kind.className} />
-					{kind.label}
-				</span>
-			))
-		}
-	</figcaption>
-
-	{
-		scenarios.length > 0 && (
-			<div class="side">
-				{/* Without JS every scenario is simply a readable list. */}
-				{scenarioSteps.map((steps, i) => (
-					<section class="steps" data-scenario={i}>
-						<h3>{scenarios[i].name}</h3>
-						<ol>
-							{steps.map((step) => (
-								<li data-d={step.d} data-wire={step.wire} data-from={step.from} data-to={step.to} data-x={step.x} data-y={step.y}>
-									<b>{step.title}</b>
-									{step.text && <span>{step.text}</span>}
-								</li>
-							))}
-						</ol>
-					</section>
-				))}
-				<div class="component" data-component hidden aria-live="polite">
-					<h3>Komponente</h3>
-					<p class="name" data-c="label"></p>
-					<p class="meta" data-c="meta"></p>
-					<p class="description" data-c="description"></p>
-				</div>
+						))
+					}
+					{layout.dividers.map((x) => <line class="divider" x1={x} y1={-24} x2={x} y2={layout.height + 8} />)}
+					{layout.wires.map((wire) => <path class="wire" data-wire={wire.key} d={wire.d} />)}
+					{layout.wires.flatMap((wire) => wire.vias.map((via) => <circle class="via" cx={via.x} cy={via.y} r="2.4" />))}
+					{
+						architecture.nodes.map((node) => {
+							const box = layout.boxes[node.id];
+							return (
+								<g
+									class:list={['node', kinds[node.kind].className]}
+									data-node={node.id}
+									data-label={node.label}
+									data-meta={[node.sub, kinds[node.kind].label].filter(Boolean).join(' · ')}
+									data-description={node.description ?? ''}
+								>
+									{/* Native tooltip, so the description is reachable even without JS. */}
+									{node.description && <title>{`${node.label}: ${node.description}`}</title>}
+									<rect x={box.x} y={box.y} width={layout.nodeWidth} height={NODE_HEIGHT} rx="6" />
+									<text x={box.x + TEXT_INSET} y={box.y + 22}>
+										{node.label}
+									</text>
+									{node.sub && (
+										<text class="sub" x={box.x + TEXT_INSET} y={box.y + 39}>
+											{node.sub}
+										</text>
+									)}
+								</g>
+							);
+						})
+					}
+					<circle class="packet" data-packet r="4" cx="-40" cy="-40"></circle>
+					<path class="probe" data-probe d="M0 0"></path>
+				</svg>
 			</div>
-		)
-	}
+			<div class="legend">
+				{
+					Object.values(kinds).map((kind) => (
+						<span>
+							<i class={kind.className} />
+							{kind.label}
+						</span>
+					))
+				}
+			</div>
+		</div>
+
+		{
+			scenarios.length > 0 && (
+				<div class="side">
+					{/* Without JS every scenario is simply a readable list. */}
+					{scenarioSteps.map((steps, i) => (
+						<section class="steps" data-scenario={i}>
+							<h3>{scenarios[i].name}</h3>
+							<ol>
+								{steps.map((step) => (
+									<li data-d={step.d} data-wire={step.wire} data-from={step.from} data-to={step.to} data-x={step.x} data-y={step.y}>
+										<b>{step.title}</b>
+										{step.text && <span>{step.text}</span>}
+									</li>
+								))}
+							</ol>
+						</section>
+					))}
+					<div class="component" data-component hidden aria-live="polite">
+						<h3>Komponente</h3>
+						<p class="name" data-c="label"></p>
+						<p class="meta" data-c="meta"></p>
+						<p class="description" data-c="description"></p>
+					</div>
+				</div>
+			)
+		}
+	</div>
 	<span hidden data-first-node={firstService?.id}></span>
 </figure>
 
@@ -311,12 +315,27 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 </script>
 
 <style>
+	/*
+	 * Laid out by its own width, not the viewport's: the same component can
+	 * sit in a wide page column or a narrow one and still pick the right
+	 * arrangement. Wide → steps beside the diagram; medium → steps and
+	 * component details side by side underneath; narrow → all stacked.
+	 */
 	.schematic {
+		container-type: inline-size;
 		margin: 0;
 		border: 1px solid var(--color-border-strong);
 		border-radius: 0.75rem;
 		background-color: var(--color-surface);
 		overflow: hidden;
+	}
+
+	.body {
+		display: grid;
+	}
+
+	.stage {
+		min-width: 0;
 	}
 
 	.head {
@@ -587,9 +606,27 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 		color: var(--color-text-muted);
 	}
 
-	@media (max-width: 640px) {
+	@container (max-width: 639px) {
 		.side {
 			grid-template-columns: 1fr;
+		}
+
+		.component {
+			border-left: 0;
+			border-top: 1px dashed var(--color-border-strong);
+		}
+	}
+
+	@container (min-width: 960px) {
+		.body {
+			grid-template-columns: minmax(0, 1fr) 300px;
+		}
+
+		.side {
+			grid-template-columns: 1fr;
+			align-content: start;
+			border-top: 0;
+			border-left: 1px dashed var(--color-border-strong);
 		}
 
 		.component {

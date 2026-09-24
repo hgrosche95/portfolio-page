@@ -36,7 +36,9 @@ const lastPushed = stats
 	description={entry.data.summary}
 	image={`/og/${entry.id}.png`}
 >
-	<article class="mx-auto max-w-3xl px-4 pt-12 pb-20">
+	<!-- Same width as the header, wide enough for the schematic; running text
+	     below keeps its own reading width. -->
+	<article class="mx-auto max-w-5xl px-4 pt-12 pb-20">
 		<a
 			href="/#projects"
 			class="font-mono text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
@@ -126,7 +128,7 @@ const lastPushed = stats
 			)
 		}
 
-		<div class="project-content mt-8max-w-none space-y-5 text-base leading-relaxed text-[var(--color-text-muted)]">
+		<div class="project-content mt-8 max-w-3xl space-y-5 text-base leading-relaxed text-[var(--color-text-muted)]">
 			<Content />
 		</div>
 
