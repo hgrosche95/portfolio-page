@@ -71,10 +71,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
+/* In the base layer so a utility class (e.g. font-sans on the hero name)
+   can still override it; unlayered, it would beat every Tailwind utility. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
 }
 
 /*
