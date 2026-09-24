@@ -17,12 +17,26 @@ designed with layered depth rather than as two separate versions.
 
 ## Signature technical elements
 
-**Functional node-graph as site navigation.** The homepage centerpiece is an animated
-node-graph / flow-diagram, styled after the kind of system-integration work described in the
-CV (connecting Outlook, Nextcloud, Advoware, and Brevo into one automated workflow). It's not
-decorative — clicking a node routes to that project's page. This was chosen over a generic
-hero animation because it demonstrates the actual skill being claimed (connecting systems)
-rather than just looking impressive.
+**Interactive architecture schematics, one per project.** Every project page shows its
+architecture as a circuit-style schematic with playable scenarios ("Faktenfrage mit Quellen",
+"Zug spielen"): a packet travels the real path through the system while a step list narrates it,
+and clicking a component explains what it does. This demonstrates the skill being claimed
+(designing and connecting systems) on each project's own terms, instead of describing it.
+
+Built without a diagram framework: layout and wire routing live in a small pure module
+(`src/lib/schematic.ts`, unit-tested), the SVG is rendered at build time, and every packet path
+is precomputed into the HTML so a few lines of inline script only move a dot along it. Project
+pages therefore still ship no JS bundle. The frontmatter schema cross-checks the data (edges and
+scenario steps must reference real nodes and existing connections), so a typo breaks the build
+instead of silently producing a packet that goes nowhere. The homepage hero reuses the same
+component in a compact form for the one system that best shows the AI side: the roguelike's
+encounter agent, switchable between the cloud model and the self-distilled local one.
+
+This replaced the original signature element, an animated node-graph (`@xyflow/react`) as
+homepage navigation where clicking a node opened the project. It showed *that* projects exist
+and how they share infrastructure, but not how any single one works, and it duplicated the card
+list beneath it. The homepage now uses a project index instead (see below); the schematics
+carry the "systems" story where it has substance.
 
 **Live CI/CD pipeline visualization.** Rather than a static description of "I have CI/CD
 experience," the site pulls real data from its own last GitHub Actions deploy (commit, status,
@@ -31,9 +45,15 @@ and rejected — deploys are infrequent, so a "live" widget would sit static mos
 read as boring rather than impressive. Instead, the real data replays as an animation on every
 page load: honest (no fabricated data) but always visually alive.
 
-**Live GitHub API data for projects.** Project cards pull live stats (stars, last commit,
-language) from the GitHub API rather than being hardcoded, layered on top of hand-written
-"why/how" explanations for each project.
+**Live GitHub API data for projects.** The project index and pages pull live stats (last
+commit, language) from the GitHub API rather than being hardcoded, layered on top of
+hand-written "why/how" explanations for each project. Star counts were dropped from display:
+on repos this young they only ever read "0", which says nothing useful.
+
+**Decisions as structured data.** Each project's frontmatter lists its key architecture
+decisions as `topic / rejected / chosen / reason`, rendered as margin notes beside the
+write-up with the rejected options struck through. Structured rather than prose so the
+alternatives that were weighed stay visible at a glance instead of being buried in a paragraph.
 
 **Reachability check for scale-to-zero demos, done server-to-server.** Two of the live project
 demos run their backend on Azure Container Apps with scale-to-zero: after a few idle minutes the
@@ -49,27 +69,28 @@ slug, never from the request: accepting a caller-supplied URL here would turn a 
 check into an open fetch proxy. Results are cached briefly (20s) so several visitors hitting a
 project page at once don't each trigger their own probe against someone else's server.
 
-**Project filter: derived tags, not a hand-picked list; dims the graph, hides the list.** The
-homepage's tag filter only offers tags that recur across at least two projects, computed from the
-same `techStack` frontmatter the cards and node-graph already read — a tag only one project has
-would be a filter with exactly one possible result, which isn't a filter, just a relabelled link
-to that project. The card list and the graph react differently to a non-matching project on
-purpose: the list hides it outright (it's explicitly framed as "the same projects as a list"),
-while the graph dims it instead of removing it, because the graph is also the structural map of
-shared infrastructure (which projects share Azure, Docker, GitHub Actions) — removing a node
-would force a re-fit/reflow of the whole layout for what is otherwise a purely cosmetic change.
+**Project index on the homepage.** One row per project (kind, live status, stack, last push),
+each expandable to its schematic, its most important decision and its links. Built on
+`<details>`, so expanding works without any JavaScript; the first row starts open so the
+page shows what a row contains without a click. The schematics in the index are static on
+purpose: seven animated diagrams on one page would be noise, the project pages play them.
+
+**Project filter: derived tags, not a hand-picked list.** The homepage's tag filter only offers
+tags that recur across at least two projects, computed from the same `techStack` frontmatter the
+index already reads — a tag only one project has would be a filter with exactly one possible
+result, which isn't a filter, just a relabelled link to that project.
 
 ## Content & structure
 
 **Multi-page, not single-page scroll.** Considered a single scrolling page with anchor links,
-chose separate routes per project (`/projects/[slug]`) instead. Reasoning: the node-graph
-navigation needs somewhere to route *to*, and each project's "why/how" explanation needs room
-to be substantive rather than squeezed into a scroll section.
+chose separate routes per project (`/projects/[slug]`) instead. Reasoning: each project's
+schematic, decisions and "why/how" explanation need room to be substantive rather than squeezed
+into a scroll section.
 
 **Every project repo gets featured**, not a curated subset — six as of this writing (the two
 game/agent projects, AI Trip Planner, Cocktail Orders, the job-application Claude Code skill,
 and this site itself). Adding one is a single MDX file under `src/content/projects/`; title,
-tech stack, GitHub API card data, node-graph position and optional architecture diagram all come
+tech stack, GitHub API data, schematic, scenarios and decisions all come
 from that file's frontmatter, so extending the site doesn't require touching component code (see
 `src/content.config.ts`). Each project's "why/how" write-up is drafted from actually reading that
 repo's code, not just its README or repo name — a project's own README turned out to be stale on
@@ -140,6 +161,10 @@ Astro + React islands was chosen as the option that doesn't force a trade-off be
 things that actually mattered here: proving React competence, and being fast. It still deploys
 to Azure Static Web Apps on the free tier exactly as planned, with routing for the per-project
 pages intact.
+
+Later, the node-graph island was replaced by build-time SVG schematics (see Signature technical
+elements), leaving the CI/CD widget as the only React island. Because React was only ever loaded
+where it was used, dropping the graph was a deletion, not a rewrite of the page.
 
 ## Hosting & deployment
 

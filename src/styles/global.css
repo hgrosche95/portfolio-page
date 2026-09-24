@@ -107,11 +107,16 @@ body::before {
   display: none;
 }
 
-/* Measured against the widest container on the site (the project graph's
-   max-w-7xl), so the line never runs through content on any page. */
-@media (min-width: 85rem) {
+/* Measured against the widest container on the site (max-w-5xl, 64rem),
+   so the line never runs through content on any page. If a wider section
+   is ever added, raise --trace-container and the breakpoint together. */
+:root {
+  --trace-container: 64rem;
+}
+
+@media (min-width: 72rem) {
   .trace {
-    --trace-x: calc((100% - 80rem) / 2 - 1.25rem);
+    --trace-x: calc((100% - var(--trace-container)) / 2 - 1.25rem);
     display: block;
     position: absolute;
     top: 0;
@@ -135,11 +140,14 @@ body::before {
   /*
    * From the trace to the heading's own solder pad. The heading's left edge
    * is its container's content edge, (100% - container) / 2 + 1rem; the
-   * trace's centre is (100% - 80rem) / 2 - 1.25rem + 1px. Their difference
-   * no longer depends on the viewport, which is what lets plain CSS draw it.
+   * trace's centre is (100% - trace-container) / 2 - 1.25rem + 1px. Their
+   * difference no longer depends on the viewport, which is what lets plain
+   * CSS draw it. A heading in a narrower container can set --container-width.
    */
   .trace-branch {
-    --branch-start: calc((var(--container-width, 64rem) - 80rem) / 2 - 2.25rem + 1px);
+    --branch-start: calc(
+      (var(--container-width, var(--trace-container)) - var(--trace-container)) / 2 - 2.25rem + 1px
+    );
     display: block;
     position: absolute;
     top: 50%;
@@ -359,27 +367,14 @@ body::after {
 }
 
 /*
- * Both graphs on this site (deploy pipeline, project node graph) have their
- * own drag/zoom/pan disabled — the project graph only needs taps to
- * navigate. But xyflow's pane sets touch-action: none unconditionally so it
- * can own pinch and drag gestures, which also swallows a plain vertical
- * swipe and makes the page feel stuck when a mobile scroll starts over one
- * of them. Since neither actually needs touch gestures, hand vertical
- * swipes back to the page; tap-to-navigate is unaffected by touch-action.
+ * The deploy-pipeline graphic has its own drag/zoom/pan disabled. But
+ * xyflow's pane sets touch-action: none unconditionally so it can own pinch
+ * and drag gestures, which also swallows a plain vertical swipe and makes
+ * the page feel stuck when a mobile scroll starts over it. It needs no touch
+ * gestures, so hand vertical swipes back to the page.
  */
 .static-flow .react-flow__pane {
   touch-action: pan-y !important;
-}
-
-/*
- * Thinner, theme-coloured connector lines for the project graph only - xyflow's
- * default edge stroke is a flat grey that reads as unstyled next to the rest
- * of the page. Scoped to .project-graph rather than .static-flow so the
- * unrelated deploy-pipeline graphic keeps its own look.
- */
-.project-graph .react-flow__edge-path {
-  stroke: var(--color-border-strong);
-  stroke-width: 1.25px;
 }
 
 .project-content code {

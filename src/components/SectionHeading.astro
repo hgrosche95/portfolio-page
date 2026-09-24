@@ -11,16 +11,9 @@ interface Props {
 	subtitle?: string;
 	/** Appended to the subtitle, but only from the `sm` breakpoint up. */
 	desktopHint?: string;
-	/**
-	 * Max width of the section this heading sits in. The branch to the margin
-	 * trace is drawn in CSS from the difference between this and the widest
-	 * container, so it has to know which one it is in.
-	 */
-	container?: '5xl' | '7xl';
 }
 
-const { eyebrow, title, subtitle, desktopHint, container = '5xl' } = Astro.props;
-const containerWidth = container === '7xl' ? '80rem' : '64rem';
+const { eyebrow, title, subtitle, desktopHint } = Astro.props;
 ---
 
 <div data-reveal>
@@ -31,10 +24,10 @@ const containerWidth = container === '7xl' ? '80rem' : '64rem';
 			</p>
 		)
 	}
+	{/* data-trace-stop + .trace-branch: hangs this heading off the margin trace (see global.css). */}
 	<h2
 		class="relative mt-2 flex items-center gap-3 text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl"
 		data-trace-stop
-		style={`--container-width: ${containerWidth}`}
 	>
 		<span class="trace-branch" aria-hidden="true"></span>
 		<span class="solder-pad" aria-hidden="true"></span>

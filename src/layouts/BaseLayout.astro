@@ -12,7 +12,7 @@ interface Props {
 
 const {
 	title,
-	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit Node-Graph-Navigation, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
+	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit interaktiven Architektur-Schaltplänen, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
 	// Generated at build time by scripts/generate-og-images.ts. The portrait is
 	// deliberately not used here: it is 800x1067 portrait, which social cards
 	// crop to a ~1.91:1 landscape strip.
@@ -115,8 +115,9 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 					JS-Bundle
 				</p>
 				<p class="mt-2">
-					Diese Seite lädt React nur für die zwei markierten Elemente und die erst beim
-					Hineinscrollen (<span class="font-mono">client:visible</span>)
+					Diese Seite lädt React nur für die Deploy-Pipeline, und die erst beim Hineinscrollen
+					(<span class="font-mono">client:visible</span>). Die Schaltpläne sind statisches SVG
+					mit ein paar Zeilen Inline-Skript.
 				</p>
 			</div>
 			<button
