@@ -6,17 +6,96 @@ techStack: ["Astro", "TypeScript", "React", "Tailwind CSS", "MDX", "Azure", "Git
 order: 6
 kind: static
 architecture:
+  lanes: ["Build & Browser", "Azure", "Extern"]
   nodes:
-    - { id: build, label: "Astro Build (static)", kind: backend }
-    - { id: islands, label: "React Islands", kind: frontend }
-    - { id: scripts, label: "Build-Skripte", kind: backend }
-    - { id: gh, label: "GitHub API", kind: external }
-    - { id: swa, label: "Azure Static Web Apps", kind: external }
+    - id: build
+      label: "Astro Build (static)"
+      kind: backend
+      sub: "MDX · Zod-Schema"
+      lane: 0
+      row: 1.3
+      description: "Projekttexte als typisierte Content Collection. Ein Tippfehler im Frontmatter bricht den Build, statt live eine kaputte Seite zu erzeugen."
+    - id: islands
+      label: "React Islands"
+      kind: frontend
+      sub: "im Browser"
+      lane: 0
+      row: 2.6
+      description: "Projektseiten laden kein JS-Bundle. React gibt es nur für zwei Inseln auf der Startseite, und erst beim Hineinscrollen."
+    - id: scripts
+      label: "Build-Skripte"
+      kind: backend
+      sub: "prebuild-Hook"
+      lane: 0
+      row: 0
+      description: "Holen GitHub-Stats und Deploy-Info. Welche Repos abgefragt werden, leiten sie aus dem Frontmatter ab."
+    - id: gh
+      label: "GitHub API"
+      kind: external
+      sub: "Stars · Pushes"
+      lane: 2
+      row: 0
+      description: "Liefert die Repo-Daten für die Projektkarten."
+    - id: swa
+      label: "Azure Static Web Apps"
+      kind: external
+      sub: "Free Tier · PR-Previews"
+      lane: 1
+      row: 1.3
+      description: "Liefert die statische Seite aus. Jeder Pull Request bekommt eine eigene Vorschau-Umgebung."
+    - id: func
+      label: "Azure Functions"
+      kind: backend
+      sub: "Kontakt · Live-Status"
+      lane: 1
+      row: 2.6
+      description: "Zwei kleine Funktionen: das Kontaktformular mit Honeypot und Rate-Limit, und der Erreichbarkeits-Check für die Demos."
+    - id: brevo
+      label: "Brevo"
+      kind: external
+      sub: "Mailversand"
+      lane: 2
+      row: 2
+      description: "Verschickt die Nachrichten aus dem Kontaktformular."
+    - id: demos
+      label: "Demo-Backends"
+      kind: external
+      sub: "feste Allowlist"
+      lane: 2
+      row: 3.2
+      description: "Die Container der Live-Demos. Ziel-URLs kommen nur aus einer festen Allowlist, nie aus dem Request."
   edges:
     - [build, islands]
     - [build, scripts]
     - [scripts, gh]
     - [build, swa]
+    - [islands, swa]
+    - [islands, func]
+    - [func, brevo]
+    - [func, demos]
+  scenarios:
+    - name: "Push auf main"
+      steps:
+        - { from: build, to: scripts, label: "prebuild" }
+        - { from: scripts, to: gh, label: "Stats", detail: "für alle Repos aus dem Frontmatter" }
+        - { from: gh, to: scripts, label: "Antwort" }
+        - { from: scripts, to: build, label: "JSON", detail: "nach src/data" }
+        - { from: build, to: build, label: "Zod", detail: "prüft jedes Frontmatter" }
+        - { from: build, to: swa, label: "Deploy", detail: "per GitHub Actions" }
+    - name: "Besuch + Demo-Check"
+      steps:
+        - { from: islands, to: swa, label: "Seite laden" }
+        - { from: swa, to: islands, label: "HTML", detail: "Projektseiten ohne JS-Bundle" }
+        - { from: islands, to: func, label: "live-status" }
+        - { from: func, to: demos, label: "Probe", detail: "server-to-server, kein CORS" }
+        - { from: demos, to: func, label: "Antwort" }
+        - { from: func, to: islands, label: "wach / schläft", detail: "20 s Cache" }
+    - name: "Kontaktformular"
+      steps:
+        - { from: islands, to: func, label: "Nachricht", detail: "+ Honeypot" }
+        - { from: func, to: func, label: "Rate-Limit" }
+        - { from: func, to: brevo, label: "Mail" }
+        - { from: func, to: islands, label: "Gesendet" }
 ---
 
 Die Seite, auf der Sie gerade sind. Sie ist dazu da, einen Teil meiner Skills zu präsentieren. Sie ist als Bewerbungsseite gebaut, sollte die Fähigkeiten aus dem Lebenslauf aber nicht nur behaupten, sondern vorführen: Der Node-Graph auf der Startseite ist die Navigation und gleichzeitig ein Beispiel für Systemintegration. Die Deployment-Grafik zeigt echte Daten aus dem letzten Deployment des Repos in der sich der Code dieser Seite befindet.

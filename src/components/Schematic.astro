@@ -125,6 +125,14 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 					))
 				}
 			</div>
+			{/* Under the diagram rather than beside it: on wide screens this
+			    fills the space next to the (taller) step list. */}
+			<div class="component" data-component hidden aria-live="polite">
+				<h3>Komponente</h3>
+				<p class="name" data-c="label"></p>
+				<p class="meta" data-c="meta"></p>
+				<p class="description" data-c="description"></p>
+			</div>
 		</div>
 
 		{
@@ -144,12 +152,6 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 							</ol>
 						</section>
 					))}
-					<div class="component" data-component hidden aria-live="polite">
-						<h3>Komponente</h3>
-						<p class="name" data-c="label"></p>
-						<p class="meta" data-c="meta"></p>
-						<p class="description" data-c="description"></p>
-					</div>
 				</div>
 			)
 		}
@@ -518,12 +520,11 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 	}
 
 	.side {
-		display: grid;
-		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
 		border-top: 1px dashed var(--color-border-strong);
 	}
 
-	.side h3 {
+	.side h3,
+	.component h3 {
 		margin: 0 0 0.5rem;
 		font: 500 11.5px var(--font-mono);
 		letter-spacing: 0.12em;
@@ -579,7 +580,7 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 	}
 
 	.component {
-		border-left: 1px dashed var(--color-border-strong);
+		border-top: 1px dashed var(--color-border-strong);
 		padding: 0.875rem 1rem;
 	}
 
@@ -606,14 +607,19 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 		color: var(--color-text-muted);
 	}
 
-	@container (max-width: 639px) {
-		.side {
-			grid-template-columns: 1fr;
+	/* Medium width: the step list sits underneath, split into two columns so
+	   a nine-step scenario doesn't turn into a long strip. */
+	@container (min-width: 640px) and (max-width: 959px) {
+		/* Newspaper columns rather than a two-column grid, so the numbers
+		   still read top to bottom: 01–05 left, 06–09 right. */
+		.steps ol {
+			display: block;
+			columns: 2;
+			column-gap: 1rem;
 		}
 
-		.component {
-			border-left: 0;
-			border-top: 1px dashed var(--color-border-strong);
+		.steps li {
+			break-inside: avoid;
 		}
 	}
 
@@ -623,15 +629,8 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 		}
 
 		.side {
-			grid-template-columns: 1fr;
-			align-content: start;
 			border-top: 0;
 			border-left: 1px dashed var(--color-border-strong);
-		}
-
-		.component {
-			border-left: 0;
-			border-top: 1px dashed var(--color-border-strong);
 		}
 	}
 
