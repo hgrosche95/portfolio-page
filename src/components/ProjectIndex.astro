@@ -1,0 +1,297 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Schematic from './Schematic.astro';
+import githubStats from '../data/github-stats.json';
+
+interface Props {
+	projects: CollectionEntry<'projects'>[];
+}
+
+const { projects } = Astro.props;
+
+type RepoStats = { stars: number; language: string | null; lastPushedAt: string };
+const stats = githubStats as Record<string, RepoStats | undefined>;
+
+const kindLabels = {
+	fullstack: 'Full-Stack',
+	agent: 'KI-Agent',
+	orchestration: 'Orchestrierung',
+	static: 'Statische Seite',
+} as const;
+
+const formatDate = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' });
+
+/** Longer stacks are cut off with a "+n" counter so the rows stay one height; the full list is on the project page. */
+const MAX_TAGS = 4;
+---
+
+<div class="index" data-xray="ProjectIndex.astro · statisch, <details>" data-xray-kind="static">
+	{
+		projects.map((entry, i) => {
+			const { data } = entry;
+			const repo = stats[data.githubRepo];
+			const extraTags = data.techStack.length - MAX_TAGS;
+			const decision = data.decisions?.[0];
+			return (
+				<details class="row" data-project-tags={data.techStack.join('|')} open={i === 0} data-reveal>
+					<summary>
+						<span class="kind">
+							{kindLabels[data.kind]}
+							{data.liveUrl && <span class="live">Live-Demo</span>}
+						</span>
+						<span class="main">
+							<h3>{data.title}</h3>
+							<span class="summary">{data.summary}</span>
+						</span>
+						<span class="facts">
+							<span class="stack">
+								{data.techStack.slice(0, MAX_TAGS).join(' · ')}
+								{extraTags > 0 && ` +${extraTags}`}
+							</span>
+							{repo && <span>{[repo.language, `zuletzt ${formatDate(repo.lastPushedAt)}`].filter(Boolean).join(' · ')}</span>}
+						</span>
+						<span class="toggle" aria-hidden="true">
+							+
+						</span>
+					</summary>
+
+					<div class="detail">
+						{/* Scenarios dropped on purpose: seven animated diagrams on one
+						    page would be noise. The project page plays them. */}
+						{data.architecture?.lanes && <Schematic architecture={{ ...data.architecture, scenarios: [] }} compact />}
+						<div class="aside">
+							{decision && (
+								<p class="decision">
+									<span class="label">Entscheidung · {decision.topic}</span>
+									{decision.rejected.length > 0 && (
+										<>
+											<s>{decision.rejected.join(' / ')}</s>
+											<span class="sr-only">(verworfen), stattdessen:</span>
+											<span aria-hidden="true"> → </span>
+										</>
+									)}
+									<strong>{decision.chosen}</strong>
+								</p>
+							)}
+							{data.hosting && <p class="hosting">{data.hosting}</p>}
+							<p class="links">
+								<a href={`/projects/${entry.id}`}>Projekt lesen →</a>
+								{data.liveUrl && (
+									<a href={data.liveUrl} target="_blank" rel="noopener noreferrer">
+										{data.liveLabel ?? 'Live ansehen'} ↗<span class="sr-only"> (öffnet in neuem Tab)</span>
+									</a>
+								)}
+								<a href={`https://github.com/hgrosche95/${data.githubRepo}`} target="_blank" rel="noopener noreferrer">
+									Code ↗<span class="sr-only"> (öffnet in neuem Tab)</span>
+								</a>
+							</p>
+						</div>
+					</div>
+				</details>
+			);
+		})
+	}
+</div>
+
+<style>
+	.index {
+		margin-top: 1.5rem;
+		border-top: 1px solid var(--color-text);
+	}
+
+	.row {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	summary {
+		display: grid;
+		grid-template-columns: 8.5rem minmax(0, 1fr) 13rem 1.5rem;
+		gap: 1.5rem;
+		align-items: baseline;
+		padding: 1.25rem 0;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	summary::-webkit-details-marker {
+		display: none;
+	}
+
+	summary:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 4px;
+	}
+
+	.kind {
+		display: grid;
+		gap: 0.3rem;
+		font: 12px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.live {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 11px;
+		color: var(--color-live);
+	}
+
+	.live::before {
+		content: "";
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background-color: currentColor;
+		box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent);
+	}
+
+	.main {
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	h3 {
+		margin: 0;
+		font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+		font-weight: 600;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		color: var(--color-text);
+		transition: color 0.2s;
+	}
+
+	summary:hover h3 {
+		color: var(--color-accent);
+	}
+
+	.summary {
+		max-width: 62ch;
+		font-size: 0.925rem;
+		line-height: 1.55;
+		color: var(--color-text-muted);
+	}
+
+	.facts {
+		display: grid;
+		gap: 0.25rem;
+		font: 12px/1.5 var(--font-mono);
+		color: var(--color-text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.stack {
+		color: var(--color-text);
+	}
+
+	.toggle {
+		justify-self: end;
+		font: 1.1rem var(--font-mono);
+		color: var(--color-text-muted);
+		transition:
+			transform 0.25s,
+			color 0.2s;
+	}
+
+	.row[open] .toggle {
+		transform: rotate(45deg);
+		color: var(--color-accent);
+	}
+
+	.detail {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 15rem;
+		gap: 1.5rem;
+		padding: 0 0 1.75rem 10rem;
+	}
+
+	.aside {
+		display: grid;
+		align-content: start;
+		gap: 0.9rem;
+		font-size: 0.875rem;
+		line-height: 1.5;
+	}
+
+	.aside p {
+		margin: 0;
+	}
+
+	.decision {
+		border-left: 2px solid var(--color-accent);
+		padding-left: 0.75rem;
+		color: var(--color-text-muted);
+	}
+
+	.decision .label {
+		display: block;
+		margin-bottom: 0.2rem;
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.decision strong {
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.hosting {
+		font: 12px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
+		font: 13px var(--font-mono);
+	}
+
+	.links a {
+		color: var(--color-accent);
+		text-decoration: none;
+		border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+	}
+
+	.links a:hover {
+		border-bottom-color: var(--color-accent);
+	}
+
+	@media (max-width: 960px) {
+		summary {
+			grid-template-columns: minmax(0, 1fr) 1.5rem;
+			gap: 0.6rem;
+		}
+
+		.kind {
+			grid-column: 1;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.25rem 1rem;
+		}
+
+		.main,
+		.facts {
+			grid-column: 1;
+		}
+
+		.toggle {
+			grid-column: 2;
+			grid-row: 1;
+		}
+
+		.detail {
+			grid-template-columns: minmax(0, 1fr);
+			padding-left: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.toggle,
+		h3 {
+			transition: none;
+		}
+	}
+</style>

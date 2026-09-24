@@ -3,8 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import NodeGraph, { type GraphProject } from '../components/NodeGraph';
-import ProjectCards, { type CardProject } from '../components/ProjectCards.astro';
+import ProjectIndex from '../components/ProjectIndex.astro';
 import ProjectFilter from '../components/ProjectFilter.astro';
 import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
@@ -15,24 +14,7 @@ const projectEntries = (await getCollection('projects')).sort(
 	(a, b) => a.data.order - b.data.order,
 );
 
-const graphProjects: GraphProject[] = projectEntries.map((entry) => ({
-	slug: entry.id,
-	label: entry.data.title,
-	sublabel: entry.data.techStack.slice(0, 2).join(', '),
-	techStack: entry.data.techStack,
-	kind: entry.data.kind,
-	architecture: entry.data.architecture,
-}));
-
-const cardProjects: CardProject[] = projectEntries.map((entry) => ({
-	slug: entry.id,
-	title: entry.data.title,
-	summary: entry.data.summary,
-	techStack: entry.data.techStack,
-	githubRepo: entry.data.githubRepo,
-}));
-
-// Derived from the same content the cards/graph already use, not hand-picked:
+// Derived from the same content the index already uses, not hand-picked:
 // a tag only earns a filter chip by actually recurring across projects.
 // A one-off tag (a project's only Python dependency, say) would just be a
 // filter with one possible result, which isn't a filter, just a relabelled
@@ -52,25 +34,13 @@ const filterTags = [...tagCounts.entries()]
 <BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
 	<Hero />
 
-	<section id="projects" class="mx-auto max-w-7xl px-4 pb-20">
-		<div class="max-w-3xl">
-			<SectionHeading
-				title="Private Projekte"
-				subtitle="Auf einen Knoten klicken, um zum Projekt zu springen."
-				desktopHint="Über den Pfeil klappt die Architektur des Projekts auf; die Randart eines Knotens zeigt seine Art."
-			/>
-			<ProjectFilter tags={filterTags} />
-		</div>
-		<div
-			data-reveal
-			class="mt-6"
-			data-xray="NodeGraph.tsx · React-Island, client:visible"
-			data-xray-kind="island"
-		>
-			<NodeGraph projects={graphProjects} client:visible />
-		</div>
-
-		<ProjectCards projects={cardProjects} />
+	<section id="projects" class="mx-auto max-w-5xl px-4 pb-20">
+		<SectionHeading
+			title={`Private Projekte · ${projectEntries.length}`}
+			subtitle="Eine Zeile aufklappen für den Schaltplan, die wichtigste Entscheidung und die Links."
+		/>
+		<ProjectFilter tags={filterTags} />
+		<ProjectIndex projects={projectEntries} />
 	</section>
 
 	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-20">

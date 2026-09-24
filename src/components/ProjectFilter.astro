@@ -67,8 +67,8 @@ const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-sof
 			ACTIVE.forEach((cls) => button.classList.toggle(cls, pressed));
 		}
 
-		// Every card on the page declares its own tags; nothing here needs to
-		// know how many cards exist or where they live.
+		// Every project entry on the page (the index rows) declares its own
+		// tags; nothing here needs to know how many exist or where they live.
 		function cards() {
 			return Array.from(document.querySelectorAll<HTMLElement>('[data-project-tags]'));
 		}
@@ -90,13 +90,6 @@ const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-sof
 			if (countEl) {
 				countEl.textContent = selected.size === 0 ? '' : `${visible} von ${all.length} Projekten`;
 			}
-
-			// The graph is a React island living elsewhere on the page: a
-			// CustomEvent is the only interface a static script and a React
-			// component can share without either depending on the other.
-			window.dispatchEvent(
-				new CustomEvent('project-filter-change', { detail: { tags: Array.from(selected) } }),
-			);
 		}
 
 		allButton.addEventListener('click', () => {

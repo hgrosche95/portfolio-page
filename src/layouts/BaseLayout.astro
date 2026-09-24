@@ -12,7 +12,7 @@ interface Props {
 
 const {
 	title,
-	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit Node-Graph-Navigation, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
+	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit interaktiven Architektur-Schaltplänen, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
 	// Generated at build time by scripts/generate-og-images.ts. The portrait is
 	// deliberately not used here: it is 800x1067 portrait, which social cards
 	// crop to a ~1.91:1 landscape strip.
@@ -56,24 +56,37 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 	</head>
 	<body class="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
 		<Header />
-		<main class="flex-1">
+		<main class="relative flex-1">
+			<div class="trace" id="trace" aria-hidden="true"></div>
 			<slot />
 		</main>
 		<Footer />
 
-		<div class="trace" id="trace" aria-hidden="true"></div>
 		<script is:inline>
 			(function () {
-				// Copper part of the margin trace follows how far down the page
-				// the reader is. Purely cosmetic: without this it stays short.
+				// The copper part of the margin trace reaches down to a fixed
+				// reading line in the viewport; a heading counts as reached once
+				// it has passed that line. Purely cosmetic: without this script
+				// the trace and its branches simply stay grey.
 				const trace = document.getElementById('trace');
 				if (!trace) return;
+				const main = trace.parentElement;
+				const stops = Array.prototype.slice.call(document.querySelectorAll('[data-trace-stop]'));
+				const READING_LINE = 0.55;
 				let queued = false;
 				function update() {
 					queued = false;
-					const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-					const progress = scrollable > 0 ? window.scrollY / scrollable : 1;
-					trace.style.setProperty('--trace-progress', Math.max(0.04, Math.min(1, progress)).toFixed(4));
+					const line = window.innerHeight * READING_LINE;
+					const box = main.getBoundingClientRect();
+					// At the very bottom the last headings may never cross the
+					// line, so the end of the page counts as fully read.
+					const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+					const progress = atEnd ? 1 : (line - box.top) / box.height;
+					trace.style.setProperty('--trace-progress', Math.max(0.02, Math.min(1, progress)).toFixed(4));
+					stops.forEach(function (stop) {
+						const rect = stop.getBoundingClientRect();
+						stop.classList.toggle('reached', atEnd || rect.top + rect.height / 2 <= line);
+					});
 				}
 				function schedule() {
 					if (queued) return;
@@ -102,8 +115,9 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 					JS-Bundle
 				</p>
 				<p class="mt-2">
-					Diese Seite lädt React nur für die zwei markierten Elemente und die erst beim
-					Hineinscrollen (<span class="font-mono">client:visible</span>)
+					Diese Seite lädt React nur für die Deploy-Pipeline, und die erst beim Hineinscrollen
+					(<span class="font-mono">client:visible</span>). Die Schaltpläne sind statisches SVG
+					mit ein paar Zeilen Inline-Skript.
 				</p>
 			</div>
 			<button
