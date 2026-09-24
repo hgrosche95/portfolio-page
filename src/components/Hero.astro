@@ -128,22 +128,25 @@ const skillGroups = [
 				<img
 					src="/profile.webp"
 					alt="Porträtfoto von Henrik Grosche"
-					width="56"
-					height="56"
+					width="96"
+					height="96"
 					fetchpriority="high"
-					class="size-14 rounded-lg border border-[var(--color-border-strong)] object-cover"
+					class="size-20 rounded-xl border border-[var(--color-border-strong)] object-cover sm:size-24"
 				/>
 				<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
 					Full-Stack-Entwickler · Düsseldorf
 				</p>
 			</div>
 			<h1
-				class="mt-6 text-5xl leading-[0.95] font-bold tracking-tight text-[var(--color-text)] sm:text-6xl"
+				class="mt-6 font-sans text-5xl leading-[0.95] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl"
 			>
-				Henrik<br /><span class="font-medium text-[var(--color-text-muted)]">Grosche</span>
+				{/* Plex Sans rather than the display face: the name reads as a plain,
+				    confident statement; Bricolage stays for section headings. */}
+				Henrik<br />Grosche
 			</h1>
 			<p class="mt-4 text-lg leading-snug text-[var(--color-text)] sm:text-xl">
-				Ich baue Systeme und verbinde sie zu effizienten, automatisierten Workflows.
+				Ich baue Systeme und verbinde sie zu automatisierten Workflows, zunehmend mit{' '}
+				<span class="whitespace-nowrap">KI-Agenten</span>, die man messen und kontrollieren kann.
 			</p>
 			<p class="mt-4 text-base leading-relaxed text-[var(--color-text-muted)]">
 				Von React/TypeScript-Frontends über Node.js-Backends bis zur Integration verschiedenster
