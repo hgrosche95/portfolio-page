@@ -5,7 +5,7 @@
   "description": "Azure Functions backend for the portfolio contact form.",
   "main": "dist/functions/*.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
