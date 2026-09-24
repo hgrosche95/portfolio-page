@@ -61,6 +61,31 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 		</main>
 		<Footer />
 
+		<div class="trace" id="trace" aria-hidden="true"></div>
+		<script is:inline>
+			(function () {
+				// Copper part of the margin trace follows how far down the page
+				// the reader is. Purely cosmetic: without this it stays short.
+				const trace = document.getElementById('trace');
+				if (!trace) return;
+				let queued = false;
+				function update() {
+					queued = false;
+					const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+					const progress = scrollable > 0 ? window.scrollY / scrollable : 1;
+					trace.style.setProperty('--trace-progress', Math.max(0.04, Math.min(1, progress)).toFixed(4));
+				}
+				function schedule() {
+					if (queued) return;
+					queued = true;
+					window.requestAnimationFrame(update);
+				}
+				window.addEventListener('scroll', schedule, { passive: true });
+				window.addEventListener('resize', schedule);
+				update();
+			})();
+		</script>
+
 		{/* Desktop only: the labels would cover the content on a phone. */}
 		<div class="fixed right-4 bottom-4 z-50 hidden flex-col items-end gap-2 sm:flex">
 			<div

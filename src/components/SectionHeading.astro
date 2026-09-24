@@ -24,7 +24,8 @@ const { eyebrow, title, subtitle, desktopHint } = Astro.props;
 			</p>
 		)
 	}
-	<h2 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
+	<h2 class="mt-2 flex items-center gap-3 text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
+		<span class="solder-pad" aria-hidden="true"></span>
 		{title}
 	</h2>
 	{

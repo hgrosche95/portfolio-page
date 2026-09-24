@@ -8,18 +8,89 @@ kind: agent
 liveUrl: "https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestcentral.azurecontainerapps.io/health"
 liveLabel: "API-Health-Check ansehen"
 liveStatusCheck: true
+hosting: "Container Apps · Bicep"
+decisions:
+  - topic: "Zugang"
+    rejected: ["nur MCP", "nur REST"]
+    chosen: "MCP für Claude, REST für n8n"
+    reason: "MCP, wo ein Modell die Tools selbst entdeckt. REST, wo der Ablauf ohnehin feststeht."
+  - topic: "Leitplanken"
+    rejected: ["nur eine Prompt-Regel"]
+    chosen: "Validierungs-Loop mit Retry"
+    reason: "Das Modell erfand trotz Regel gelegentlich Zahlen. Der Loop prüft deterministisch, höchstens dreimal."
+  - topic: "Deploy-Rechte"
+    rejected: ["subscription-weit"]
+    chosen: "eigene Resource Group"
+    reason: "Die Federated Credential darf genau diese eine Gruppe verwalten, sonst nichts."
 architecture:
+  lanes: ["Aufrufer", "Dienst", "Extern"]
   nodes:
-    - { id: claude, label: "Claude (MCP)", kind: external }
-    - { id: api, label: "NestJS API", kind: backend }
-    - { id: llm, label: "LLM-Provider (Groq/Claude)", kind: external }
-    - { id: scripts, label: "Python-CLI → PDF & Ordner", kind: data }
-    - { id: langfuse, label: "Langfuse (Tracing)", kind: external }
+    - id: claude
+      label: "Claude (MCP)"
+      kind: external
+      sub: "Desktop / Code"
+      lane: 0
+      row: 0
+      description: "Spricht den Dienst über MCP an. Das Modell entdeckt die Tools selbst, ein Ablauf muss nicht vorgegeben werden."
+    - id: api
+      label: "NestJS API"
+      kind: backend
+      sub: "Validierungs-Loop"
+      lane: 1
+      row: 0
+      description: "Generieren, deterministisch prüfen, bei Verstoß mit dem konkreten Fehler erneut versuchen, höchstens dreimal. Prüft bisher Wortzahl und Floskeln, erfundene Zahlen noch nicht."
+    - id: llm
+      label: "LLM-Provider"
+      kind: external
+      sub: "Groq · Claude-Fallback"
+      lane: 2
+      row: 0
+      description: "Entwirft und gleicht ab. Leitplanke im Prompt: keine erfundenen Erfahrungen oder Kennzahlen."
+    - id: scripts
+      label: "Python-Skripte"
+      kind: data
+      sub: "PDF & Bewerbungsordner"
+      lane: 1
+      row: 1.4
+      description: "Die ursprünglichen Skill-Skripte, inhaltlich unverändert. Laufen per apt-Python im selben Container wie das Backend."
+    - id: langfuse
+      label: "Langfuse"
+      kind: external
+      sub: "ein Span pro Versuch"
+      lane: 2
+      row: 1
+      description: "Der Loop bleibt nachvollziehbar, ohne dass Anzeige, Lebenslauf oder Anschreiben im Trace landen."
+    - id: n8n
+      label: "n8n"
+      kind: frontend
+      sub: "REST · feste Workflows"
+      lane: 0
+      row: 1.4
+      description: "Automationen wie das Beobachten einer Jobbörse. Für einen feststehenden Ablauf wäre MCP unnötiger Overhead."
   edges:
     - [claude, api]
     - [api, llm]
     - [api, scripts]
     - [api, langfuse]
+    - [n8n, api]
+  scenarios:
+    - name: "Anschreiben entwerfen"
+      steps:
+        - { from: claude, to: api, label: "draft_cover_letter" }
+        - { from: api, to: llm, label: "Entwurf" }
+        - { from: llm, to: api, label: "Text" }
+        - { from: api, to: api, label: "Prüfen", detail: "Wortzahl + Floskeln, sonst Retry mit Fehler (≤ 3)" }
+        - { from: api, to: langfuse, label: "Span", detail: "je Versuch" }
+        - { from: api, to: scripts, label: "PDF", detail: "+ Bewerbungsordner" }
+        - { from: scripts, to: api, label: "Fertig" }
+        - { from: api, to: claude, label: "Ergebnis" }
+    - name: "Jobbörse (n8n)"
+      steps:
+        - { from: n8n, to: api, label: "match_job_posting", detail: "per REST" }
+        - { from: api, to: llm, label: "Abgleich", detail: "3–5 Anforderungen gegen den Lebenslauf" }
+        - { from: llm, to: api, label: "Bewertung" }
+        - { from: api, to: langfuse, label: "Trace" }
+        - { from: api, to: n8n, label: "Treffer", detail: "bester: 5/5" }
 ---
 
 Begann als reine "Claude Code Skill" — ein Ordner mit Anweisungen (`SKILL.md`), den Claude automatisch lädt, sobald jemand eine Stellenanzeige teilt: Lebenslauf und Anzeige einsammeln, 3–5 Anforderungen ehrlich gegen die eigene Erfahrung abgleichen (Lücken benennen statt erfinden), ein Anschreiben entwerfen, mit Rückmeldung verfeinern, am Ende einen Bewerbungsordner samt PDF anlegen. Das läuft komplett in der Klartext-Anleitung, keine Zeile Code für die inhaltlichen Entscheidungen.

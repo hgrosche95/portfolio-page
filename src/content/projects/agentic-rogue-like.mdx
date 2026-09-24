@@ -8,18 +8,121 @@ kind: agent
 liveUrl: "https://witty-rock-0f2836f0f.6.azurestaticapps.net/"
 liveLabel: "Jetzt spielen"
 liveStatusCheck: true
+hosting: "Container Apps · Static Web Apps"
+decisions:
+  - topic: "Reihenfolge"
+    rejected: ["Agent zuerst"]
+    chosen: "Kern-Loop ohne LLM zuerst"
+    reason: "Die Balance ist prüfbar, bevor ein Modell Inhalte erzeugt, und die Grenze zwischen KI und fester Spiellogik bleibt sichtbar."
+  - topic: "Messen"
+    rejected: ["erst trainieren, dann messen"]
+    chosen: "Eval-Harness vor dem Fine-Tuning"
+    reason: "Die Groq-Baseline über 310 Aufrufe stand fest, bevor es etwas zu vergleichen gab. Sonst hätte man dem Vergleich nicht trauen können."
+  - topic: "Standardmodell"
+    rejected: ["lokales Modell in Azure"]
+    chosen: "Groq bleibt Standard"
+    reason: "Eine dauerhaft laufende Instanz würde die Kostenrechnung umkehren. Der Wechsel bleibt eine Konfigurationsfrage."
 architecture:
+  lanes: ["Clients", "Schnittstelle", "Spielkern", "KI"]
   nodes:
-    - { id: cli, label: "Terminal-CLI", kind: frontend }
-    - { id: web, label: "React · Vite (Web-UI)", kind: frontend }
-    - { id: api, label: "FastAPI", kind: backend }
-    - { id: engine, label: "Run-Engine", kind: backend }
-    - { id: mapgen, label: "Prozedurale Node-Map", kind: backend }
-    - { id: combat, label: "Kartenbasierter Kampf", kind: backend }
-    - { id: agent, label: "Encounter-Agent (LangGraph)", kind: backend }
-    - { id: groq, label: "Groq · gpt-oss-20b (Cloud)", kind: external }
-    - { id: localmodel, label: "Fine-Tune · Qwen2.5-1.5B (lokal, Ollama)", kind: external }
-    - { id: models, label: "Pydantic-Modelle", kind: data }
+    - id: cli
+      label: "Terminal-CLI"
+      kind: frontend
+      sub: "cli.py"
+      lane: 0
+      row: 0
+      description: "Treibt die Engine direkt an, ohne HTTP dazwischen. Kämpfe werden automatisch gelöst."
+    - id: web
+      label: "React · Vite"
+      kind: frontend
+      sub: "Web-UI"
+      lane: 0
+      row: 1
+      description: "Klickbare Dungeon-Map und kartenbasierter Kampf, Karte für Karte über eigene Endpunkte."
+    - id: api
+      label: "FastAPI"
+      kind: backend
+      sub: "api.py · Sessions"
+      lane: 1
+      row: 1
+      description: "Legt dieselbe Engine über zustandslose HTTP-Requests offen, mit dem Laufzustand pro Run in einer eigenen Session-Verwaltung."
+    - id: engine
+      label: "Run-Engine"
+      kind: backend
+      sub: "engine.py"
+      lane: 2
+      row: 1
+      description: "Deterministischer Kern-Loop. Zuerst gebaut und getestet, komplett ohne LLM, damit die Balance unabhängig vom Agenten prüfbar ist."
+    - id: mapgen
+      label: "Node-Map"
+      kind: backend
+      sub: "prozedural"
+      lane: 2
+      row: 0
+      description: "Erzeugt Etagen und Pfade eines Runs. Eigenes Modul mit eigener pytest-Suite."
+    - id: combat
+      label: "Kampf"
+      kind: backend
+      sub: "Karten · 5 Slots"
+      lane: 2
+      row: 2
+      description: "Kein Energie-System: ein Feld mit 5 Slots als Ressource. Permanente Karten wirken positionsabhängig."
+    - id: agent
+      label: "Encounter-Agent"
+      kind: backend
+      sub: "LangGraph · Budget"
+      lane: 3
+      row: 1
+      description: "Erfindet Gegner nur über Tool-Calls mit festem Schema und gegen ein Budget pro Etage. Retry bei Verstoß, nach drei Versuchen statischer Content-Pool."
+    - id: groq
+      label: "Groq"
+      kind: external
+      sub: "gpt-oss-20b · Cloud"
+      lane: 3
+      row: 0
+      description: "Standard-Modell. Die Baseline ist über 310 Aufrufe gemessen."
+    - id: localmodel
+      label: "Qwen2.5-1.5B"
+      kind: external
+      sub: "QLoRA · Ollama · lokal"
+      lane: 3
+      row: 2
+      description: "Eigenes Fine-Tune, 935 MB als GGUF, läuft lokal ohne API-Key. 100 % schemakonform über 604 Aufrufe, dafür weniger Vielfalt."
+    - id: models
+      label: "Pydantic-Modelle"
+      kind: data
+      sub: "RunState · Enemy"
+      lane: 1
+      row: 2.2
+      description: "Ein Schema für beides: validiert den Spielzustand und das, was das Modell zurückgeben darf."
+  scenarios:
+    - name: "Gegner generieren"
+      steps:
+        - { from: web, to: api, label: "Etage betreten" }
+        - { from: api, to: engine, label: "Run-Zustand" }
+        - { from: engine, to: agent, label: "Etage + Budget" }
+        - { from: agent, to: groq, label: "Tool-Call", detail: "festes Schema" }
+        - { from: groq, to: agent, label: "Vorschlag" }
+        - { from: agent, to: agent, label: "Prüfen", detail: "Schema + Budget, sonst Retry (≤ 3)" }
+        - { from: agent, to: engine, label: "Gegner", detail: "oder Fallback-Pool" }
+        - { from: engine, to: api, label: "neuer Zustand" }
+        - { from: api, to: web, label: "Kampf beginnt" }
+    - name: "Lokales Modell"
+      steps:
+        - { from: engine, to: agent, label: "Etage + Budget" }
+        - { from: agent, to: localmodel, label: "gleiche Tools", detail: "per Umgebungsvariable umgeschaltet" }
+        - { from: localmodel, to: agent, label: "Vorschlag", detail: "ohne Netzwerk" }
+        - { from: agent, to: agent, label: "Prüfen", detail: "dieselben Leitplanken" }
+        - { from: agent, to: engine, label: "Gegner" }
+    - name: "Im Terminal"
+      steps:
+        - { from: cli, to: engine, label: "neuer Run" }
+        - { from: engine, to: mapgen, label: "Etagen erzeugen" }
+        - { from: mapgen, to: engine, label: "Node-Map" }
+        - { from: engine, to: combat, label: "Kampf", detail: "automatisch gelöst" }
+        - { from: combat, to: engine, label: "Ergebnis" }
+        - { from: engine, to: models, label: "Zustand", detail: "als RunState validiert" }
+        - { from: engine, to: cli, label: "Ausgabe" }
   edges:
     - [cli, engine]
     - [web, api]

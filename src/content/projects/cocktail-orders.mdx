@@ -8,18 +8,89 @@ kind: fullstack
 liveUrl: "https://kind-ground-07fd6390f.6.azurestaticapps.net/"
 liveLabel: "Live testen"
 liveStatusCheck: true
+hosting: "Bicep · Container Apps"
+decisions:
+  - topic: "LLM-Einsatz"
+    rejected: ["offener Chat"]
+    chosen: "ein Aufruf, Bestätigung im Formular"
+    reason: "Der Freitext wird zugeordnet, bestellt wird immer über das normale Formular, nie direkt aus dem Freitext."
+  - topic: "Synchronisierung"
+    rejected: ["vollen State über den Socket"]
+    chosen: "Signal + REST"
+    reason: "Ein Roundtrip mehr, dafür deutlich einfacher und weniger fehleranfällig."
 architecture:
+  lanes: ["Clients", "Server", "Extern & Daten"]
   nodes:
-    - { id: web, label: "React · Vite", kind: frontend }
-    - { id: api, label: "Express (REST)", kind: backend }
-    - { id: ws, label: "WebSocket → Clients", kind: backend }
-    - { id: groq, label: "Groq (LLM)", kind: external }
-    - { id: db, label: "PostgreSQL · Prisma", kind: data }
+    - id: web
+      label: "React · Vite"
+      kind: frontend
+      sub: "Gästekarte"
+      lane: 0
+      row: 0
+      description: "Filterbare Karte, Live-Position in der Warteschlange und „Empfohlen für dich“ per Collaborative Filtering, ohne LLM."
+    - id: api
+      label: "Express (REST)"
+      kind: backend
+      sub: "validiert Bestellungen"
+      lane: 1
+      row: 0
+      description: "Eine offene Bestellung pro Gast, Positionen nur aus der eigenen Karte. Welche Cocktails bestellbar sind, wird live aus Zutaten und Rezepten berechnet."
+    - id: ws
+      label: "WebSocket"
+      kind: backend
+      sub: "nur ein Signal"
+      lane: 1
+      row: 1.1
+      description: "Sendet bei jeder Änderung nur „orders-changed“, keine Nutzdaten. Clients holen den Stand dann per REST."
+    - id: groq
+      label: "Groq (LLM)"
+      kind: external
+      sub: "Freitext → Cocktail"
+      lane: 2
+      row: 0
+      description: "Ein einzelner Aufruf, kein offener Chat. Bei Rate-Limit wird die Funktion für die Session sauber abgeschaltet."
+    - id: db
+      label: "PostgreSQL · Prisma"
+      kind: data
+      lane: 2
+      row: 1.1
+      description: "Bestellungen, Bewertungen und der Vorrat an Zutaten."
+    - id: bar
+      label: "Barkeeper-Ansicht"
+      kind: frontend
+      sub: "Tablet · Token"
+      lane: 0
+      row: 2.2
+      description: "Offene Bestellungen samt Rezept. Geschützt durch ein signiertes Token mit Ablaufzeit, das der Server bei jeder Aktion prüft."
   edges:
     - [web, api]
     - [api, db]
     - [api, ws]
     - [api, groq]
+    - [ws, web]
+    - [ws, bar]
+    - [bar, api]
+  scenarios:
+    - name: "Freitext-Bestellung"
+      steps:
+        - { from: web, to: api, label: "Wunsch", detail: "„etwas Bitteres, ohne Rum“" }
+        - { from: api, to: groq, label: "Prompt", detail: "nur aus der Server-Kopie der Karte" }
+        - { from: groq, to: api, label: "Treffer", detail: "oder Auswahlliste" }
+        - { from: api, to: web, label: "Vorschlag", detail: "landet im normalen Bestellformular" }
+        - { from: web, to: api, label: "Bestätigen" }
+        - { from: api, to: db, label: "Speichern" }
+        - { from: api, to: ws, label: "Änderung" }
+        - { from: ws, to: bar, label: "orders-changed" }
+        - { from: bar, to: api, label: "Abholen", detail: "offene Bestellungen per REST" }
+    - name: "Zutat ist leer"
+      steps:
+        - { from: bar, to: api, label: "Nicht vorrätig", detail: "Token geprüft" }
+        - { from: api, to: db, label: "Speichern" }
+        - { from: api, to: ws, label: "Änderung" }
+        - { from: ws, to: web, label: "orders-changed" }
+        - { from: web, to: api, label: "Karte neu laden" }
+        - { from: api, to: api, label: "Bestellbarkeit", detail: "live aus Rezepten berechnet" }
+        - { from: api, to: web, label: "Cocktail verschwindet" }
 ---
 
 Eine Bestell-App für die eigene Cocktail-Party: Gäste öffnen die Seite, loggen sich nur mit Namen ein, bestellen aus einer filterbaren, filmklassiker-themed Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind — oder beschreiben ihren Wunsch in eigenen Worten ("etwas Bitteres, ohne Rum, ohne Eis"), den ein LLM in einen passenden Menüeintrag übersetzt. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann; betroffene Cocktails verschwinden dann automatisch aus der Gästekarte. Bewertete Cocktails fließen außerdem in eine "Empfohlen für dich"-Sektion pro Gast ein.

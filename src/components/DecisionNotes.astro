@@ -1,0 +1,106 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type Decisions = NonNullable<CollectionEntry<'projects'>['data']['decisions']>;
+
+interface Props {
+	decisions: Decisions;
+}
+
+const { decisions } = Astro.props;
+---
+
+<aside class="notes" aria-labelledby="decisions-title" data-xray="DecisionNotes.astro · statisch" data-xray-kind="static">
+	<h2 id="decisions-title">Entscheidungen</h2>
+	<ul>
+		{
+			decisions.map((decision) => (
+				<li>
+					<p class="topic">{decision.topic}</p>
+					<p class="choice">
+						{decision.rejected.map((option, i) => (
+							<>
+								{i > 0 && ' / '}
+								<s>{option}</s>
+							</>
+						))}
+						{decision.rejected.length > 0 && (
+							<>
+								{/* Strikethrough isn't announced by screen readers, so say it. */}
+								<span class="sr-only">(verworfen), stattdessen:</span>
+								<span class="arrow" aria-hidden="true">
+									→
+								</span>
+							</>
+						)}
+						<strong>{decision.chosen}</strong>
+					</p>
+					<p class="reason">{decision.reason}</p>
+				</li>
+			))
+		}
+	</ul>
+</aside>
+
+<style>
+	.notes h2 {
+		margin: 0 0 0.75rem;
+		font: 500 11.5px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	ul {
+		display: grid;
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* Rail on the left, like a margin note in a technical document. */
+	li {
+		border-left: 2px solid var(--color-accent);
+		padding-left: 0.875rem;
+	}
+
+	p {
+		margin: 0;
+	}
+
+	.topic {
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.choice {
+		margin-top: 0.25rem;
+		font-size: 14.5px;
+		line-height: 1.45;
+		color: var(--color-text-muted);
+	}
+
+	.arrow {
+		margin: 0 0.3em;
+		font-family: var(--font-mono);
+	}
+
+	s {
+		text-decoration-thickness: 1px;
+	}
+
+	strong {
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.reason {
+		margin-top: 0.3rem;
+		font-size: 13.5px;
+		line-height: 1.5;
+		color: var(--color-text-muted);
+	}
+</style>

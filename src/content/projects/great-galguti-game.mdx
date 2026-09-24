@@ -8,16 +8,74 @@ kind: fullstack
 liveUrl: "https://blue-sea-08b19cb0f.7.azurestaticapps.net/"
 liveLabel: "Jetzt spielen"
 liveStatusCheck: true
+hosting: "Static Web Apps · Container Apps · Neon"
+decisions:
+  - topic: "Spiellogik"
+    rejected: ["im Server duplizieren"]
+    chosen: "als eigenes Paket importieren"
+    reason: "Test, Bot und Live-Spiel entscheiden mit derselben Funktion, ob ein Zug gültig ist."
+  - topic: "Verdeckte Karten"
+    rejected: ["nur im UI verstecken"]
+    chosen: "serverseitig zurückhalten"
+    reason: "Jeder Client bekommt nur die eigene Hand. Ein manipulierter WebSocket-Client sieht trotzdem keine fremden Karten."
 architecture:
+  lanes: ["Clients", "Server", "Daten"]
   nodes:
-    - { id: web, label: "React 19", kind: frontend }
-    - { id: server, label: "Express + WebSocket", kind: backend }
-    - { id: logic, label: "Spiellogik (src/)", kind: backend }
-    - { id: db, label: "PostgreSQL · Prisma", kind: data }
+    - id: web
+      label: "React 19"
+      kind: frontend
+      sub: "dein Browser"
+      lane: 0
+      row: 0
+      description: "Der Spieltisch. Bekommt nur die eigene Hand und die Kartenanzahl der Gegner, nie deren Karten."
+    - id: others
+      label: "Weitere Clients"
+      kind: frontend
+      sub: "3–8 am Tisch"
+      lane: 0
+      row: 1.3
+      description: "Alle anderen Spieler:innen. Jede Änderung kommt per WebSocket an."
+    - id: server
+      label: "Express + WebSocket"
+      kind: backend
+      sub: "Auth · Rate-Limit"
+      lane: 1
+      row: 0
+      description: "Nimmt Züge entgegen, prüft sie gegen die echte Hand und verteilt den neuen Stand. Auth per Handshake mit Timeout, weil Browser beim WS-Handshake keine Header setzen können."
+    - id: logic
+      label: "Spiellogik (src/)"
+      kind: backend
+      sub: "ohne Abhängigkeiten"
+      lane: 1
+      row: 1.3
+      description: "Reine Funktionen, mit Vitest getestet. Server, Bots und Tests nutzen exakt denselben Code."
+    - id: db
+      label: "PostgreSQL · Prisma"
+      kind: data
+      sub: "Neon"
+      lane: 2
+      row: 0
+      description: "Nutzerkonten."
   edges:
     - [web, server]
     - [server, logic]
     - [server, db]
+    - [server, others]
+  scenarios:
+    - name: "Zug spielen"
+      steps:
+        - { from: web, to: server, label: "Zug", detail: "per WebSocket gesendet" }
+        - { from: server, to: logic, label: "Validieren", detail: "gegen die echte Hand, nicht gegen den Client" }
+        - { from: logic, to: server, label: "gültig" }
+        - { from: server, to: others, label: "Broadcast", detail: "neuer Stand, ohne fremde Karten" }
+        - { from: server, to: web, label: "Update", detail: "eigene Hand aktualisiert" }
+    - name: "Anmelden"
+      steps:
+        - { from: web, to: server, label: "Login", detail: "Rate-Limit gegen Passwort-Raten" }
+        - { from: server, to: db, label: "Konto prüfen" }
+        - { from: db, to: server, label: "ok" }
+        - { from: server, to: web, label: "JWT" }
+        - { from: web, to: server, label: "WS-Handshake", detail: "Token als erste Nachricht, mit Timeout" }
 ---
 
 Ein Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen (Stichspiel mit Zahlenkarten und Jokern), gebaut, um mein TypeScript- und Full-Stack-Wissen an einem praktischen individuellen Projekt zu vertiefen. Es beinhaltet echte Nutzerkonten und einen Live-Zustand über mehrere Clients hinweg.

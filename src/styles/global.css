@@ -1,52 +1,60 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/jetbrains-mono";
-@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource-variable/bricolage-grotesque";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * "Schaltplan" look: the site reads like a circuit diagram, because what it
+ * shows is systems wired together. Copper is the one accent (traces, active
+ * states); everything else stays in cool, slightly blue-biased neutrals so
+ * the copper has something to stand out against.
+ */
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono Variable", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* Headings + the nav wordmark only - body text stays on --font-sans so the
      display face reads as a deliberate accent, not a second body font. */
-  --font-display: "Space Grotesk Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
-  --color-bg: #f7f8fa;
-  --color-surface: #ffffff;
+  --color-bg: #edf0f2;
+  --color-surface: #f8fafb;
   /* Raised surface for cards that sit on top of --color-surface. */
-  --color-surface-raised: #f1f3f6;
-  --color-border: #d8dbe0;
-  --color-border-strong: #b9bec7;
-  --color-text: #1a1d23;
-  --color-text-muted: #5a616b;
+  --color-surface-raised: #e4e8eb;
+  --color-border: #cdd4da;
+  --color-border-strong: #a3aeb8;
+  --color-text: #121a24;
+  --color-text-muted: #56616d;
   /*
-   * Darkened from #1f8f5f (Hallmark audit, 2026-09-18): the old value hit
-   * only ~3.6-3.84:1 against --color-bg/--color-accent-soft, below WCAG AA's
-   * 4.5:1 for the normal-size text it's used as (eyebrows, chip labels, nav
-   * links). This value holds ~4.8-5.6:1 against both. Dark-mode accent is
-   * untouched - already ~10.9:1 there.
+   * Contrast kept at WCAG AA for the normal-size text the accent is used as
+   * (eyebrows, chip labels, links): ~4.8:1 on --color-bg, ~4.7:1 on
+   * --color-accent-soft. The dark-mode copper sits at ~6.8:1.
    */
-  --color-accent: #19714b;
-  --color-accent-soft: #e3f5ec;
+  --color-accent: #a4531f;
+  --color-accent-soft: #f6ece5;
   /* Accent at low alpha, for glows and hover washes in either theme. */
-  --color-accent-glow: rgb(25 113 75 / 0.12);
+  --color-accent-glow: rgb(164 83 31 / 0.14);
   /* Backdrop for the sticky header, so content blurs through it. */
-  --color-bg-translucent: rgb(247 248 250 / 0.8);
+  --color-bg-translucent: rgb(237 240 242 / 0.82);
+  /* Background grid lines, deliberately fainter than any border. */
+  --color-grid: rgb(18 26 36 / 0.045);
 }
 
 .dark {
-  --color-bg: #0d1117;
-  --color-surface: #12181f;
-  --color-surface-raised: #171e27;
-  --color-border: #262d38;
-  --color-border-strong: #3a4452;
-  --color-text: #e6edf3;
-  --color-text-muted: #8b98a5;
-  --color-accent: #4ade80;
-  --color-accent-soft: #14251c;
-  --color-accent-glow: rgb(74 222 128 / 0.1);
-  --color-bg-translucent: rgb(13 17 23 / 0.8);
+  --color-bg: #0f151b;
+  --color-surface: #151d25;
+  --color-surface-raised: #1b252f;
+  --color-border: #24303b;
+  --color-border-strong: #3b4855;
+  --color-text: #e4e9ee;
+  --color-text-muted: #8f9ba7;
+  --color-accent: #e08a4f;
+  --color-accent-soft: #2a1e16;
+  --color-accent-glow: rgb(224 138 79 / 0.14);
+  --color-bg-translucent: rgb(15 21 27 / 0.82);
+  --color-grid: rgb(228 233 238 / 0.035);
 }
 
 body {
@@ -63,9 +71,9 @@ h3 {
 }
 
 /*
- * Depth layer: a faint blueprint grid that fades out toward the bottom, plus a
- * soft accent glow behind the hero. Purely decorative and non-interactive — it
- * exists so the page reads as built rather than as a blank document.
+ * Depth layer: a faint 24px grid across the whole page, like the paper a
+ * schematic is drawn on, plus a soft accent glow behind the hero. Purely
+ * decorative and non-interactive.
  */
 body::before {
   content: "";
@@ -74,11 +82,45 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, var(--color-border) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
-  background-size: 48px 48px;
-  opacity: 0.14;
-  mask-image: radial-gradient(ellipse 75% 40% at 50% 0%, #000 5%, transparent 70%);
+    linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/*
+ * The trace: a thin line in the left margin whose copper part grows with
+ * scroll progress (--trace-progress, set by BaseLayout). Only where the
+ * margin is wide enough to hold it without touching content; the line itself
+ * is visible at rest, so nothing depends on the script running.
+ */
+.trace {
+  display: none;
+}
+
+/* Measured against the widest container on the site (the project graph's
+   max-w-7xl), so the line never runs through content on any page. */
+@media (min-width: 85rem) {
+  .trace {
+    display: block;
+    position: fixed;
+    top: 5rem;
+    bottom: 2rem;
+    left: calc((100vw - 80rem) / 2 - 1.25rem);
+    z-index: 0;
+    width: 2px;
+    pointer-events: none;
+    background-color: var(--color-border);
+  }
+
+  .trace::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform-origin: top;
+    transform: scaleY(var(--trace-progress, 0.04));
+    background-color: var(--color-accent);
+    box-shadow: 0 0 10px var(--color-accent-glow);
+  }
 }
 
 body::after {
@@ -92,6 +134,26 @@ body::after {
   translate: -50% 0;
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 0%, var(--color-accent-glow), transparent 70%);
+}
+
+/* Ring with a filled centre, the way a solder pad looks on a board. Marks
+   section headings as stations along the trace. */
+.solder-pad {
+  position: relative;
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--color-accent);
+  border-radius: 50%;
+  background-color: var(--color-bg);
+}
+
+.solder-pad::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
 }
 
 /* Consistent keyboard focus treatment across links, buttons and summaries. */

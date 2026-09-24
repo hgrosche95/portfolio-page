@@ -8,23 +8,112 @@ kind: agent
 liveUrl: "https://witty-pond-0504bdc0f.7.azurestaticapps.net"
 liveLabel: "Live-Demo öffnen"
 liveStatusCheck: true
+hosting: "Bicep · Container Apps · Neon"
+decisions:
+  - topic: "Wissenssuche"
+    rejected: ["feste Vorschaltsuche"]
+    chosen: "Suche als Tool"
+    reason: "Das Modell entscheidet, wann eine Faktenfrage vorliegt, statt jede Nachricht durch die Suche zu schicken."
+  - topic: "Sprachgrenze"
+    rejected: ["RAG als Bibliothek im Node-Backend"]
+    chosen: "eigener FastAPI-Service"
+    reason: "Das Embedding-Ökosystem lebt in Python, die Agent-Logik in TypeScript. Dazwischen liegt eine dokumentierte HTTP-Schnittstelle."
+  - topic: "Löschen"
+    rejected: ["als MCP-Tool"]
+    chosen: "nur per REST"
+    reason: "Kein Modell soll autonom und unwiderruflich Daten löschen können."
 architecture:
+  lanes: ["Clients", "Dienste", "Extern & Daten"]
   nodes:
-    - { id: web, label: "Next.js", kind: frontend }
-    - { id: mcp, label: "MCP-Server", kind: frontend }
-    - { id: api, label: "NestJS Agent", kind: backend }
-    - { id: rag, label: "RAG-Service (FastAPI)", kind: backend }
-    - { id: llm, label: "LLM-Provider (Groq/Claude)", kind: external }
-    - { id: obs, label: "Langfuse (Tracing)", kind: external }
-    - { id: db, label: "PostgreSQL + pgvector (Neon)", kind: data }
+    - id: web
+      label: "Next.js"
+      kind: frontend
+      sub: "Chat · Gast-Token"
+      lane: 0
+      row: 0
+      description: "Kein Login nötig: Jeder Browser bekommt ein anonymes Gast-Token, Reisepläne sind pro Gast getrennt."
+    - id: mcp
+      label: "MCP-Server"
+      kind: frontend
+      sub: "Claude Code / Desktop"
+      lane: 0
+      row: 1.4
+      description: "Dieselben Fähigkeiten direkt aus Claude. Löschen gibt es hier bewusst nicht, damit kein Modell autonom Daten entfernt."
+    - id: api
+      label: "NestJS Agent"
+      kind: backend
+      sub: "Tool-Loop · Rate-Limit"
+      lane: 1
+      row: 0
+      description: "Echte Agent-Schleife: LLM mit tools-Array aufrufen, Tool-Calls ausführen, Ergebnisse zurückgeben, bis nichts mehr gebraucht wird. Rate-Limit pro IP und Obergrenze für Tool-Runden."
+    - id: rag
+      label: "RAG-Service"
+      kind: backend
+      sub: "FastAPI · fastembed"
+      lane: 1
+      row: 1.4
+      description: "Eigener Python-Service, weil das Embedding-Ökosystem dort lebt. Im Deployment nicht öffentlich erreichbar."
+    - id: llm
+      label: "LLM-Provider"
+      kind: external
+      sub: "Groq · Claude-Fallback"
+      lane: 2
+      row: 0
+      description: "Hinter einer eigenen Provider-Schnittstelle mit Retry. Ein Anbieterwechsel ist Konfiguration, kein Code."
+    - id: obs
+      label: "Langfuse"
+      kind: external
+      sub: "nur Metadaten"
+      lane: 2
+      row: 1
+      description: "Modell, Tokens, Latenz und Tool-Treffer. Nie die Nachricht oder die Antwort."
+    - id: db
+      label: "Postgres + pgvector"
+      kind: data
+      sub: "Neon"
+      lane: 2
+      row: 2
+      description: "Reisepläne und die Vektoren der Wissensbasis, getrennt über ein collection-Feld."
   edges:
     - [web, api]
     - [mcp, api]
     - [api, llm]
     - [api, rag]
     - [api, obs]
-    - [api, db]
     - [rag, db]
+    - [api, db]
+  scenarios:
+    - name: "Reiseplan erstellen"
+      steps:
+        - { from: web, to: api, label: "Wunsch", detail: "Ziel, Zeitraum, Budget" }
+        - { from: api, to: llm, label: "Anfrage", detail: "mit tools-Array" }
+        - { from: llm, to: api, label: "Tool-Call", detail: "search_flights, search_hotels" }
+        - { from: api, to: api, label: "Tools ausführen", detail: "tool_result zurück ans Modell" }
+        - { from: api, to: llm, label: "Ergebnisse" }
+        - { from: llm, to: api, label: "save_itinerary" }
+        - { from: api, to: db, label: "Plan speichern" }
+        - { from: api, to: obs, label: "Trace", detail: "ohne Text" }
+        - { from: api, to: web, label: "Tagesplan" }
+    - name: "Faktenfrage"
+      steps:
+        - { from: web, to: api, label: "Frage", detail: "„Was isst man in Lissabon?“" }
+        - { from: api, to: llm, label: "Anfrage" }
+        - { from: llm, to: api, label: "Tool-Call", detail: "search_travel_knowledge" }
+        - { from: api, to: rag, label: "Suche" }
+        - { from: rag, to: db, label: "Vektorsuche", detail: "pgvector" }
+        - { from: db, to: rag, label: "Treffer" }
+        - { from: rag, to: api, label: "Treffer + Quellen" }
+        - { from: api, to: llm, label: "Kontext" }
+        - { from: llm, to: api, label: "Antwort", detail: "mit Quellenangabe" }
+        - { from: api, to: web, label: "Antwort" }
+    - name: "Aus Claude (MCP)"
+      steps:
+        - { from: mcp, to: api, label: "Suche", detail: "JWT-geschützter Endpunkt" }
+        - { from: api, to: rag, label: "Suche", detail: "dieselbe Funktion wie im Chat" }
+        - { from: rag, to: db, label: "Vektorsuche" }
+        - { from: db, to: rag, label: "Treffer" }
+        - { from: rag, to: api, label: "Treffer + Quellen" }
+        - { from: api, to: mcp, label: "Ergebnis" }
 ---
 
 Eine Chat-App, die Reisen plant: Man beschreibt Ziel, Zeitraum, Budget und Vorlieben, und der Agent stellt bei Bedarf Rückfragen, sucht (simulierte) Flüge und Hotels und speichert am Ende einen strukturierten Tagesplan in der Datenbank. Fragt man stattdessen etwas zum Reiseziel selbst, zum Beispiel was man in Lissabon essen sollte, durchsucht der Agent eine eigene Wissensbasis und antwortet mit Quellenangabe, statt aus dem Gedächtnis zu spekulieren. Gebaut als Lernprojekt für produktionsnahe LLM-Anwendungen: Tool-Use-Agenten, Retrieval-Augmented Generation, austauschbare LLM-Anbieter, ein eigener MCP-Server und automatisierte Qualitätsmessung.

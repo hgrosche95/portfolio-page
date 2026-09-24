@@ -5,14 +5,89 @@ githubRepo: "life-ops-platform"
 techStack: ["n8n", "Docker", "Bicep", "GitHub Actions"]
 order: 7
 kind: orchestration
+hosting: "n8n lokal · Dienste auf Azure"
+decisions:
+  - topic: "Zugang"
+    rejected: ["überall MCP"]
+    chosen: "MCP für Claude, REST für n8n"
+    reason: "Feste Workflows brauchen keine Tool-Entdeckung. MCP wäre dort nur Overhead."
+  - topic: "Wissensbasis"
+    rejected: ["eine Vektordatenbank pro Dienst"]
+    chosen: "eine Instanz mit collection-Feld"
+    reason: "Getrennt wird über den Filter in der SQL-Abfrage, nie vermischt."
+  - topic: "Zustand"
+    rejected: ["fragilen State reparieren"]
+    chosen: "zustandslos + Hash-Vergleich"
+    reason: "n8n persistierte Static Data zwischen Läufen nicht, belegt über sechs Produktionsläufe. Der Hash-Vergleich war ohnehin schon da."
 architecture:
+  lanes: ["Aufrufer", "Dienste", "Geteilt"]
   nodes:
-    - { id: claude, label: "Claude (MCP)", kind: external }
-    - { id: n8n, label: "n8n (REST)", kind: backend }
-    - { id: trip, label: "ai-trip-planer", kind: external }
-    - { id: jobapp, label: "job-application-skill", kind: external }
-    - { id: rag, label: "RAG + Postgres (collection)", kind: data }
-    - { id: langfuse, label: "Langfuse (geteilt)", kind: external }
+    - id: claude
+      label: "Claude (MCP)"
+      kind: external
+      sub: "entdeckt Tools selbst"
+      lane: 0
+      row: 0
+      description: "Spricht beide Dienste über MCP an. Kein vordefinierter Ablauf nötig."
+    - id: n8n
+      label: "n8n (REST)"
+      kind: backend
+      sub: "Docker Compose · lokal"
+      lane: 0
+      row: 2.6
+      description: "Vier Workflows mit festem Ablauf. Läuft aktuell auf dem eigenen Rechner, der Umzug nach Azure ist der nächste Schritt."
+    - id: trip
+      label: "ai-trip-planer"
+      kind: external
+      sub: "RAG-Service"
+      lane: 1
+      row: 0
+      description: "Stellt die Wissensbasis bereit, jetzt mit einem collection-Feld für travel und jobs."
+    - id: jobapp
+      label: "job-application-skill"
+      kind: external
+      sub: "NestJS API"
+      lane: 1
+      row: 1.3
+      description: "Der Bewerbungshelfer als Dienst."
+    - id: rag
+      label: "RAG + Postgres"
+      kind: data
+      sub: "collection: travel / jobs"
+      lane: 2
+      row: 0
+      description: "Eine Instanz statt drei Vektordatenbanken. Getrennt wird nur über den Filter in der SQL-Abfrage. Befüllt ist bisher nur travel."
+    - id: langfuse
+      label: "Langfuse (geteilt)"
+      kind: external
+      sub: "ein Projekt, zwei Dienste"
+      lane: 2
+      row: 2.6
+      description: "Beide Dienste tracen in dasselbe Projekt, ohne Anzeigen-, Lebenslauf- oder Anschreiben-Text."
+  scenarios:
+    - name: "Jobbörse"
+      steps:
+        - { from: n8n, to: jobapp, label: "Anzeigen", detail: "per REST, mit Limit-Node" }
+        - { from: jobapp, to: jobapp, label: "Abgleich", detail: "gegen den Lebenslauf" }
+        - { from: jobapp, to: langfuse, label: "Trace", detail: "ohne Text" }
+        - { from: jobapp, to: n8n, label: "Ergebnis" }
+    - name: "Wissensbasis"
+      steps:
+        - { from: n8n, to: trip, label: "Trigger", detail: "stündlich, zustandslos" }
+        - { from: trip, to: rag, label: "Hash-Vergleich" }
+        - { from: rag, to: trip, label: "nur Geändertes" }
+        - { from: trip, to: n8n, label: "Ergebnis" }
+    - name: "Kostenwarnung"
+      steps:
+        - { from: n8n, to: langfuse, label: "Units abfragen" }
+        - { from: langfuse, to: n8n, label: "Verbrauch", detail: "Warnung vor dem Free-Tier-Limit" }
+    - name: "Claude fragt"
+      steps:
+        - { from: claude, to: trip, label: "search_travel_knowledge", detail: "per MCP" }
+        - { from: trip, to: rag, label: "Vektorsuche" }
+        - { from: rag, to: trip, label: "Treffer" }
+        - { from: trip, to: langfuse, label: "Trace" }
+        - { from: trip, to: claude, label: "Antwort", detail: "mit Quellen" }
   edges:
     - [claude, trip]
     - [claude, jobapp]

@@ -1,0 +1,644 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { layoutSchematic, pairKey, wirePath, NODE_HEIGHT } from '../lib/schematic';
+
+type Architecture = NonNullable<CollectionEntry<'projects'>['data']['architecture']>;
+
+interface Props {
+	architecture: Architecture;
+}
+
+const { architecture } = Astro.props;
+// The schema guarantees lane + row on every node once `lanes` is set, and
+// the page only renders this component when it is.
+const lanes = architecture.lanes ?? [];
+const scenarios = architecture.scenarios ?? [];
+const layout = layoutSchematic({
+	lanes,
+	nodes: architecture.nodes.map((node) => ({ id: node.id, lane: node.lane ?? 0, row: node.row ?? 0 })),
+	edges: architecture.edges,
+});
+
+/** Schema kind → border style and the words the legend uses for it. */
+const kinds = {
+	frontend: { className: 'k-client', label: 'Client / Aufrufer' },
+	backend: { className: 'k-service', label: 'eigener Dienst' },
+	external: { className: 'k-external', label: 'externer Dienst' },
+	data: { className: 'k-data', label: 'Daten' },
+} as const;
+
+const labelOf = new Map(architecture.nodes.map((node) => [node.id, node.label]));
+const firstService = architecture.nodes.find((node) => node.kind === 'backend') ?? architecture.nodes[0];
+
+/*
+ * Every packet path is computed here, at build time, and handed to the
+ * browser as a data attribute. The inline script below then only has to
+ * move a dot along a finished path: the geometry lives in one place
+ * (src/lib/schematic.ts) and the page still ships no JS bundle.
+ */
+const scenarioSteps = scenarios.map((scenario) =>
+	scenario.steps.map((step) => {
+		const stays = step.from === step.to;
+		const box = layout.boxes[step.from];
+		return {
+			...step,
+			title: stays ? labelOf.get(step.from) : `${labelOf.get(step.from)} → ${labelOf.get(step.to)}`,
+			text: [step.label, step.detail].filter(Boolean).join(' · '),
+			d: stays ? '' : wirePath(layout, step.from, step.to),
+			wire: stays ? '' : pairKey(step.from, step.to),
+			// Where the packet rests while work happens inside one component.
+			x: box.x + layout.nodeWidth - 12,
+			y: box.y + NODE_HEIGHT / 2,
+		};
+	}),
+);
+
+const TEXT_INSET = 12;
+const top = -30;
+const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
+---
+
+<figure class="schematic" data-schematic data-xray="Schematic.astro · statisches SVG + Inline-Skript" data-xray-kind="static">
+	{
+		scenarios.length > 0 && (
+			<div class="head" data-scenario-buttons hidden>
+				<span>Ablauf:</span>
+				{scenarios.map((scenario, i) => (
+					<button type="button" data-play={i} aria-pressed={i === 0 ? 'true' : 'false'}>
+						{scenario.name}
+					</button>
+				))}
+			</div>
+		)
+	}
+	<div class="body">
+		<div class="stage">
+			<div class="canvas">
+				<svg viewBox={viewBox} role="img" aria-label={`Architektur: ${architecture.nodes.map((node) => node.label).join(', ')}`}>
+					{
+						layout.lanes.map((lane) => (
+							<text class="lane-title" x={lane.x} y={-12}>
+								{lane.title}
+							</text>
+						))
+					}
+					{layout.dividers.map((x) => <line class="divider" x1={x} y1={-24} x2={x} y2={layout.height + 8} />)}
+					{layout.wires.map((wire) => <path class="wire" data-wire={wire.key} d={wire.d} />)}
+					{layout.wires.flatMap((wire) => wire.vias.map((via) => <circle class="via" cx={via.x} cy={via.y} r="2.4" />))}
+					{
+						architecture.nodes.map((node) => {
+							const box = layout.boxes[node.id];
+							return (
+								<g
+									class:list={['node', kinds[node.kind].className]}
+									data-node={node.id}
+									data-label={node.label}
+									data-meta={[node.sub, kinds[node.kind].label].filter(Boolean).join(' · ')}
+									data-description={node.description ?? ''}
+								>
+									{/* Native tooltip, so the description is reachable even without JS. */}
+									{node.description && <title>{`${node.label}: ${node.description}`}</title>}
+									<rect x={box.x} y={box.y} width={layout.nodeWidth} height={NODE_HEIGHT} rx="6" />
+									<text x={box.x + TEXT_INSET} y={box.y + 22}>
+										{node.label}
+									</text>
+									{node.sub && (
+										<text class="sub" x={box.x + TEXT_INSET} y={box.y + 39}>
+											{node.sub}
+										</text>
+									)}
+								</g>
+							);
+						})
+					}
+					<circle class="packet" data-packet r="4" cx="-40" cy="-40"></circle>
+					<path class="probe" data-probe d="M0 0"></path>
+				</svg>
+			</div>
+			<div class="legend">
+				{
+					Object.values(kinds).map((kind) => (
+						<span>
+							<i class={kind.className} />
+							{kind.label}
+						</span>
+					))
+				}
+			</div>
+			{/* Under the diagram rather than beside it: on wide screens this
+			    fills the space next to the (taller) step list. */}
+			<div class="component" data-component hidden aria-live="polite">
+				<h3>Komponente</h3>
+				<p class="name" data-c="label"></p>
+				<p class="meta" data-c="meta"></p>
+				<p class="description" data-c="description"></p>
+			</div>
+		</div>
+
+		{
+			scenarios.length > 0 && (
+				<div class="side">
+					{/* Without JS every scenario is simply a readable list. */}
+					{scenarioSteps.map((steps, i) => (
+						<section class="steps" data-scenario={i}>
+							<h3>{scenarios[i].name}</h3>
+							<ol>
+								{steps.map((step) => (
+									<li data-d={step.d} data-wire={step.wire} data-from={step.from} data-to={step.to} data-x={step.x} data-y={step.y}>
+										<b>{step.title}</b>
+										{step.text && <span>{step.text}</span>}
+									</li>
+								))}
+							</ol>
+						</section>
+					))}
+				</div>
+			)
+		}
+	</div>
+	<span hidden data-first-node={firstService?.id}></span>
+</figure>
+
+<script is:inline>
+	(function () {
+		const figure = document.querySelector('[data-schematic]');
+		if (!figure || figure.dataset.ready) return;
+		figure.dataset.ready = 'true';
+
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const buttons = figure.querySelectorAll('[data-play]');
+		const panels = figure.querySelectorAll('[data-scenario]');
+		const wires = figure.querySelectorAll('.wire');
+		const nodes = figure.querySelectorAll('[data-node]');
+		const packet = figure.querySelector('[data-packet]');
+		const probe = figure.querySelector('[data-probe]');
+		const component = figure.querySelector('[data-component]');
+
+		// --- Component details on click ------------------------------------
+		function select(id) {
+			nodes.forEach(function (node) {
+				const on = node.dataset.node === id;
+				node.classList.toggle('selected', on);
+				if (on && component) {
+					component.querySelector('[data-c="label"]').textContent = node.dataset.label;
+					component.querySelector('[data-c="meta"]').textContent = node.dataset.meta;
+					component.querySelector('[data-c="description"]').textContent = node.dataset.description;
+				}
+			});
+		}
+
+		if (component) {
+			component.hidden = false;
+			nodes.forEach(function (node) {
+				// Only interactive once this script runs, so no dead focus stops without JS.
+				node.setAttribute('tabindex', '0');
+				node.setAttribute('role', 'button');
+				node.setAttribute('aria-label', node.dataset.label + ': Details anzeigen');
+				node.addEventListener('click', function () {
+					select(node.dataset.node);
+				});
+				node.addEventListener('keydown', function (event) {
+					if (event.key === 'Enter' || event.key === ' ') {
+						event.preventDefault();
+						select(node.dataset.node);
+					}
+				});
+			});
+			select(figure.querySelector('[data-first-node]').dataset.firstNode);
+		}
+
+		if (!buttons.length) return;
+
+		// --- Scenario playback ---------------------------------------------
+		// Each play() bumps `run`; a loop that notices it is outdated stops
+		// itself, so switching scenarios never leaves two packets running.
+		let run = 0;
+		let visible = true;
+		let current = 0;
+
+		function light(ids) {
+			nodes.forEach(function (node) {
+				node.classList.toggle('lit', ids.indexOf(node.dataset.node) >= 0);
+			});
+		}
+
+		function play(index) {
+			run += 1;
+			const token = run;
+			current = index;
+			buttons.forEach(function (button, i) {
+				button.setAttribute('aria-pressed', String(i === index));
+			});
+			panels.forEach(function (panel, i) {
+				panel.hidden = i !== index;
+			});
+
+			const steps = Array.prototype.slice.call(panels[index].querySelectorAll('li'));
+			const hot = steps.map(function (step) {
+				return step.dataset.wire;
+			});
+			wires.forEach(function (wire) {
+				wire.classList.toggle('hot', hot.indexOf(wire.dataset.wire) >= 0);
+			});
+
+			if (reduceMotion) {
+				steps.forEach(function (step) {
+					step.classList.add('on');
+				});
+				return;
+			}
+
+			let k = 0;
+			function next() {
+				if (token !== run) return;
+				if (!visible) {
+					setTimeout(next, 400);
+					return;
+				}
+				if (k >= steps.length) {
+					light([]);
+					packet.setAttribute('cx', '-40');
+					steps.forEach(function (step) {
+						step.classList.remove('on');
+					});
+					k = 0;
+					setTimeout(next, 1100);
+					return;
+				}
+				const step = steps[k];
+				steps.forEach(function (other, i) {
+					other.classList.toggle('on', i === k);
+				});
+				k += 1;
+
+				if (!step.dataset.d) {
+					light([step.dataset.from]);
+					packet.setAttribute('cx', step.dataset.x);
+					packet.setAttribute('cy', step.dataset.y);
+					setTimeout(next, 1100);
+					return;
+				}
+
+				light([step.dataset.from, step.dataset.to]);
+				probe.setAttribute('d', step.dataset.d);
+				const length = probe.getTotalLength();
+				const duration = Math.max(550, length * 3.2);
+				const start = performance.now();
+				(function frame(now) {
+					if (token !== run) return;
+					const t = Math.min(1, (now - start) / duration);
+					const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+					const point = probe.getPointAtLength(length * eased);
+					packet.setAttribute('cx', point.x);
+					packet.setAttribute('cy', point.y);
+					if (t < 1) window.requestAnimationFrame(frame);
+					else setTimeout(next, 380);
+				})(start);
+			}
+			next();
+		}
+
+		// Pause while scrolled out of view. If the observer is unavailable the
+		// animation simply keeps running; nothing depends on it.
+		if ('IntersectionObserver' in window) {
+			new IntersectionObserver(function (entries) {
+				visible = entries[0].isIntersecting;
+			}).observe(figure);
+		}
+
+		figure.querySelector('[data-scenario-buttons]').hidden = false;
+		buttons.forEach(function (button, i) {
+			button.addEventListener('click', function () {
+				play(i);
+			});
+		});
+		play(current);
+	})();
+</script>
+
+<style>
+	/*
+	 * Laid out by its own width, not the viewport's: the same component can
+	 * sit in a wide page column or a narrow one and still pick the right
+	 * arrangement. Wide → steps beside the diagram; medium → steps and
+	 * component details side by side underneath; narrow → all stacked.
+	 */
+	.schematic {
+		container-type: inline-size;
+		margin: 0;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 0.75rem;
+		background-color: var(--color-surface);
+		overflow: hidden;
+	}
+
+	.body {
+		display: grid;
+	}
+
+	.stage {
+		min-width: 0;
+	}
+
+	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.375rem;
+		border-bottom: 1px dashed var(--color-border-strong);
+		padding: 0.625rem 0.875rem;
+		font: 12px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.head span {
+		margin-right: 0.25rem;
+	}
+
+	.head button {
+		border: 1px solid var(--color-border-strong);
+		border-radius: 0.3rem;
+		padding: 0.35rem 0.7rem;
+		font: 500 12px var(--font-mono);
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+
+	.head button:hover {
+		border-color: var(--color-text);
+		color: var(--color-text);
+	}
+
+	.head button[aria-pressed='true'] {
+		border-color: var(--color-accent);
+		background-color: var(--color-accent);
+		color: var(--color-bg);
+	}
+
+	/* The diagram keeps a readable minimum size and scrolls on its own on a
+	   phone, instead of shrinking the labels to nothing or widening the page. */
+	.canvas {
+		overflow-x: auto;
+		padding: 1rem 0.875rem 0.5rem;
+	}
+
+	svg {
+		display: block;
+		width: 100%;
+		min-width: 640px;
+		height: auto;
+	}
+
+	.lane-title {
+		font: 10.5px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		fill: var(--color-text-muted);
+	}
+
+	.divider {
+		stroke: var(--color-border);
+		stroke-dasharray: 2 4;
+	}
+
+	.wire {
+		fill: none;
+		stroke: var(--color-border-strong);
+		stroke-width: 1.4;
+		transition: stroke 0.25s;
+	}
+
+	.wire.hot {
+		stroke: var(--color-accent);
+		stroke-width: 1.8;
+	}
+
+	.via {
+		fill: var(--color-border-strong);
+	}
+
+	.node rect {
+		fill: var(--color-bg);
+		stroke: var(--color-border-strong);
+		transition: stroke 0.2s;
+	}
+
+	.node text {
+		font: 12px var(--font-mono);
+		fill: var(--color-text);
+		pointer-events: none;
+	}
+
+	.node text.sub {
+		font-size: 10px;
+		fill: var(--color-text-muted);
+	}
+
+	.k-client rect {
+		stroke: var(--color-text);
+	}
+
+	.k-external rect {
+		stroke-dasharray: 4 3;
+	}
+
+	.k-data rect {
+		fill: var(--color-accent-soft);
+		stroke: var(--color-accent);
+	}
+
+	.node[role='button'] {
+		cursor: pointer;
+	}
+
+	.node[role='button']:hover rect,
+	.node.lit rect {
+		stroke: var(--color-accent);
+	}
+
+	.node.lit rect {
+		filter: drop-shadow(0 0 6px var(--color-accent-glow));
+	}
+
+	.node.selected rect {
+		stroke: var(--color-accent);
+		stroke-width: 2;
+	}
+
+	/* The box itself shows focus; a rectangular outline around an SVG group
+	   would sit off the rounded corners. */
+	.node:focus {
+		outline: none;
+	}
+
+	.node:focus-visible rect {
+		stroke: var(--color-accent);
+		stroke-width: 2.5;
+	}
+
+	.packet {
+		fill: var(--color-accent);
+		filter: drop-shadow(0 0 5px var(--color-accent-glow));
+	}
+
+	.probe {
+		fill: none;
+		stroke: none;
+	}
+
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem 1.125rem;
+		border-top: 1px dashed var(--color-border-strong);
+		padding: 0.625rem 0.875rem;
+		font: 11px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.legend i {
+		display: inline-block;
+		width: 18px;
+		height: 10px;
+		margin-right: 6px;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 2px;
+		vertical-align: -1px;
+	}
+
+	.legend i.k-client {
+		border-color: var(--color-text);
+	}
+
+	.legend i.k-external {
+		border-style: dashed;
+	}
+
+	.legend i.k-data {
+		border-color: var(--color-accent);
+		background-color: var(--color-accent-soft);
+	}
+
+	.side {
+		border-top: 1px dashed var(--color-border-strong);
+	}
+
+	.side h3,
+	.component h3 {
+		margin: 0 0 0.5rem;
+		font: 500 11.5px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.steps {
+		padding: 0.875rem 1rem;
+	}
+
+	.steps ol {
+		display: grid;
+		gap: 2px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		counter-reset: step;
+	}
+
+	.steps li {
+		display: grid;
+		grid-template-columns: 1.5rem 1fr;
+		column-gap: 0.375rem;
+		counter-increment: step;
+		border-radius: 0.3rem;
+		padding: 0.3rem 0.4rem;
+		font-size: 13.5px;
+		line-height: 1.4;
+		color: var(--color-text-muted);
+		transition: background-color 0.2s;
+	}
+
+	.steps li::before {
+		content: counter(step, decimal-leading-zero);
+		grid-row: span 2;
+		padding-top: 2px;
+		font: 11px var(--font-mono);
+	}
+
+	.steps li b {
+		font: 500 11.5px var(--font-mono);
+		color: var(--color-text);
+	}
+
+	.steps li.on {
+		background-color: var(--color-accent-soft);
+		color: var(--color-text);
+	}
+
+	.steps li.on::before {
+		color: var(--color-accent);
+	}
+
+	.component {
+		border-top: 1px dashed var(--color-border-strong);
+		padding: 0.875rem 1rem;
+	}
+
+	.component p {
+		margin: 0;
+	}
+
+	.component .name {
+		font-family: var(--font-display);
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.component .meta {
+		margin: 0.125rem 0 0.5rem;
+		font: 11.5px var(--font-mono);
+		color: var(--color-accent);
+	}
+
+	.component .description {
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--color-text-muted);
+	}
+
+	/* Medium width: the step list sits underneath, split into two columns so
+	   a nine-step scenario doesn't turn into a long strip. */
+	@container (min-width: 640px) and (max-width: 959px) {
+		/* Newspaper columns rather than a two-column grid, so the numbers
+		   still read top to bottom: 01–05 left, 06–09 right. */
+		.steps ol {
+			display: block;
+			columns: 2;
+			column-gap: 1rem;
+		}
+
+		.steps li {
+			break-inside: avoid;
+		}
+	}
+
+	@container (min-width: 960px) {
+		.body {
+			grid-template-columns: minmax(0, 1fr) 300px;
+		}
+
+		.side {
+			border-top: 0;
+			border-left: 1px dashed var(--color-border-strong);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.wire,
+		.node rect,
+		.steps li {
+			transition: none;
+		}
+	}
+</style>
