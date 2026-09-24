@@ -101,11 +101,24 @@ architecture:
 
 import PlatformStatus from '../../components/PlatformStatus.astro';
 
-Kein eigenständiges Produkt, sondern ein Meta-Repo über zwei bereits bestehende Projekte (`ai-trip-planer`, `job-application-skill`) — die Frage dahinter: Was, wenn mehrere eigene LLM-Projekte nicht isoliert nebeneinanderstehen, sondern sich Infrastruktur teilen und sich gegenseitig automatisiert am Laufen halten? Ein drittes Repo, `agentic-rogue-like`, ist dabei bewusst nur Ideen-Geber, kein integrierter Dienst: sein Validierungs-Loop-Muster (generieren → deterministisch prüfen → bei Verstoß mit dem konkreten Fehler erneut, gedeckelt) wurde für den Anschreiben-Ton-/Längen-Check nachgebaut, ohne dass `life-ops-platform` dafür Code aus diesem Repo importiert.
+Kein eigenes Produkt, sondern ein Meta-Repo über `ai-trip-planer` und `job-application-skill`. Die Frage dahinter: Was, wenn mehrere eigene LLM-Projekte sich Infrastruktur teilen und sich gegenseitig automatisiert am Laufen halten, statt isoliert nebeneinanderzustehen?
 
-Die drei n8n-Automationen unten in echt, mit ihrem jeweils letzten Ergebnis — ein vierter Workflow (`publish-platform-status`) sammelt diesen Stand über n8ns eigene Executions-API ein und committet ihn hierher, gebaut nach demselben Build-Time-Snapshot-Prinzip wie die Deployment-Grafik auf der Startseite. n8n läuft dafür aktuell per Docker Compose auf meinem Rechner, nicht in der Cloud; der letzte Lauf kann deshalb auch ein paar Tage zurückliegen. Der Umzug von n8n nach Azure ist der nächste Schritt.
+Unten die drei n8n-Automationen mit ihrem letzten echten Ergebnis. Ein vierter Workflow sammelt diesen Stand ein und committet ihn hierher. n8n läuft noch lokal per Docker Compose, der Umzug nach Azure ist der nächste Schritt.
 
 <PlatformStatus />
+
+**Zwei Zugänge zu denselben Fähigkeiten:** Claude spricht beide Dienste über MCP an und entdeckt die Tools selbst. n8n nutzt einfaches REST, weil seine Workflows ohnehin feststehen und MCP dort nur Overhead wäre.
+
+**Geteilt statt verdreifacht:** Eine RAG-Instanz trennt Reise- und Karriere-Wissen über ein `collection`-Feld, statt für jeden Dienst eine eigene Vektordatenbank zu betreiben. Beide Dienste tracen in dasselbe Langfuse-Projekt, ohne Anzeigen-, Lebenslauf- oder Anschreiben-Text. Ehrlicher Stand: Befüllt ist bisher nur die Reise-Collection.
+
+**Kurskorrekturen:** Ein Commit-Watcher scheiterte, weil diese n8n-Version ihren Zustand zwischen Läufen nicht speichert, belegt über sechs Produktionsläufe. Ihn ersetzt ein zustandsloser stündlicher Trigger. Ein RSS-Feed mit 20+ Einträgen riss das Groq-Rate-Limit, behoben mit einem Limit-Node.
+
+<details class="more">
+<summary>Ausführlich lesen: Hintergrund, Zugänge, Wissensbasis, Deployment</summary>
+
+Kein eigenständiges Produkt, sondern ein Meta-Repo über zwei bereits bestehende Projekte (`ai-trip-planer`, `job-application-skill`) — die Frage dahinter: Was, wenn mehrere eigene LLM-Projekte nicht isoliert nebeneinanderstehen, sondern sich Infrastruktur teilen und sich gegenseitig automatisiert am Laufen halten? Ein drittes Repo, `agentic-rogue-like`, ist dabei bewusst nur Ideen-Geber, kein integrierter Dienst: sein Validierungs-Loop-Muster (generieren → deterministisch prüfen → bei Verstoß mit dem konkreten Fehler erneut, gedeckelt) wurde für den Anschreiben-Ton-/Längen-Check nachgebaut, ohne dass `life-ops-platform` dafür Code aus diesem Repo importiert.
+
+Die drei n8n-Automationen oben in echt, mit ihrem jeweils letzten Ergebnis — ein vierter Workflow (`publish-platform-status`) sammelt diesen Stand über n8ns eigene Executions-API ein und committet ihn hierher, gebaut nach demselben Build-Time-Snapshot-Prinzip wie die Deployment-Grafik auf der Startseite. n8n läuft dafür aktuell per Docker Compose auf meinem Rechner, nicht in der Cloud; der letzte Lauf kann deshalb auch ein paar Tage zurückliegen. Der Umzug von n8n nach Azure ist der nächste Schritt.
 
 **Zwei bewusst unterschiedliche Zugänge zu denselben Fähigkeiten:** Claude (Code/Desktop) spricht beide Dienste über MCP an — das Modell entdeckt die Tools live selbst, kein vordefinierter Ablauf nötig. n8n spricht dieselben Fähigkeiten stattdessen über einfaches REST an: Workflows sind vorab festgelegt (Jobbörse beobachten, Wissensbasis aktuell halten, Kosten überwachen), MCP-Overhead wäre dort unnötige Komplexität für einen bereits feststehenden Ablauf.
 
@@ -114,3 +127,5 @@ Die drei n8n-Automationen unten in echt, mit ihrem jeweils letzten Ergebnis — 
 **Technisch interessant:** Zwei der n8n-Workflows liefen erst nach einer echten Kurskorrektur: Ein geplanter GitHub-Commit-Watcher für die Wissensbasis scheiterte daran, dass diese n8n-Version `$getWorkflowStaticData` zwischen automatischen Läufen nicht wie dokumentiert persistiert (mit sechs beobachteten Produktionsläufen in der n8n-eigenen SQLite-Datenbank verifiziert, nicht nur vermutet) — ersetzt durch einen zustandslosen stündlichen Trigger, der sich auf den ohnehin vorhandenen Hash-Vergleich der Ingestion-Pipeline verlässt, statt einen fragilen State-Mechanismus zu reparieren. Die Jobbörsen-Automation riss außerdem live das Groq-Free-Tier-Rate-Limit, weil ein RSS-Feed mit 20+ Einträgen ebenso viele parallele LLM-Aufrufe auslöste — behoben mit einem einfachen Limit-Node statt komplexerer Drosselung.
 
 **Deployment:** `job-application-skill` bekam für dieses Projekt sein erstes echtes Azure-Deployment — eigene, isolierte Resource Group statt die von `ai-trip-planer` mitzunutzen, eigene Federated Credential mit auf genau diese Resource Group beschränkten Rechten (nicht subscription-weit, wie es das ältere Muster im selben Account vorsah). Der API-Server läuft dabei tatsächlich mit Python im selben Container wie das NestJS-Backend, weil die Bewerbungshelfer-Skripte (Lebenslauf/Anschreiben als PDF) Python-Prozesse aufrufen — `node:20-slim` bekommt Python 3 einfach per `apt` dazu, statt ein zweites Basis-Image zu brauchen.
+
+</details>
