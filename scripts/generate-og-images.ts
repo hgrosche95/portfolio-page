@@ -25,25 +25,25 @@ const WIDTH = 1200;
 const HEIGHT = 630;
 
 const COLORS = {
-  bg: '#0d1117',
-  surface: '#12181f',
-  border: '#262d38',
-  text: '#e6edf3',
-  muted: '#8b98a5',
-  accent: '#4ade80',
+  bg: '#0f151b',
+  surface: '#151d25',
+  border: '#24303b',
+  text: '#e4e9ee',
+  muted: '#8f9ba7',
+  accent: '#e08a4f',
 };
 
-const fontDir = 'node_modules/@fontsource/jetbrains-mono/files';
+const fontDir = 'node_modules/@fontsource/ibm-plex-mono/files';
 const fonts = [
   {
-    name: 'JetBrains Mono',
-    data: readFileSync(`${fontDir}/jetbrains-mono-latin-400-normal.woff`),
+    name: 'IBM Plex Mono',
+    data: readFileSync(`${fontDir}/ibm-plex-mono-latin-400-normal.woff`),
     weight: 400 as const,
     style: 'normal' as const,
   },
   {
-    name: 'JetBrains Mono',
-    data: readFileSync(`${fontDir}/jetbrains-mono-latin-700-normal.woff`),
+    name: 'IBM Plex Mono',
+    data: readFileSync(`${fontDir}/ibm-plex-mono-latin-700-normal.woff`),
     weight: 700 as const,
     style: 'normal' as const,
   },
@@ -77,9 +77,9 @@ function layout(card: Card) {
         // stops matter: without a transparent end satori renders a hard edge
         // where the gradient meets the background.
         backgroundImage:
-          'radial-gradient(1100px 620px at 50% -20%, rgba(74,222,128,0.20) 0%, rgba(74,222,128,0.08) 45%, rgba(74,222,128,0) 100%)',
+          'radial-gradient(1100px 620px at 50% -20%, rgba(224,138,79,0.20) 0%, rgba(224,138,79,0.08) 45%, rgba(224,138,79,0) 100%)',
         padding: '64px 72px',
-        fontFamily: 'JetBrains Mono',
+        fontFamily: 'IBM Plex Mono',
         borderTop: `8px solid ${COLORS.accent}`,
       },
       children: [
