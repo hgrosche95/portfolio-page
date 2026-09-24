@@ -40,6 +40,12 @@
   --color-bg-translucent: rgb(237 240 242 / 0.82);
   /* Background grid lines, deliberately fainter than any border. */
   --color-grid: rgb(18 26 36 / 0.045);
+  /*
+   * Status, not decoration: "running / reachable". Kept apart from the
+   * accent so a live signal never blends into the copper around it.
+   * ~5.2:1 on --color-bg.
+   */
+  --color-live: #1f7a4d;
 }
 
 .dark {
@@ -55,6 +61,7 @@
   --color-accent-glow: rgb(224 138 79 / 0.14);
   --color-bg-translucent: rgb(15 21 27 / 0.82);
   --color-grid: rgb(228 233 238 / 0.035);
+  --color-live: #5cc98f;
 }
 
 body {
@@ -88,12 +95,15 @@ body::before {
 }
 
 /*
- * The trace: a thin line in the left margin whose copper part grows with
- * scroll progress (--trace-progress, set by BaseLayout). Only where the
- * margin is wide enough to hold it without touching content; the line itself
- * is visible at rest, so nothing depends on the script running.
+ * The trace: a thin line in the left margin of <main>, scrolling with the
+ * content. Its copper part reaches down to a fixed reading line in the
+ * viewport (--trace-progress, set by BaseLayout), and every section heading
+ * hangs off it by a short branch that turns copper once the fill passes it.
+ * Only where the margin is wide enough to hold it without touching content;
+ * line and branches are visible at rest, so nothing depends on the script.
  */
-.trace {
+.trace,
+.trace-branch {
   display: none;
 }
 
@@ -101,12 +111,12 @@ body::before {
    max-w-7xl), so the line never runs through content on any page. */
 @media (min-width: 85rem) {
   .trace {
+    --trace-x: calc((100% - 80rem) / 2 - 1.25rem);
     display: block;
-    position: fixed;
-    top: 5rem;
-    bottom: 2rem;
-    left: calc((100vw - 80rem) / 2 - 1.25rem);
-    z-index: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--trace-x);
     width: 2px;
     pointer-events: none;
     background-color: var(--color-border);
@@ -120,6 +130,56 @@ body::before {
     transform: scaleY(var(--trace-progress, 0.04));
     background-color: var(--color-accent);
     box-shadow: 0 0 10px var(--color-accent-glow);
+  }
+
+  /*
+   * From the trace to the heading's own solder pad. The heading's left edge
+   * is its container's content edge, (100% - container) / 2 + 1rem; the
+   * trace's centre is (100% - 80rem) / 2 - 1.25rem + 1px. Their difference
+   * no longer depends on the viewport, which is what lets plain CSS draw it.
+   */
+  .trace-branch {
+    --branch-start: calc((var(--container-width, 64rem) - 80rem) / 2 - 2.25rem + 1px);
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: var(--branch-start);
+    width: calc(-1 * var(--branch-start));
+    height: 2px;
+    translate: 0 -50%;
+    pointer-events: none;
+    background-color: var(--color-border);
+    transition: background-color 0.3s;
+  }
+
+  /* Junction dot where the branch leaves the trace. */
+  .trace-branch::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background-color: var(--color-border-strong);
+    transition: background-color 0.3s;
+  }
+
+  .reached .trace-branch,
+  .reached .trace-branch::before {
+    background-color: var(--color-accent);
+  }
+
+  .reached .trace-branch {
+    box-shadow: 0 0 8px var(--color-accent-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trace-branch,
+  .trace-branch::before {
+    transition: none;
   }
 }
 

@@ -164,7 +164,13 @@ const sheet = [
 		{
 			entry.data.architecture?.lanes && (
 				<section class="mt-14" aria-labelledby="schematic-title">
-					<h2 id="schematic-title" class="mb-4 text-xl font-semibold tracking-tight text-[var(--color-text)]">
+					<h2
+						id="schematic-title"
+						class="relative mb-4 flex items-center gap-3 text-xl font-semibold tracking-tight text-[var(--color-text)]"
+						data-trace-stop
+					>
+						<span class="trace-branch" aria-hidden="true"></span>
+						<span class="solder-pad" aria-hidden="true"></span>
 						So hängt es zusammen
 					</h2>
 					<Schematic architecture={entry.data.architecture} />
@@ -291,7 +297,7 @@ const sheet = [
 					.then(function (data) {
 						if (data.awake) {
 							el.textContent = '● Server ist gerade wach';
-							el.classList.add('text-[var(--color-accent)]');
+							el.classList.add('text-[var(--color-live)]');
 						} else {
 							el.textContent = '○ Server schläft gerade, wacht beim Öffnen in ca. 30–40s auf';
 						}
