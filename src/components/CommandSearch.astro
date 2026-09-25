@@ -23,7 +23,7 @@ const { projects } = Astro.props;
 	type="button"
 	id="cmdk-trigger"
 	aria-haspopup="dialog"
-	aria-label="Projekte durchsuchen (Strg K)"
+	aria-label="Projekte durchsuchen"
 	class="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-2 py-1 text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
 >
 	<svg
@@ -38,9 +38,6 @@ const { projects } = Astro.props;
 		<circle cx="11" cy="11" r="7"></circle>
 		<path d="m21 21-4.3-4.3"></path>
 	</svg>
-	<kbd class="hidden rounded border border-[var(--color-border-strong)] px-1 font-mono text-[10px] sm:inline">
-		&#8984;K
-	</kbd>
 </button>
 
 <div id="cmdk-backdrop" class="fixed inset-0 z-[60] hidden bg-black/50" data-cmdk-close></div>
@@ -71,9 +68,17 @@ const { projects } = Astro.props;
 			autocomplete="off"
 			class="flex-1 bg-transparent font-mono text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
 		/>
-		<kbd class="rounded border border-[var(--color-border-strong)] px-1 font-mono text-[10px] text-[var(--color-text-muted)]">
-			Esc
-		</kbd>
+		{/* A visible close button; Esc still works as a keyboard shortcut. */}
+		<button
+			type="button"
+			id="cmdk-close"
+			aria-label="Suche schließen"
+			class="grid size-7 shrink-0 place-items-center rounded text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)]"
+		>
+			<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+				<path d="M18 6 6 18M6 6l12 12"></path>
+			</svg>
+		</button>
 	</div>
 	<ul id="cmdk-results" class="max-h-72 overflow-y-auto p-1.5"></ul>
 	<p id="cmdk-empty" class="hidden px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]">
@@ -161,6 +166,7 @@ const { projects } = Astro.props;
 
 		trigger.addEventListener('click', open);
 		backdrop.addEventListener('click', close);
+		document.getElementById('cmdk-close')?.addEventListener('click', close);
 
 		document.addEventListener('keydown', (event) => {
 			const isSearchShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
