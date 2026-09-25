@@ -1,71 +1,5 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import Schematic from './Schematic.astro';
-
-type Architecture = NonNullable<CollectionEntry<'projects'>['data']['architecture']>;
-
-/*
- * The hero's diagram: the encounter agent from agentic-rogue-like, cut down
- * to the part that makes the point - the model is swappable, the guardrails
- * around it are not. Kept here rather than in that project's MDX because it
- * is a deliberate simplification (engine, map and combat collapsed into one
- * box), not the project's real architecture.
- */
-const encounterAgent: Architecture = {
-	lanes: ['Spielkern', 'Agent', 'Modell'],
-	nodes: [
-		{ id: 'engine', label: 'Run-Engine', kind: 'backend', sub: 'Etage · Budget', lane: 0, row: 0.6 },
-		{ id: 'agent', label: 'Encounter-Agent', kind: 'backend', sub: 'LangGraph', lane: 1, row: 0 },
-		{ id: 'check', label: 'Validierung', kind: 'backend', sub: 'Schema + Budget', lane: 1, row: 1.4 },
-		{ id: 'groq', label: 'Groq', kind: 'external', sub: 'gpt-oss-20b · Cloud', lane: 2, row: 0 },
-		{ id: 'local', label: 'Qwen2.5-1.5B', kind: 'external', sub: 'QLoRA · lokal', lane: 2, row: 1.4 },
-	],
-	edges: [
-		['engine', 'agent'],
-		['agent', 'groq'],
-		['agent', 'local'],
-		['agent', 'check'],
-		['check', 'engine'],
-	],
-	scenarios: [
-		{
-			name: 'Cloud (Groq)',
-			steps: [
-				{ from: 'engine', to: 'agent', label: 'Etage + Budget' },
-				{ from: 'agent', to: 'groq', label: 'Tool-Call', detail: 'festes Schema' },
-				{ from: 'groq', to: 'agent', label: 'Vorschlag' },
-				{ from: 'agent', to: 'check', label: 'Prüfen' },
-				{ from: 'check', to: 'check', label: 'Bei Verstoß', detail: 'Retry, höchstens dreimal' },
-				{ from: 'check', to: 'engine', label: 'Gegner', detail: 'sonst statischer Pool' },
-			],
-		},
-		{
-			name: 'Lokal (Fine-Tune)',
-			steps: [
-				{ from: 'engine', to: 'agent', label: 'Etage + Budget' },
-				{ from: 'agent', to: 'local', label: 'Tool-Call', detail: 'dieselben Tools, ohne Netzwerk' },
-				{ from: 'local', to: 'agent', label: 'Vorschlag' },
-				{ from: 'agent', to: 'check', label: 'Prüfen' },
-				{ from: 'check', to: 'check', label: 'Bei Verstoß', detail: 'Retry, höchstens dreimal' },
-				{ from: 'check', to: 'engine', label: 'Gegner', detail: 'sonst statischer Pool' },
-			],
-		},
-	],
-};
-
-/** What changes with the model, from training/RESULTS.md in that repo. Same order as the scenarios. */
-const metrics = [
-	[
-		{ value: 'Standard', label: 'in Produktion' },
-		{ value: '310 Aufrufe', label: 'als Baseline gemessen' },
-		{ value: 'Cent-Beträge', label: 'braucht Netz + API-Key' },
-	],
-	[
-		{ value: '100 %', label: 'schemakonform, 604 Aufrufe' },
-		{ value: '935 MB', label: 'GGUF, lokal über Ollama' },
-		{ value: 'Vielfalt ↓', label: 'dokumentierter Zielkonflikt' },
-	],
-];
+import AgentConsole from './AgentConsole.astro';
 
 /**
  * Skills grouped by domain rather than listed as one flat row, so the core
@@ -180,50 +114,14 @@ const skillGroups = [
 			</div>
 		</div>
 
-		<figure data-reveal class="m-0" data-hero-schematic>
-			<Schematic architecture={encounterAgent} width={520} compact scenarioLabel="Modell:" />
-			{/* One strip per scenario; the script below shows the one that is playing. */}
-			{
-				metrics.map((set, i) => (
-					<dl
-						data-metrics={i}
-						hidden={i !== 0}
-						class="mt-2 grid grid-cols-3 overflow-hidden rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-xs"
-					>
-						{set.map((metric) => (
-							<div class="border-l border-dashed border-[var(--color-border-strong)] px-3 py-2 first:border-l-0">
-								<dt class="sr-only">{metric.label}</dt>
-								<dd class="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
-									{metric.value}
-								</dd>
-								<dd class="leading-snug text-[var(--color-text-muted)]" aria-hidden="true">
-									{metric.label}
-								</dd>
-							</div>
-						))}
-					</dl>
-				))
-			}
+		<figure data-reveal class="m-0">
+			<AgentConsole />
 			<figcaption class="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
-				Ein echtes Stück aus dem{' '}
-				<a href="/projects/agentic-rogue-like" class="text-[var(--color-accent)] hover:underline">Agentic Roguelike</a>: Das Modell lässt sich umschalten, die Leitplanken drumherum bleiben gleich.
+				Ein echter Ablauf aus dem{' '}
+				<a href="/projects/ai-trip-planer" class="text-[var(--color-accent)] hover:underline">AI Trip Planner</a>: Jede Zeile im Log schickt ein Paket durch den Aufbau darüber.
 			</figcaption>
 		</figure>
 	</div>
-
-	<script is:inline>
-		(function () {
-			const hero = document.querySelector('[data-hero-schematic]');
-			if (!hero) return;
-			const schematic = hero.querySelector('[data-schematic]');
-			const strips = hero.querySelectorAll('[data-metrics]');
-			schematic.addEventListener('schematic:play', function (event) {
-				strips.forEach(function (strip, i) {
-					strip.hidden = i !== event.detail.index;
-				});
-			});
-		})();
-	</script>
 
 	<div data-reveal class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 		{
