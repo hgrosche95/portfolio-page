@@ -197,6 +197,12 @@ const skillGroups = [
 				// Starts at the page edge, as in the prototype.
 				const startX = 0;
 				const padX = n.left - origin.left - 18;
+				// No trace where the margin is too narrow for the pad (phones): the
+				// name sits at the page gutter, so the pad would hang off the screen.
+				if (padX < 12) {
+					svg.innerHTML = '';
+					return [];
+				}
 				const y = n.top - origin.top + n.height / 2;
 				const segments = [`M${startX} ${y} H${padX}`];
 				let end = null;
@@ -281,7 +287,7 @@ const skillGroups = [
 				const legs = layout();
 				legs.forEach(prepare);
 
-				draw(legs[0], LEG1);
+				if (legs[0]) draw(legs[0], LEG1);
 				// Letters start just before the line reaches the name, as in the prototype.
 				chars.forEach((ch, i) => {
 					setTimeout(() => ch.classList.add('lit'), LETTERS_AT + i * STAGGER);
@@ -295,8 +301,8 @@ const skillGroups = [
 				await sleep(300);
 				startConsole();
 				await sleep(900);
-				runPacket(legs);
-				await sleep(PACKET_RUN);
+				if (legs.length) runPacket(legs);
+				if (legs.length) await sleep(PACKET_RUN);
 				animating = false;
 			}
 
