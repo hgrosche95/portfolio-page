@@ -55,8 +55,24 @@ const skillGroups = [
 	data-xray="Hero.astro · statisch"
 	data-xray-kind="static"
 	data-xray-pos="inside"
+	data-hero
 >
-	<div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+	<script is:inline>
+		// Decide before the name renders whether the boot sequence plays: only
+		// with motion allowed, and only once per browser session.
+		(function () {
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			try {
+				if (sessionStorage.getItem('hero-booted')) return;
+				sessionStorage.setItem('hero-booted', '1');
+			} catch (e) {
+				// Storage blocked: play it, just not remembered.
+			}
+			document.documentElement.setAttribute('data-hero-booting', '');
+		})();
+	</script>
+	<svg class="boot" data-boot-svg aria-hidden="true"></svg>
+	<div class="relative z-[1] grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
 		<div data-reveal>
 			<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
 				Full-Stack-Entwickler · Düsseldorf
@@ -66,11 +82,16 @@ const skillGroups = [
 			    thumbnail next to a heading. */}
 			<div class="mt-5 flex items-center gap-5 sm:gap-6">
 				<h1
+					data-boot-name
 					class="font-sans text-5xl leading-[0.95] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl"
 				>
 					{/* Plex Sans rather than the display face: the name reads as a plain,
 					    confident statement; Bricolage stays for section headings. */}
-					Henrik<br />Grosche
+					{/* One span per letter so the boot sequence can light them one by one;
+					    hidden from screen readers, which get the whole name instead. */}
+					<span aria-hidden="true">{[...'Henrik'].map((c) => <span class="ch">{c}</span>)}</span><br />
+					<span aria-hidden="true">{[...'Grosche'].map((c) => <span class="ch">{c}</span>)}</span>
+					<span class="sr-only">Henrik Grosche</span>
 				</h1>
 				<img
 					src="/profile.webp"
@@ -81,6 +102,7 @@ const skillGroups = [
 					class="h-[6.5rem] w-[4.875rem] shrink-0 rounded-xl border border-[var(--color-border-strong)] object-cover object-top sm:h-32 sm:w-24"
 				/>
 			</div>
+			<div data-boot-after>
 			<p class="mt-4 text-lg leading-snug text-[var(--color-text)] sm:text-xl">
 				Ich baue Systeme und verbinde sie zu automatisierten Workflows, zunehmend mit{' '}
 				<span class="whitespace-nowrap">KI-Agenten</span>, die man messen und kontrollieren kann.
@@ -112,9 +134,10 @@ const skillGroups = [
 					Kontakt
 				</a>
 			</div>
+			</div>
 		</div>
 
-		<figure data-reveal class="m-0">
+		<figure data-reveal class="m-0" data-boot-target>
 			<AgentConsole />
 			<figcaption class="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
 				Ein echter Ablauf aus dem{' '}
@@ -122,6 +145,122 @@ const skillGroups = [
 			</figcaption>
 		</figure>
 	</div>
+
+	<script is:inline>
+		(function () {
+			const hero = document.querySelector('[data-hero]');
+			const svg = hero.querySelector('[data-boot-svg]');
+			const name = hero.querySelector('[data-boot-name]');
+			const target = hero.querySelector('[data-boot-target]');
+			const chars = [...name.querySelectorAll('.ch')];
+			const root = document.documentElement;
+			const booting = root.hasAttribute('data-hero-booting');
+			const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+			let animating = false;
+			let consoleStarted = false;
+
+			// Shows the text and lets the agent console start. Safe to call twice.
+			function reveal() {
+				root.removeAttribute('data-hero-booting');
+			}
+			function startConsole() {
+				if (consoleStarted) return;
+				consoleStarted = true;
+				reveal();
+				document.dispatchEvent(new Event('hero:booted'));
+			}
+			// Fail-safe: whatever happens (hidden tab, error), never stay in the boot state.
+			if (booting) setTimeout(startConsole, 4500);
+
+			// Draws the trace for the current layout. The svg sits in <main>, so
+			// coordinates are relative to its top-left corner.
+			function layout() {
+				const origin = svg.getBoundingClientRect();
+				const box = hero.getBoundingClientRect();
+				const n = name.getBoundingClientRect();
+				const t = target.getBoundingClientRect();
+				svg.style.height = `${box.bottom - origin.top}px`;
+
+				// Start on the margin trace when it is shown, else at the page edge.
+				const margin = document.getElementById('trace');
+				const m = margin ? margin.getBoundingClientRect() : null;
+				const startX = m && m.width ? m.left + m.width / 2 - origin.left : 0;
+				const padX = n.left - origin.left - 18;
+				const y = n.top - origin.top + n.height / 2;
+				const segments = [`M${startX} ${y} H${padX}`];
+				let end = null;
+
+				// Second leg only when the console sits beside the name (desktop):
+				// over the top, through the empty space above the eyebrow.
+				if (t.top < n.bottom) {
+					const topY = box.top - origin.top + 28;
+					end = { x: t.left - origin.left + 28, y: t.top - origin.top };
+					segments.push(`M${padX} ${y} V${topY} H${end.x} V${end.y}`);
+				}
+
+				const pad = (x, py) =>
+					`<circle class="boot-pad" cx="${x}" cy="${py}" r="5"/><circle class="boot-pad-in" cx="${x}" cy="${py}" r="2"/>`;
+				svg.innerHTML =
+					segments.map((d) => `<path class="boot-line" d="${d}"/><path class="boot-fill" d="${d}"/>`).join('') +
+					pad(padX, y) +
+					(end ? pad(end.x, end.y) : '');
+				return [...svg.querySelectorAll('.boot-fill')];
+			}
+
+			// Draws one leg with the packet riding its tip.
+			function drawAlong(path, packet, ms) {
+				const length = path.getTotalLength();
+				const start = performance.now();
+				return new Promise((resolve) => {
+					(function frame(now) {
+						const t = Math.min(1, (now - start) / ms);
+						const eased = 1 - Math.pow(1 - t, 3);
+						path.style.strokeDashoffset = `${length * (1 - eased)}`;
+						const p = path.getPointAtLength(length * eased);
+						packet.setAttribute('cx', p.x);
+						packet.setAttribute('cy', p.y);
+						if (t < 1) requestAnimationFrame(frame);
+						else resolve();
+					})(start);
+				});
+			}
+
+			async function boot() {
+				animating = true;
+				const legs = layout();
+				for (const leg of legs) {
+					const length = leg.getTotalLength();
+					leg.style.strokeDasharray = `${length}`;
+					leg.style.strokeDashoffset = `${length}`;
+				}
+				svg.insertAdjacentHTML('beforeend', '<circle class="boot-packet" r="3.5" cx="-20" cy="-20"/>');
+				const packet = svg.querySelector('.boot-packet');
+
+				await drawAlong(legs[0], packet, 700);
+				chars.forEach((ch, i) => {
+					setTimeout(() => ch.classList.add('lit'), i * 55);
+					setTimeout(() => ch.classList.add('set'), i * 55 + 650);
+				});
+				await sleep(chars.length * 55 + 200);
+				reveal();
+				if (legs[1]) await drawAlong(legs[1], packet, 650);
+				// The dot only runs this once, then it is gone for good.
+				packet.remove();
+				animating = false;
+				startConsole();
+			}
+
+			if (booting) boot();
+			else layout();
+
+			// Keep the trace in place when the layout changes (resize, late fonts).
+			const redraw = () => {
+				if (!animating) layout();
+			};
+			window.addEventListener('resize', redraw);
+			if (document.fonts) document.fonts.ready.then(redraw);
+		})();
+	</script>
 
 	<div data-reveal class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 		{
