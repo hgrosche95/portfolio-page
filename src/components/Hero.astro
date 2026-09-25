@@ -73,7 +73,7 @@ const skillGroups = [
 	</script>
 	<svg class="boot" data-boot-svg aria-hidden="true"></svg>
 	<div class="relative z-[1] grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-		<div data-reveal>
+		<div>
 			<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
 				Full-Stack-Entwickler · Düsseldorf
 			</p>
@@ -102,7 +102,7 @@ const skillGroups = [
 					class="h-[6.5rem] w-[4.875rem] shrink-0 rounded-xl border border-[var(--color-border-strong)] object-cover object-top sm:h-32 sm:w-24"
 				/>
 			</div>
-			<div data-boot-after>
+			<div data-boot-after class="pt-2">
 			<p class="mt-4 text-lg leading-snug text-[var(--color-text)] sm:text-xl">
 				Ich baue Systeme und verbinde sie zu automatisierten Workflows, zunehmend mit{' '}
 				<span class="whitespace-nowrap">KI-Agenten</span>, die man messen und kontrollieren kann.
@@ -137,7 +137,7 @@ const skillGroups = [
 			</div>
 		</div>
 
-		<figure data-reveal class="m-0" data-boot-target>
+		<figure class="m-0" data-boot-target>
 			<AgentConsole />
 			<figcaption class="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
 				Ein echter Ablauf aus dem{' '}
@@ -170,7 +170,7 @@ const skillGroups = [
 				document.dispatchEvent(new Event('hero:booted'));
 			}
 			// Fail-safe: whatever happens (hidden tab, error), never stay in the boot state.
-			if (booting) setTimeout(startConsole, 4500);
+			if (booting) setTimeout(startConsole, 6500);
 
 			// Draws the trace for the current layout. The svg sits in <main>, so
 			// coordinates are relative to its top-left corner.
@@ -196,7 +196,7 @@ const skillGroups = [
 				// console's left edge (never into the console itself).
 				if (t.top < n.bottom) {
 					const row = name.parentElement.getBoundingClientRect();
-					const after = hero.querySelector('[data-boot-after]').getBoundingClientRect();
+					const after = hero.querySelector('[data-boot-after] p').getBoundingClientRect();
 					const gapY = (row.bottom + after.top) / 2 - origin.top;
 					const endX = t.left - origin.left - 10;
 					// Enter at the gap's height if the console reaches that far, else as close as it gets.
@@ -225,7 +225,8 @@ const skillGroups = [
 				return new Promise((resolve) => {
 					(function frame(now) {
 						const t = Math.min(1, (now - start) / ms);
-						const eased = 1 - Math.pow(1 - t, 3);
+						// Ease in and out, so the line neither jumps off nor slams into the pad.
+						const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 						path.style.strokeDashoffset = `${length * (1 - eased)}`;
 						const p = path.getPointAtLength(length * eased);
 						packet.setAttribute('cx', p.x);
@@ -247,21 +248,23 @@ const skillGroups = [
 				svg.insertAdjacentHTML('beforeend', '<circle class="boot-packet" r="3.5" cx="-20" cy="-20"/>');
 				const packet = svg.querySelector('.boot-packet');
 
-				await drawAlong(legs[0], packet, 700);
+				await drawAlong(legs[0], packet, 1100);
 				chars.forEach((ch, i) => {
-					setTimeout(() => ch.classList.add('lit'), i * 55);
-					setTimeout(() => ch.classList.add('set'), i * 55 + 650);
+					setTimeout(() => ch.classList.add('lit'), i * 70);
+					setTimeout(() => ch.classList.add('set'), i * 70 + 700);
 				});
-				await sleep(chars.length * 55 + 200);
+				await sleep(chars.length * 70 + 250);
 				reveal();
-				if (legs[1]) await drawAlong(legs[1], packet, 650);
+				if (legs[1]) await drawAlong(legs[1], packet, 1000);
 				// The dot only runs this once, then it is gone for good.
 				packet.remove();
 				animating = false;
 				startConsole();
 			}
 
-			if (booting) boot();
+			// Start once the fonts are in and one frame has rendered: before that the
+			// name can still shift, and the page is busy loading, which made it stutter.
+			if (booting) (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(boot));
 			else layout();
 
 			// Keep the trace in place when the layout changes (resize, late fonts).
