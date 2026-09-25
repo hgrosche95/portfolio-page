@@ -1,5 +1,16 @@
 ---
+// Kept in step with the CV (public/cv-henrik-grosche.pdf).
 const entries = [
+	{
+		role: 'KI-Engineering: eigene Projekte',
+		company: 'Auswahl, weitere Projekte auf github.com/hgrosche95',
+		period: '09/2026 – heute',
+		details: [
+			'AI Trip Planner: Chat-Agent mit Tool-Use, RAG, MCP-Server und CI-Evals, live auf Azure (NestJS, Next.js, FastAPI, pgvector)',
+			'Bewerbungshelfer & Life-Ops-Plattform: LLM-API und MCP-Server für Job-Matching und Anschreiben, per n8n automatisiert (NestJS, n8n)',
+			'Agentic Roguelike: LLM-Agent erzeugt Spielinhalte; dafür eigenes Modell destilliert (gpt-oss-20b → Qwen2.5-1.5B, LoRA), lokal via Ollama (Python, LangGraph)',
+		],
+	},
 	{
 		role: 'Full-Stack-Entwickler (Manager IT & Web)',
 		company: 'iurFRIEND AG, Düsseldorf',
@@ -7,11 +18,9 @@ const entries = [
 		details: [
 			'Konzeption, Entwicklung und Pflege von Webseiten, Portalen und internen Anwendungen im juristischen Umfeld (TYPO3, Nextcloud)',
 			'Entwicklung und Integration KI-gestützter Anwendungen und Automatisierungen mit OpenAI und Anthropic/Claude Code',
-			'Systemintegration zwischen Outlook, Nextcloud, Advoware und Brevo zur automatisierten Termin- und Dokumentenverwaltung, inkl. KI-gestützter Klassifizierung eingehender beA-Dokumente',
-			'Buchungstool für Termine, das die manuelle Terminkoordination im Team deutlich reduziert hat',
-			'Anbindung und Pflege von APIs zwischen internen Systemen (Laravel, Symfony, AngularJS) sowie Weiterentwicklung des internen CRM- und Funnel-Systems',
-			'Qualitätssicherung, Testing sowie Mitgestaltung standardisierter CI/CD-Prozesse mit GitLab CI/CD und GitHub',
-			'Entwicklung moderner Webanwendungen mit JavaScript, Node.js und PHP sowie technische Dokumentation',
+			'Konzeption und Umsetzung einer Systemintegration zwischen Outlook, Nextcloud, Advoware und Brevo zur automatisierten Termin- und Dokumentenverwaltung, inkl. KI-gestützter Klassifizierung eingehender beA-Dokumente',
+			'Entwicklung eines Buchungstools für Termine, das die manuelle Terminkoordination im Team deutlich reduziert hat',
+			'Anbindung von APIs zwischen internen Systemen (Laravel, Symfony, AngularJS), Weiterentwicklung des CRM- und Funnel-Systems sowie CI/CD mit GitLab und GitHub',
 		],
 	},
 	{
@@ -21,7 +30,7 @@ const entries = [
 		details: [
 			'Optimierung und Erstellung von Webseiten in TYPO3, Shopify, Shopware und WordPress',
 			'Entwicklung containerisierter Anwendungen mit Docker',
-			'Mitarbeit an automatisierten CI/CD-Deployment-Prozessen, die die Release-Frequenz erhöht haben',
+			'Versionsverwaltung mit Git und Mitarbeit an automatisierten CI/CD-Deployment-Prozessen, die die Release-Frequenz erhöht haben',
 		],
 	},
 	{
@@ -31,8 +40,7 @@ const entries = [
 		details: [
 			'Neu- und Weiterentwicklung von Kapitalverwaltungsprodukten für institutionelle Anleger, Versicherungen und Pensionskassen',
 			'Frontend-Ausbau fachlich anspruchsvoller Softwarelösungen mit React, TypeScript und CSS',
-			'Versionsverwaltung und Merge Requests mit Git und GitLab',
-			'Pflege der Jira-Issue-Queue zur Steuerung der Releaseentwicklung, Zusammenarbeit in einem größeren Entwicklerteam',
+			'Merge Requests mit GitLab und Release-Steuerung über Jira im Team',
 		],
 	},
 	{
@@ -40,16 +48,21 @@ const entries = [
 		company: 'Commerz Real AG, Düsseldorf',
 		period: '04/2020 – 10/2020',
 		details: [
-			'Programmierung grafischer Oberflächen, Anwendungsfunktionalitäten und Datenbankschnittstellen im Frontend und in der Middleware mit Java und Python',
-			'Neuaufsatz eines Entwicklungsstacks für Java und Python auf einem lokalen Server',
-			'Durchführung funktionaler Tests und Modultests',
+			'Programmierung von Oberflächen und Datenbankschnittstellen in Frontend und Middleware mit Java und Python',
+			'Neuaufsatz eines Java/Python-Entwicklungsstacks sowie funktionale Tests und Modultests',
 		],
 	},
 	{
 		role: 'Praktikum',
 		company: 'Heinrich-Heine-Universität, Düsseldorf',
 		period: '04/2019 – 08/2019',
-		details: ['Implementierung und Pflege von Datenbanken mit PHP und SQL zur Optimierung der Datenverwaltung'],
+		details: ['Implementierung und Pflege von Datenbanken mit PHP und SQL'],
+	},
+	{
+		role: 'Bachelor Informatik',
+		company: 'Heinrich-Heine-Universität, Düsseldorf',
+		period: '2020',
+		details: ['Bachelorabschluss Informatik'],
 	},
 ];
 ---

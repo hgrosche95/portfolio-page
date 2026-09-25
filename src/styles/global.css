@@ -527,13 +527,15 @@ html[data-hero-booting] [data-boot-name] .ch {
   text-shadow: none;
 }
 
-[data-boot-after] {
+/* Everything after the name fades in one piece at a time: each step carries
+   its own --boot-delay, which only takes effect when the boot state ends. */
+[data-boot-step] {
   transition:
-    opacity 0.6s,
-    translate 0.6s;
+    opacity 0.6s var(--boot-delay, 0ms),
+    translate 0.6s var(--boot-delay, 0ms);
 }
 
-html[data-hero-booting] [data-boot-after] {
+html[data-hero-booting] [data-boot-step] {
   opacity: 0;
   translate: 0 8px;
 }
