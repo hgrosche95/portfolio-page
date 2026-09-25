@@ -476,7 +476,7 @@ body::after {
 
 .boot-line {
   fill: none;
-  stroke: var(--color-border);
+  stroke: var(--color-border-strong);
   stroke-width: 2;
 }
 
@@ -484,6 +484,7 @@ body::after {
   fill: none;
   stroke: var(--color-accent);
   stroke-width: 2;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 60%, transparent));
 }
 
 .boot-pad {
@@ -497,8 +498,8 @@ body::after {
 }
 
 .boot-packet {
-  fill: #ffd2b0;
-  filter: drop-shadow(0 0 6px var(--color-accent));
+  fill: #ffc79e;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 90%, transparent));
 }
 
 [data-boot-name] .ch {
