@@ -1,71 +1,5 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import Schematic from './Schematic.astro';
-
-type Architecture = NonNullable<CollectionEntry<'projects'>['data']['architecture']>;
-
-/*
- * The hero's diagram: the encounter agent from agentic-rogue-like, cut down
- * to the part that makes the point - the model is swappable, the guardrails
- * around it are not. Kept here rather than in that project's MDX because it
- * is a deliberate simplification (engine, map and combat collapsed into one
- * box), not the project's real architecture.
- */
-const encounterAgent: Architecture = {
-	lanes: ['Spielkern', 'Agent', 'Modell'],
-	nodes: [
-		{ id: 'engine', label: 'Run-Engine', kind: 'backend', sub: 'Etage · Budget', lane: 0, row: 0.6 },
-		{ id: 'agent', label: 'Encounter-Agent', kind: 'backend', sub: 'LangGraph', lane: 1, row: 0 },
-		{ id: 'check', label: 'Validierung', kind: 'backend', sub: 'Schema + Budget', lane: 1, row: 1.4 },
-		{ id: 'groq', label: 'Groq', kind: 'external', sub: 'gpt-oss-20b · Cloud', lane: 2, row: 0 },
-		{ id: 'local', label: 'Qwen2.5-1.5B', kind: 'external', sub: 'QLoRA · lokal', lane: 2, row: 1.4 },
-	],
-	edges: [
-		['engine', 'agent'],
-		['agent', 'groq'],
-		['agent', 'local'],
-		['agent', 'check'],
-		['check', 'engine'],
-	],
-	scenarios: [
-		{
-			name: 'Cloud (Groq)',
-			steps: [
-				{ from: 'engine', to: 'agent', label: 'Etage + Budget' },
-				{ from: 'agent', to: 'groq', label: 'Tool-Call', detail: 'festes Schema' },
-				{ from: 'groq', to: 'agent', label: 'Vorschlag' },
-				{ from: 'agent', to: 'check', label: 'Prüfen' },
-				{ from: 'check', to: 'check', label: 'Bei Verstoß', detail: 'Retry, höchstens dreimal' },
-				{ from: 'check', to: 'engine', label: 'Gegner', detail: 'sonst statischer Pool' },
-			],
-		},
-		{
-			name: 'Lokal (Fine-Tune)',
-			steps: [
-				{ from: 'engine', to: 'agent', label: 'Etage + Budget' },
-				{ from: 'agent', to: 'local', label: 'Tool-Call', detail: 'dieselben Tools, ohne Netzwerk' },
-				{ from: 'local', to: 'agent', label: 'Vorschlag' },
-				{ from: 'agent', to: 'check', label: 'Prüfen' },
-				{ from: 'check', to: 'check', label: 'Bei Verstoß', detail: 'Retry, höchstens dreimal' },
-				{ from: 'check', to: 'engine', label: 'Gegner', detail: 'sonst statischer Pool' },
-			],
-		},
-	],
-};
-
-/** What changes with the model, from training/RESULTS.md in that repo. Same order as the scenarios. */
-const metrics = [
-	[
-		{ value: 'Standard', label: 'in Produktion' },
-		{ value: '310 Aufrufe', label: 'als Baseline gemessen' },
-		{ value: 'Cent-Beträge', label: 'braucht Netz + API-Key' },
-	],
-	[
-		{ value: '100 %', label: 'schemakonform, 604 Aufrufe' },
-		{ value: '935 MB', label: 'GGUF, lokal über Ollama' },
-		{ value: 'Vielfalt ↓', label: 'dokumentierter Zielkonflikt' },
-	],
-];
+import AgentConsole from './AgentConsole.astro';
 
 /**
  * Skills grouped by domain rather than listed as one flat row, so the core
@@ -79,7 +13,9 @@ const skillGroups = [
 			{ name: 'TypeScript', core: true },
 			{ name: 'React', core: true },
 			{ name: 'Next.js', core: true },
+			{ name: 'Astro', core: false },
 			{ name: 'JavaScript', core: false },
+			{ name: 'Tailwind CSS', core: false },
 			{ name: 'HTML', core: false },
 			{ name: 'CSS', core: false },
 		],
@@ -89,28 +25,39 @@ const skillGroups = [
 		skills: [
 			{ name: 'Node.js', core: true },
 			{ name: 'NestJS', core: true },
+			{ name: 'PostgreSQL', core: false },
 			{ name: 'SQL', core: false },
+			{ name: 'SQLite', core: false },
+			{ name: 'WebSockets', core: false },
+			{ name: 'JWT', core: false },
+			{ name: 'Python', core: false },
 			{ name: 'Java', core: false },
 			{ name: 'PHP', core: false },
-			{ name: 'Python', core: false },
+			{ name: 'TYPO3', core: false },
+			{ name: 'WordPress', core: false },
+		],
+	},
+	{
+		label: 'KI',
+		skills: [
+			{ name: 'LangGraph', core: true },
+			{ name: 'RAG', core: true },
+			{ name: 'MCP', core: true },
+			{ name: 'OpenAI', core: false },
+			{ name: 'Claude', core: false },
+			{ name: 'Copilot', core: false },
 		],
 	},
 	{
 		label: 'DevOps & Tools',
 		skills: [
 			{ name: 'CI/CD', core: true },
+			{ name: 'GitHub Actions', core: false },
 			{ name: 'Docker', core: false },
+			{ name: 'Azure', core: false },
 			{ name: 'Git / GitLab', core: false },
 			{ name: 'Linux', core: false },
-			{ name: 'Claude', core: false },
-			{ name: 'Copilot', core: false },
-		],
-	},
-	{
-		label: 'CMS',
-		skills: [
-			{ name: 'TYPO3', core: false },
-			{ name: 'WordPress', core: false },
+			{ name: 'Vitest', core: false },
 		],
 	},
 ];
@@ -121,9 +68,25 @@ const skillGroups = [
 	data-xray="Hero.astro · statisch"
 	data-xray-kind="static"
 	data-xray-pos="inside"
+	data-hero
 >
-	<div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-		<div data-reveal>
+	<script is:inline>
+		// Decide before the name renders whether the boot sequence plays: only
+		// with motion allowed, and only once per browser session.
+		(function () {
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			try {
+				if (sessionStorage.getItem('hero-booted')) return;
+				sessionStorage.setItem('hero-booted', '1');
+			} catch (e) {
+				// Storage blocked: play it, just not remembered.
+			}
+			document.documentElement.setAttribute('data-hero-booting', '');
+		})();
+	</script>
+	<svg class="boot" data-boot-svg aria-hidden="true"></svg>
+	<div class="relative z-[1] grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+		<div>
 			<p class="font-mono text-xs tracking-widest text-[var(--color-accent)] uppercase">
 				Full-Stack-Entwickler · Düsseldorf
 			</p>
@@ -132,11 +95,16 @@ const skillGroups = [
 			    thumbnail next to a heading. */}
 			<div class="mt-5 flex items-center gap-5 sm:gap-6">
 				<h1
+					data-boot-name
 					class="font-sans text-5xl leading-[0.95] font-semibold tracking-tight text-[var(--color-text)] sm:text-6xl"
 				>
 					{/* Plex Sans rather than the display face: the name reads as a plain,
 					    confident statement; Bricolage stays for section headings. */}
-					Henrik<br />Grosche
+					{/* One span per letter so the boot sequence can light them one by one;
+					    hidden from screen readers, which get the whole name instead. */}
+					<span aria-hidden="true">{[...'Henrik'].map((c) => <span class="ch">{c}</span>)}</span><br />
+					<span aria-hidden="true">{[...'Grosche'].map((c) => <span class="ch">{c}</span>)}</span>
+					<span class="sr-only">Henrik Grosche</span>
 				</h1>
 				<img
 					src="/profile.webp"
@@ -147,17 +115,18 @@ const skillGroups = [
 					class="h-[6.5rem] w-[4.875rem] shrink-0 rounded-xl border border-[var(--color-border-strong)] object-cover object-top sm:h-32 sm:w-24"
 				/>
 			</div>
-			<p class="mt-4 text-lg leading-snug text-[var(--color-text)] sm:text-xl">
+			<div data-boot-after class="pt-2">
+			<p data-boot-step style="--boot-delay: 0ms" class="mt-4 text-lg leading-snug text-[var(--color-text)] sm:text-xl">
 				Ich baue Systeme und verbinde sie zu automatisierten Workflows, zunehmend mit{' '}
 				<span class="whitespace-nowrap">KI-Agenten</span>, die man messen und kontrollieren kann.
 			</p>
-			<p class="mt-4 text-base leading-relaxed text-[var(--color-text-muted)]">
+			<p data-boot-step style="--boot-delay: 140ms" class="mt-4 text-base leading-relaxed text-[var(--color-text-muted)]">
 				Von React/TypeScript-Frontends über Node.js-Backends bis zur Integration verschiedenster
 				APIs und Drittsysteme. Technische Herausforderungen reizen mich; neue Technologien und
 				Cloud-Umgebungen eigne ich mir schnell und eigenständig an.
 			</p>
 
-			<div class="mt-7 flex flex-wrap items-center gap-3">
+			<div data-boot-step style="--boot-delay: 280ms" class="mt-7 flex flex-wrap items-center gap-3">
 				<a
 					href="#projects"
 					class="rounded-md bg-[var(--color-accent)] px-4 py-2 font-mono text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
@@ -178,57 +147,187 @@ const skillGroups = [
 					Kontakt
 				</a>
 			</div>
+			</div>
 		</div>
 
-		<figure data-reveal class="m-0" data-hero-schematic>
-			<Schematic architecture={encounterAgent} width={520} compact scenarioLabel="Modell:" />
-			{/* One strip per scenario; the script below shows the one that is playing. */}
-			{
-				metrics.map((set, i) => (
-					<dl
-						data-metrics={i}
-						hidden={i !== 0}
-						class="mt-2 grid grid-cols-3 overflow-hidden rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-xs"
-					>
-						{set.map((metric) => (
-							<div class="border-l border-dashed border-[var(--color-border-strong)] px-3 py-2 first:border-l-0">
-								<dt class="sr-only">{metric.label}</dt>
-								<dd class="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
-									{metric.value}
-								</dd>
-								<dd class="leading-snug text-[var(--color-text-muted)]" aria-hidden="true">
-									{metric.label}
-								</dd>
-							</div>
-						))}
-					</dl>
-				))
-			}
+		<figure class="m-0" data-boot-target data-boot-step style="--boot-delay: 460ms">
+			<AgentConsole />
 			<figcaption class="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
-				Ein echtes Stück aus dem{' '}
-				<a href="/projects/agentic-rogue-like" class="text-[var(--color-accent)] hover:underline">Agentic Roguelike</a>: Das Modell lässt sich umschalten, die Leitplanken drumherum bleiben gleich.
+				Ein echter Ablauf aus dem{' '}
+				<a href="/projects/ai-trip-planer" class="text-[var(--color-accent)] hover:underline">AI Trip Planner</a>: Jede Zeile im Log schickt ein Paket durch den Aufbau darüber.
 			</figcaption>
 		</figure>
 	</div>
 
 	<script is:inline>
 		(function () {
-			const hero = document.querySelector('[data-hero-schematic]');
-			if (!hero) return;
-			const schematic = hero.querySelector('[data-schematic]');
-			const strips = hero.querySelectorAll('[data-metrics]');
-			schematic.addEventListener('schematic:play', function (event) {
-				strips.forEach(function (strip, i) {
-					strip.hidden = i !== event.detail.index;
+			const hero = document.querySelector('[data-hero]');
+			const svg = hero.querySelector('[data-boot-svg]');
+			const name = hero.querySelector('[data-boot-name]');
+			const target = hero.querySelector('[data-boot-target]');
+			const chars = [...name.querySelectorAll('.ch')];
+			const root = document.documentElement;
+			const booting = root.hasAttribute('data-hero-booting');
+			const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+			let animating = false;
+			let consoleStarted = false;
+
+			// Shows the text and lets the agent console start. Safe to call twice.
+			function reveal() {
+				root.removeAttribute('data-hero-booting');
+			}
+			function startConsole() {
+				if (consoleStarted) return;
+				consoleStarted = true;
+				reveal();
+				document.dispatchEvent(new Event('hero:booted'));
+			}
+			// Fail-safe: whatever happens (hidden tab, error), never stay in the boot state.
+			if (booting) setTimeout(startConsole, 6500);
+
+			// Draws the trace for the current layout. The svg sits in <main>, so
+			// coordinates are relative to its top-left corner.
+			function layout() {
+				const origin = svg.getBoundingClientRect();
+				const box = hero.getBoundingClientRect();
+				const n = name.getBoundingClientRect();
+				const t = target.getBoundingClientRect();
+				svg.style.height = `${box.bottom - origin.top}px`;
+
+				// Starts at the page edge, as in the prototype.
+				const startX = 0;
+				const padX = n.left - origin.left - 18;
+				// No trace where the margin is too narrow for the pad (phones): the
+				// name sits at the page gutter, so the pad would hang off the screen.
+				if (padX < 12) {
+					svg.innerHTML = '';
+					return [];
+				}
+				const y = n.top - origin.top + n.height / 2;
+				const segments = [`M${startX} ${y} H${padX}`];
+				let end = null;
+
+				// Second leg only when the console sits beside the name (desktop):
+				// down into the gap between the name row and the text below it,
+				// across under name and photo, and into a pad just outside the
+				// console's left edge (never into the console itself).
+				if (t.top < n.bottom) {
+					const row = name.parentElement.getBoundingClientRect();
+					const after = hero.querySelector('[data-boot-after] p').getBoundingClientRect();
+					const gapY = (row.bottom + after.top) / 2 - origin.top;
+					const endX = t.left - origin.left - 10;
+					// Enter at the gap's height if the console reaches that far, else as close as it gets.
+					const enterY = Math.min(Math.max(gapY, t.top - origin.top + 24), t.bottom - origin.top - 24);
+					end = { x: endX, y: enterY };
+					segments.push(
+						enterY === gapY
+							? `M${padX} ${y} V${gapY} H${endX}`
+							: `M${padX} ${y} V${gapY} H${endX - 16} V${enterY} H${endX}`,
+					);
+				}
+
+				const pad = (x, py) =>
+					`<circle class="boot-pad" cx="${x}" cy="${py}" r="6"/><circle class="boot-pad-in" cx="${x}" cy="${py}" r="2.5"/>`;
+				svg.innerHTML =
+					segments.map((d) => `<path class="boot-line" d="${d}"/><path class="boot-fill" d="${d}"/>`).join('') +
+					pad(padX, y) +
+					(end ? pad(end.x, end.y) : '');
+				return [...svg.querySelectorAll('.boot-fill')];
+			}
+
+			// Timings from the prototype (ms).
+			const LEG1 = 700;
+			const LEG2 = 650;
+			const LETTERS_AT = 450;
+			const STAGGER = 45;
+			const PACKET_RUN = 2600;
+
+			// Hides a leg so it can be drawn in, and returns its length.
+			function prepare(leg) {
+				const length = leg.getTotalLength();
+				leg.style.strokeDasharray = `${length}`;
+				leg.style.strokeDashoffset = `${length}`;
+				return length;
+			}
+
+			// Draws a leg in with a CSS transition rather than a JS loop, so the
+			// browser can animate it smoothly even while the page is still busy.
+			function draw(leg, ms) {
+				leg.getBoundingClientRect(); // commit the hidden start state first
+				leg.style.transition = `stroke-dashoffset ${ms}ms cubic-bezier(.6, .1, .3, 1)`;
+				leg.style.strokeDashoffset = '0';
+			}
+
+			// The glowing dot: one pass over the whole trace once it is built,
+			// then it is removed for good.
+			function runPacket(legs) {
+				const lengths = legs.map((leg) => leg.getTotalLength());
+				const total = lengths.reduce((sum, l) => sum + l, 0);
+				svg.insertAdjacentHTML('beforeend', '<circle class="boot-packet" r="3.5" cx="-20" cy="-20"/>');
+				const packet = svg.querySelector('.boot-packet');
+				const start = performance.now();
+				(function frame(now) {
+					const t = Math.min(1, (now - start) / PACKET_RUN);
+					let d = t * total;
+					let i = 0;
+					while (i < legs.length - 1 && d > lengths[i]) {
+						d -= lengths[i];
+						i += 1;
+					}
+					const p = legs[i].getPointAtLength(d);
+					packet.setAttribute('cx', p.x);
+					packet.setAttribute('cy', p.y);
+					if (t < 1) requestAnimationFrame(frame);
+					else packet.remove();
+				})(start);
+			}
+
+			async function boot() {
+				animating = true;
+				const legs = layout();
+				legs.forEach(prepare);
+
+				if (legs[0]) draw(legs[0], LEG1);
+				// Letters start just before the line reaches the name, as in the prototype.
+				chars.forEach((ch, i) => {
+					setTimeout(() => ch.classList.add('lit'), LETTERS_AT + i * STAGGER);
+					setTimeout(() => ch.classList.add('set'), LETTERS_AT + i * STAGGER + 700);
 				});
-			});
+				// The text starts while the last letters are still lighting up.
+				await sleep(LETTERS_AT + Math.round(chars.length * STAGGER * 0.6));
+
+				reveal();
+				if (legs[1]) draw(legs[1], LEG2);
+				await sleep(300);
+				startConsole();
+				await sleep(900);
+				if (legs.length) runPacket(legs);
+				if (legs.length) await sleep(PACKET_RUN);
+				animating = false;
+			}
+
+			// Start once the fonts are in and one frame has rendered: before that the
+			// name can still shift, and the page is busy loading, which made it stutter.
+			// Wait for the fonts at most 300 ms: past that, starting beats a perfect line.
+			const fontsOrTimeout = Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(300)]);
+			if (booting) fontsOrTimeout.then(() => requestAnimationFrame(boot));
+			else layout();
+
+			// Keep the trace in place when the layout changes (resize, late fonts).
+			const redraw = () => {
+				if (!animating) layout();
+			};
+			window.addEventListener('resize', redraw);
+			if (document.fonts) document.fonts.ready.then(redraw);
 		})();
 	</script>
 
-	<div data-reveal class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+	{/* No scroll reveal here: above the fold, these join the boot sequence instead,
+	    one group after another once the console has faded in. */}
+	<div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 		{
-			skillGroups.map((group) => (
-				<div>
+			skillGroups.map((group, i) => (
+				<div data-boot-step style={`--boot-delay: ${640 + i * 120}ms`}>
 					<p class="font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase">
 						{group.label}
 					</p>

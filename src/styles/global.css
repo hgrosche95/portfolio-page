@@ -250,10 +250,11 @@ body::after {
 @media (prefers-reduced-motion: no-preference) {
   .js-reveal [data-reveal] {
     opacity: 0;
-    translate: 0 12px;
+    translate: 0 8px;
+    /* Same motion as the hero boot sequence, so both read as one entrance. */
     transition:
-      opacity 0.5s ease-out,
-      translate 0.5s ease-out;
+      opacity 0.6s ease,
+      translate 0.6s ease;
   }
 
   .js-reveal [data-reveal][data-revealed] {
@@ -457,4 +458,85 @@ body::after {
   .project-content details.more > summary::before {
     transition: none;
   }
+}
+
+/*
+ * Hero boot sequence (Hero.astro). The hiding rules only apply while
+ * html[data-hero-booting] is set, which the hero's first inline script does
+ * only when motion is allowed and the sequence has not played this session;
+ * a timeout removes it again, so content can never stay hidden.
+ */
+.boot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.boot-line {
+  fill: none;
+  stroke: var(--color-border-strong);
+  stroke-width: 2;
+}
+
+.boot-fill {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
+
+.boot-pad {
+  fill: var(--color-bg);
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+
+.boot-pad-in {
+  fill: var(--color-accent);
+}
+
+.boot-packet {
+  fill: #ffc79e;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 90%, transparent));
+}
+
+[data-boot-name] .ch {
+  transition:
+    opacity 0.25s,
+    color 0.6s,
+    text-shadow 0.9s;
+}
+
+html[data-hero-booting] [data-boot-name] .ch {
+  opacity: 0.08;
+}
+
+[data-boot-name] .ch.lit {
+  opacity: 1;
+  color: #ffd7b8;
+  text-shadow:
+    0 0 18px var(--color-accent),
+    0 0 2px #ffd7b8;
+}
+
+/* After its flash each letter settles back to the normal heading colour. */
+[data-boot-name] .ch.set {
+  color: inherit;
+  text-shadow: none;
+}
+
+/* Everything after the name fades in one piece at a time: each step carries
+   its own --boot-delay, which only takes effect when the boot state ends. */
+[data-boot-step] {
+  transition:
+    opacity 0.6s var(--boot-delay, 0ms),
+    translate 0.6s var(--boot-delay, 0ms);
+}
+
+html[data-hero-booting] [data-boot-step] {
+  opacity: 0;
+  translate: 0 8px;
 }
