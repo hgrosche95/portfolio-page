@@ -171,13 +171,42 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 
 				let pending = targets;
 				let queued = false;
+				// While the homepage hero plays its boot sequence, hold everything
+				// else back so it follows the hero instead of competing with it. The
+				// hero always ends its boot state (it has its own timeout), and this
+				// has one too, so nothing can stay hidden.
+				let held = document.documentElement.hasAttribute('data-hero-booting');
+				function release() {
+					if (!held) return;
+					held = false;
+					schedule();
+				}
+				if (held) {
+					document.addEventListener('hero:booted', function () {
+						setTimeout(release, 700);
+					}, { once: true });
+					setTimeout(release, 8000);
+				}
+
+				const STAGGER = 90;
+				const MAX_DELAY = 540;
 
 				function reveal() {
 					queued = false;
+					if (held) return;
 					const limit = window.innerHeight * 0.9;
+					// Elements that come into view together fade in one after another.
+					let batch = 0;
 					pending = pending.filter(function (el) {
 						if (el.getBoundingClientRect().top > limit) return true;
+						el.style.transitionDelay = Math.min(batch * STAGGER, MAX_DELAY) + 'ms';
+						batch += 1;
 						el.setAttribute('data-revealed', '');
+						// The delay is only for this entrance; drop it so it never
+						// slows down any later transition on the same element.
+						el.addEventListener('transitionend', function () {
+							el.style.transitionDelay = '';
+						}, { once: true });
 						return false;
 					});
 					if (!pending.length) {
