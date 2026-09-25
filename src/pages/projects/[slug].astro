@@ -106,7 +106,6 @@ const sheet = [
 								class="inline-flex items-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2 font-mono text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
 							>
 								{entry.data.liveLabel ?? 'Live ansehen'}
-								<span aria-hidden="true">&#8599;</span>
 								<span class="sr-only">(öffnet in neuem Tab)</span>
 							</a>
 						)
@@ -118,7 +117,6 @@ const sheet = [
 						class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-4 py-2 font-mono text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
 					>
 						Code auf GitHub
-						<span aria-hidden="true">&#8599;</span>
 						<span class="sr-only">(öffnet in neuem Tab)</span>
 					</a>
 				</div>
@@ -227,10 +225,6 @@ const sheet = [
 					{next.data.title}
 				</span>
 			</span>
-			<span
-				class="font-mono text-[var(--color-text-muted)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--color-accent)]"
-				aria-hidden="true">&rarr;</span
-			>
 		</a>
 
 		<script is:inline>

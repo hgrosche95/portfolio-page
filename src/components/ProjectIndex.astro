@@ -43,7 +43,7 @@ const MAX_TAGS = 4;
 							{kindLabels[data.kind]}
 							{data.liveUrl && (
 								<a class="live" href={data.liveUrl} target="_blank" rel="noopener noreferrer">
-									Live-Demo ↗<span class="sr-only"> (öffnet in neuem Tab)</span>
+									Live-Demo<span class="sr-only"> (öffnet in neuem Tab)</span>
 								</a>
 							)}
 						</span>
@@ -91,14 +91,14 @@ const MAX_TAGS = 4;
 							)}
 							{data.hosting && <p class="hosting">{data.hosting}</p>}
 							<p class="links">
-								<a href={`/projects/${entry.id}`}>Projekt lesen →</a>
+								<a href={`/projects/${entry.id}`}>Projekt lesen</a>
 								{data.liveUrl && (
 									<a href={data.liveUrl} target="_blank" rel="noopener noreferrer">
-										{data.liveLabel ?? 'Live ansehen'} ↗<span class="sr-only"> (öffnet in neuem Tab)</span>
+										{data.liveLabel ?? 'Live ansehen'}<span class="sr-only"> (öffnet in neuem Tab)</span>
 									</a>
 								)}
 								<a href={`https://github.com/hgrosche95/${data.githubRepo}`} target="_blank" rel="noopener noreferrer">
-									Code ↗<span class="sr-only"> (öffnet in neuem Tab)</span>
+									Code<span class="sr-only"> (öffnet in neuem Tab)</span>
 								</a>
 							</p>
 						</div>
