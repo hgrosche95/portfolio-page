@@ -33,6 +33,20 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				document.documentElement.classList.toggle('dark', isDark);
 			})();
 		</script>
+		<script is:inline>
+			// Switch the scroll-reveal hiding on before the first paint, so content
+			// near the fold is not drawn once and then hidden again. The reveal
+			// script at the end of <body> confirms it took over; if it never does,
+			// this timeout shows everything again, so nothing can stay invisible.
+			(function () {
+				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+				const root = document.documentElement;
+				root.classList.add('js-reveal');
+				setTimeout(function () {
+					if (!window.__revealReady) root.classList.remove('js-reveal');
+				}, 3000);
+			})();
+		</script>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -160,13 +174,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 		<script is:inline>
 			(function () {
 				const targets = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'));
-				if (!targets.length) return;
 				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+				if (!targets.length) {
+					// Nothing to reveal on this page: undo the early opt-in from <head>.
+					document.documentElement.classList.remove('js-reveal');
+					return;
+				}
 
-				// Opt in to the hiding CSS only now that the revealing code below is
-				// guaranteed to run. A plain scroll check is used instead of
-				// IntersectionObserver because it cannot silently no-op: if it ever
-				// failed, content would stay invisible.
+				// The hiding CSS was switched on in <head>; confirm that the revealing
+				// code below is running, which disarms the fallback there. A plain
+				// scroll check is used instead of IntersectionObserver because it
+				// cannot silently no-op: if it ever failed, content would stay invisible.
+				window.__revealReady = true;
 				document.documentElement.classList.add('js-reveal');
 
 				let pending = targets;
