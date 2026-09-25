@@ -26,6 +26,9 @@ const MAX_TAGS = 4;
 ---
 
 <div class="index" data-xray="ProjectIndex.astro · statisch, <details>" data-xray-kind="static">
+	{/* The top rule is its own element so it fades in with the rows instead of
+	    standing there alone before them. */}
+	<div class="index-rule" data-reveal aria-hidden="true"></div>
 	{
 		projects.map((entry, i) => {
 			const { data } = entry;
@@ -131,6 +134,9 @@ const MAX_TAGS = 4;
 <style>
 	.index {
 		margin-top: 1.5rem;
+	}
+
+	.index-rule {
 		border-top: 1px solid var(--color-text);
 	}
 
