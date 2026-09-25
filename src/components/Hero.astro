@@ -232,8 +232,8 @@ const skillGroups = [
 			// Timings from the prototype (ms).
 			const LEG1 = 700;
 			const LEG2 = 650;
-			const LETTERS_AT = 650;
-			const STAGGER = 55;
+			const LETTERS_AT = 450;
+			const STAGGER = 45;
 			const PACKET_RUN = 2600;
 
 			// Hides a leg so it can be drawn in, and returns its length.
@@ -287,11 +287,12 @@ const skillGroups = [
 					setTimeout(() => ch.classList.add('lit'), LETTERS_AT + i * STAGGER);
 					setTimeout(() => ch.classList.add('set'), LETTERS_AT + i * STAGGER + 700);
 				});
-				await sleep(LETTERS_AT + chars.length * STAGGER + 250);
+				// The text starts while the last letters are still lighting up.
+				await sleep(LETTERS_AT + Math.round(chars.length * STAGGER * 0.6));
 
 				reveal();
 				if (legs[1]) draw(legs[1], LEG2);
-				await sleep(500);
+				await sleep(300);
 				startConsole();
 				await sleep(900);
 				runPacket(legs);
@@ -301,7 +302,9 @@ const skillGroups = [
 
 			// Start once the fonts are in and one frame has rendered: before that the
 			// name can still shift, and the page is busy loading, which made it stutter.
-			if (booting) (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(boot));
+			// Wait for the fonts at most 300 ms: past that, starting beats a perfect line.
+			const fontsOrTimeout = Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(300)]);
+			if (booting) fontsOrTimeout.then(() => requestAnimationFrame(boot));
 			else layout();
 
 			// Keep the trace in place when the layout changes (resize, late fonts).

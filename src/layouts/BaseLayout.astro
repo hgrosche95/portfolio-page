@@ -202,7 +202,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				}
 				if (held) {
 					document.addEventListener('hero:booted', function () {
-						setTimeout(release, 700);
+						setTimeout(release, 200);
 					}, { once: true });
 					setTimeout(release, 8000);
 				}
