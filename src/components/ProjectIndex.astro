@@ -110,6 +110,24 @@ const MAX_TAGS = 4;
 	}
 </div>
 
+<script is:inline>
+	(function () {
+		// A click anywhere on a row's head opens or closes its details, like the
+		// "+" does. Links inside (title, Live-Demo) keep navigating, and without
+		// JS the "+" alone still works because it is a real <details>.
+		document.querySelectorAll('.index .row').forEach(function (row) {
+			const head = row.querySelector('.head');
+			const details = row.querySelector('details');
+			head.addEventListener('click', function (event) {
+				if (event.target.closest('a')) return;
+				// Selecting text to copy it should not toggle the row.
+				if (window.getSelection().toString()) return;
+				details.open = !details.open;
+			});
+		});
+	})();
+</script>
+
 <style>
 	.index {
 		margin-top: 1.5rem;
@@ -128,6 +146,12 @@ const MAX_TAGS = 4;
 		gap: 1.5rem;
 		align-items: baseline;
 		padding: 1.25rem 0;
+		cursor: pointer;
+	}
+
+	/* The whole head acts as the toggle, so hovering it lights the "+". */
+	.row:has(.head:hover) .toggle {
+		color: var(--color-accent);
 	}
 
 	/*
