@@ -191,11 +191,22 @@ const skillGroups = [
 				let end = null;
 
 				// Second leg only when the console sits beside the name (desktop):
-				// over the top, through the empty space above the eyebrow.
+				// down into the gap between the name row and the text below it,
+				// across under name and photo, and into a pad just outside the
+				// console's left edge (never into the console itself).
 				if (t.top < n.bottom) {
-					const topY = box.top - origin.top + 28;
-					end = { x: t.left - origin.left + 28, y: t.top - origin.top };
-					segments.push(`M${padX} ${y} V${topY} H${end.x} V${end.y}`);
+					const row = name.parentElement.getBoundingClientRect();
+					const after = hero.querySelector('[data-boot-after]').getBoundingClientRect();
+					const gapY = (row.bottom + after.top) / 2 - origin.top;
+					const endX = t.left - origin.left - 10;
+					// Enter at the gap's height if the console reaches that far, else as close as it gets.
+					const enterY = Math.min(Math.max(gapY, t.top - origin.top + 24), t.bottom - origin.top - 24);
+					end = { x: endX, y: enterY };
+					segments.push(
+						enterY === gapY
+							? `M${padX} ${y} V${gapY} H${endX}`
+							: `M${padX} ${y} V${gapY} H${endX - 16} V${enterY} H${endX}`,
+					);
 				}
 
 				const pad = (x, py) =>
