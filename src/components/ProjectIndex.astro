@@ -38,22 +38,25 @@ const MAX_TAGS = 4;
 			return (
 				<article class="row" data-project-tags={data.techStack.join('|')} data-reveal>
 					{/* The head is plain content, not part of the toggle: its links
-					    (title → project page, Live-Demo → demo) must stay real links,
+					    (title → project page, live button → demo) must stay real links,
 					    and interactive elements inside a <summary> would swallow the
 					    click and read badly to screen readers. */}
 					<div class="head">
-						<span class="kind">
-							{kindLabels[data.kind]}
-							{data.liveUrl && (
-								<a class="live" href={data.liveUrl} target="_blank" rel="noopener noreferrer">
-									Live-Demo<span class="sr-only"> (öffnet in neuem Tab)</span>
-								</a>
-							)}
-						</span>
+						<span class="kind">{kindLabels[data.kind]}</span>
 						<span class="main">
-							<h3>
-								<a href={`/projects/${entry.id}`}>{data.title}</a>
-							</h3>
+							{/* The live button sits right beside the title, so "you can try
+							    this" is the first thing seen, not a footnote in the label column. */}
+							<span class="title-row">
+								<h3>
+									<a href={`/projects/${entry.id}`}>{data.title}</a>
+								</h3>
+								{data.liveUrl && (
+									<a class="live" href={data.liveUrl} target="_blank" rel="noopener noreferrer">
+										{data.liveLabel ?? 'Live ansehen'}
+										<span class="sr-only"> (öffnet in neuem Tab)</span>
+									</a>
+								)}
+							</span>
 							<span class="summary">{data.summary}</span>
 						</span>
 						<span class="facts">
@@ -116,7 +119,7 @@ const MAX_TAGS = 4;
 <script is:inline>
 	(function () {
 		// A click anywhere on a row's head opens or closes its details, like the
-		// "+" does. Links inside (title, Live-Demo) keep navigating, and without
+		// "+" does. Links inside (title, live button) keep navigating, and without
 		// JS the "+" alone still works because it is a real <details>.
 		document.querySelectorAll('.index .row').forEach(function (row) {
 			const head = row.querySelector('.head');
@@ -198,28 +201,48 @@ const MAX_TAGS = 4;
 		color: var(--color-text-muted);
 	}
 
+	.title-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+	}
+
+	/* A real button, not a link-sized hint: trying the app is the point. */
 	.live {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
-		width: fit-content;
-		font-size: 11px;
+		gap: 0.5rem;
+		padding: 0.45rem 0.9rem;
+		border: 1px solid var(--color-live);
+		border-radius: 0.4rem;
+		background-color: color-mix(in srgb, var(--color-live) 12%, transparent);
+		font: 500 13px var(--font-mono);
 		color: var(--color-live);
 		text-decoration: none;
-		text-underline-offset: 3px;
+		white-space: nowrap;
+		transition:
+			background-color 0.2s,
+			color 0.2s;
 	}
 
 	.live:hover {
-		text-decoration: underline;
+		background-color: var(--color-live);
+		color: var(--color-bg);
+	}
+
+	.live:focus-visible {
+		outline: 2px solid var(--color-live);
+		outline-offset: 2px;
 	}
 
 	.live::before {
 		content: "";
-		width: 6px;
-		height: 6px;
+		width: 7px;
+		height: 7px;
 		border-radius: 50%;
 		background-color: currentColor;
-		box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent);
 	}
 
 	.main {
@@ -368,6 +391,7 @@ const MAX_TAGS = 4;
 
 	@media (prefers-reduced-motion: reduce) {
 		.toggle,
+		.live,
 		h3 {
 			transition: none;
 		}
