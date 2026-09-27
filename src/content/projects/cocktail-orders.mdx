@@ -27,7 +27,7 @@ architecture:
       sub: "Gästekarte"
       lane: 0
       row: 0
-      description: "Filterbare Karte, Live-Position in der Warteschlange und „Empfohlen für dich“ per Collaborative Filtering, ohne LLM."
+      description: "Filterbare Karte mit Detailseite pro Drink, Live-Position in der Warteschlange neben einer Rheinturm-Lichtuhr und „Empfohlen für dich“ per Collaborative Filtering, ohne LLM."
     - id: api
       label: "Express (REST)"
       kind: backend
@@ -93,10 +93,10 @@ architecture:
         - { from: api, to: web, label: "Cocktail verschwindet" }
 ---
 
-Eine Bestell-App für die eigene Cocktail-Party: Gäste öffnen die Seite, loggen sich nur mit Namen ein, bestellen aus einer filterbaren, filmklassiker-themed Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind — oder beschreiben ihren Wunsch in eigenen Worten ("etwas Bitteres, ohne Rum, ohne Eis"), den ein LLM in einen passenden Menüeintrag übersetzt. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann; betroffene Cocktails verschwinden dann automatisch aus der Gästekarte. Bewertete Cocktails fließen außerdem in eine "Empfohlen für dich"-Sektion pro Gast ein.
+Eine Bestell-App für die eigene Cocktail-Party: Gäste öffnen die Seite, loggen sich nur mit Namen ein, bestellen aus einer filterbaren, filmklassiker-themed Cocktail-Karte und sehen live, wie viele Bestellungen noch vor ihrer dran sind — oder beschreiben ihren Wunsch in eigenen Worten ("etwas Bitteres, ohne Rum, ohne Eis"), den ein LLM in einen passenden Menüeintrag übersetzt. Auf einem Tablet läuft eine passwortgeschützte Barkeeper-Ansicht mit allen offenen Bestellungen samt Rezept, die Zutaten als "nicht vorrätig" markieren kann; betroffene Cocktails verschwinden dann automatisch aus der Gästekarte. Bewertete Cocktails fließen außerdem in eine "Empfohlen für dich"-Sektion pro Gast ein. Optisch ist die App eine Rooftop-Bar über Düsseldorf: Der Kopfbereich zeigt die Skyline mit Rheinturm, Stadttor und Medienhafen, jeder Drink hat eine eigene Detailseite mit Rezept, und nach dem Bestellen zeigt eine nachgebaute Rheinturm-Lichtuhr die Uhrzeit und die Position in der Warteschlange.
 
 <div class="screenshot-grid">
-  <img src="/projects/cocktail-orders/menu.webp" alt="Cocktail-Karte aus Gastsicht" />
+  <img src="/projects/cocktail-orders/menu.webp" alt="Cocktail-Karte aus Gastsicht unter der Düsseldorfer Skyline" />
   <img src="/projects/cocktail-orders/barkeeper.webp" alt="Barkeeper-Dashboard mit offenen Bestellungen" />
 </div>
 
