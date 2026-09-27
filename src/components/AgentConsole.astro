@@ -22,7 +22,7 @@ const scenarios: { name: string; steps: Step[] }[] = [
 		name: 'Faktenfrage',
 		steps: [
 			{ text: '› Was isst man in Lissabon?', tone: 'user', wire: 'web-api', lit: ['web', 'api'] },
-			{ text: '→ llm.chat(tools = [search_flights, search_hotels, save_itinerary, search_travel_knowledge])', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
+			{ text: '→ llm.chat(tools = [..., search_travel_knowledge])', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
 			{ text: '← tool_call: search_travel_knowledge("Lissabon Essen")', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
 			{ text: '→ rag.search(query, k = 5)', tone: 'out', wire: 'api-rag', lit: ['api', 'rag'] },
 			{ text: '→ pgvector: Ähnlichkeitssuche, collection = travel', tone: 'out', wire: 'rag-db', lit: ['rag', 'db'] },
@@ -39,6 +39,7 @@ const scenarios: { name: string; steps: Step[] }[] = [
 			{ text: '→ llm.chat(tools = [...])', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
 			{ text: '← tool_call: search_flights("Porto", Mai)', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
 			{ text: '← tool_call: search_hotels("Porto", mittel)', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
+			{ text: '← tool_call: show_destination_on_globe("Porto")', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
 			{ text: '← tool_call: save_itinerary(4 Tage)', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
 			{ text: '→ Postgres: Reiseplan gespeichert', tone: 'out', wire: 'api-db', lit: ['api', 'db'] },
 			{ text: '← Tagesplan an den Chat', tone: 'in', wire: 'web-api', back: true, lit: ['api', 'web'] },

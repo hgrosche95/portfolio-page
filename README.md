@@ -14,8 +14,10 @@ Live: https://henrikgrosche.is-a.dev
   Aufbau des Projekts als Schaltplan; Abläufe (z. B. „Faktenfrage mit
   Quellen") lassen sich abspielen, ein Klick auf eine Komponente erklärt
   sie. Beim Build als SVG erzeugt, ohne React und ohne JS-Bundle.
-- **Hero mit echtem KI-System** — der Encounter-Agent aus dem Agentic
-  Roguelike, umschaltbar zwischen Cloud-Modell und eigenem Fine-Tune.
+- **Hero mit echtem Agent-Ablauf** — spielt zwei echte Läufe des
+  AI-Trip-Planner-Agenten Zeile für Zeile ab (Faktenfrage, Reiseplan); jede
+  Log-Zeile schickt ein Paket durch den Mini-Schaltplan darüber. Statisches
+  Astro mit ein paar Zeilen Inline-Skript, kein React.
 - **Projekt-Index** auf der Startseite — aufklappbare Zeilen mit Art,
   Live-Status, Stack, Mini-Schaltplan und der wichtigsten
   Architekturentscheidung; funktioniert ohne JavaScript (`<details>`).
@@ -30,7 +32,7 @@ Live: https://henrikgrosche.is-a.dev
   abgeleitet (nur Tags, die bei mindestens zwei Projekten vorkommen, sonst
   wäre es kein Filter, sondern nur eine Umbenennung eines Links).
 - **Erreichbarkeits-Check für Live-Demos mit Scale-to-Zero-Backend**
-  (`great_galguti_game`, `ai-trip-planer`): schläft der Container gerade,
+  (alle Projekte mit `liveStatusCheck: true` im Frontmatter): schläft der Container gerade,
   zeigt die Seite das an, statt dass der erste Klick nach 30–40 s wie ein
   kaputtes Deployment aussieht.
 - **Kontaktformular** über eine eigene Azure Function (Versand via Brevo),
