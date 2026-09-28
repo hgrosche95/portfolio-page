@@ -208,12 +208,12 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				}
 
 				const STAGGER = 90;
-				const MAX_DELAY = 540;
+				const MAX_DELAY = 360;
 
 				function reveal() {
 					queued = false;
 					if (held) return;
-					const limit = window.innerHeight * 0.9;
+					const limit = window.innerHeight * 1.1;
 					// Elements that come into view together fade in one after another.
 					let batch = 0;
 					pending = pending.filter(function (el) {
