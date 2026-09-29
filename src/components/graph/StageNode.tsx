@@ -15,7 +15,7 @@ export default function StageNode({ data }: NodeProps & { data: StageNodeData })
         // neighbouring column fighting for width there, and the bigger
         // touch target reads better than the desktop row's compact size.
         data.vertical ? 'w-[280px] px-5 py-2.5 text-base' : 'w-[190px] px-3 py-2 text-sm',
-        'rounded border font-mono shadow-sm transition-all duration-500',
+        'rounded border font-mono shadow-sm transition-all duration-500 motion-reduce:transition-none',
         data.active
           ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)] opacity-100'
           : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] opacity-50',
