@@ -105,6 +105,18 @@ form actually needs, not a general-purpose form platform. `mailto:`/LinkedIn/CV 
 as a fallback alongside it rather than being replaced, since a backend outage or a JS failure
 should never be the only way to reach out.
 
+**Demo recordings: calm, not a slideshow.** The homepage reel (`DemoReel.astro`) shows short,
+silent, sped-up screen recordings of real runs on the live demos, picked by tabs. A clip
+autoplays only muted, when in view and without `prefers-reduced-motion` or Save-Data, plays
+once and stops on its last frame (usually the result) with "Nochmal" and "Weiter" instead of
+looping or advancing on its own: auto-rotation reads as advertising and interrupts whoever is
+reading the caption. All clips share one stage size, so switching tabs never moves the page;
+Cocktail Orders is recorded in portrait because guests use it on their phones. Without JS the
+clips are plain `<video controls>` figures. Files are H.264 MP4 (≤ 2.5 MB, `+faststart`,
+`preload="none"`) with a VP9 WebM fallback for Chromium builds without H.264; recording and
+cutting scripts are Playwright plus ffmpeg, and each clip's chapters live in its project's
+frontmatter, checked at build time like the scenarios.
+
 **Impressum/Datenschutzerklärung included**, using city + email only rather than a full home
 address. German TMG/DSGVO Impressum obligations are a legal grey area for a non-commercial
 personal portfolio, but including a minimal one anyway avoids risk cheaply. Full postal address

@@ -20,6 +20,10 @@
       "headers": { "cache-control": "public, max-age=31536000, immutable" }
     },
     {
+      "route": "/videos/*",
+      "headers": { "cache-control": "public, max-age=604800" }
+    },
+    {
       "route": "/*.html",
       "headers": { "cache-control": "no-cache" }
     },

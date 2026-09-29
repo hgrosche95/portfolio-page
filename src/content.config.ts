@@ -27,6 +27,40 @@ const scenarioStep = z.object({
   detail: z.string().optional(),
 });
 
+/**
+ * A short screen recording of the live demo, shown in the homepage reel.
+ * Files live in public/videos/; `src` and `poster` are site paths.
+ */
+const demo = z
+  .object({
+    /** Position in the reel, independent of the project order. */
+    order: z.number(),
+    /** Short tab label, fits a third of a phone screen. */
+    label: z.string(),
+    src: z.string().startsWith('/videos/'),
+    poster: z.string().startsWith('/videos/'),
+    /** Desktop recordings sit in a 16:10 stage, mobile ones in a phone frame. */
+    format: z.enum(['desktop', 'mobile']),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    /** Length in seconds, for the meta line and chapter checks. */
+    duration: z.number().positive(),
+    /** One sentence: what the clip shows. Also the video's text alternative. */
+    caption: z.string(),
+    chapters: z.array(z.object({ t: z.number().min(0), label: z.string() })).min(1),
+  })
+  // Chapters must be in order and inside the clip, or a seek button would lie.
+  .superRefine((d, ctx) => {
+    d.chapters.forEach((c, i) => {
+      if (c.t >= d.duration) {
+        ctx.addIssue({ code: 'custom', path: ['chapters', i, 't'], message: `Kapitel "${c.label}" liegt hinter dem Clip-Ende (${d.duration}s)` });
+      }
+      if (i > 0 && c.t <= d.chapters[i - 1].t) {
+        ctx.addIssue({ code: 'custom', path: ['chapters', i, 't'], message: `Kapitel "${c.label}" liegt nicht nach dem vorherigen` });
+      }
+    });
+  });
+
 const projects = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/projects' }),
   schema: z.object({
@@ -72,6 +106,8 @@ const projects = defineCollection({
     liveStatusCheck: z.boolean().optional(),
     /** Where it runs, one line for the project page's data sheet. */
     hosting: z.string().optional(),
+    /** Optional screen recording for the homepage reel. Needs liveUrl, since it shows the live demo. */
+    demo: demo.optional(),
     /**
      * Architecture decisions shown beside the write-up: what was chosen, what
      * was considered and dropped, and why. Structured rather than prose so

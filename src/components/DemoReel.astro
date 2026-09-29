@@ -1,0 +1,776 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+/**
+ * Homepage reel: short screen recordings of the live demos, one at a time,
+ * picked by tabs. Deliberately calm: a clip plays once when it is in view and
+ * stops on its last frame (usually the result); nothing advances on its own.
+ *
+ * Without JS every clip is simply a figure with native controls, stacked.
+ * The script turns that into tabs and removes the native controls in favour
+ * of the pause button and chapter marks.
+ */
+interface Props {
+	projects: CollectionEntry<'projects'>[];
+}
+
+const demos = Astro.props.projects
+	.filter((p) => p.data.demo)
+	.sort((a, b) => a.data.demo!.order - b.data.demo!.order)
+	.map((p) => ({ id: p.id, title: p.data.title, liveUrl: p.data.liveUrl, liveLabel: p.data.liveLabel, ...p.data.demo! }));
+
+const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const device = (d: (typeof demos)[number]) =>
+	d.format === 'mobile' ? `Gastansicht · iPhone ${d.width / 2}×${d.height / 2}` : `Live-Demo · ${d.width}×${d.height}`;
+---
+
+<div class="reel" data-demo-reel data-xray="DemoReel.astro · <video> + Inline-Skript" data-xray-kind="static">
+	<div class="tabs" role="tablist" aria-label="Aufnahmen" data-tabs hidden>
+		{
+			demos.map((d, i) => (
+				<button
+					type="button"
+					role="tab"
+					id={`demo-tab-${d.id}`}
+					aria-controls={`demo-${d.id}`}
+					aria-selected={i === 0 ? 'true' : 'false'}
+					tabindex={i === 0 ? 0 : -1}
+					data-tab
+				>
+					<span class="tab-title">{d.label}</span>
+					<span class="tab-sub">{d.title} · {clock(d.duration)}</span>
+					<span class="tab-progress" aria-hidden="true" />
+				</button>
+			))
+		}
+	</div>
+
+	{
+		demos.map((d) => (
+			<figure class="panel" id={`demo-${d.id}`} aria-labelledby={`demo-tab-${d.id}`} data-panel data-format={d.format}>
+				<div class="stage">
+					<div class="bar">
+						<span class="where">
+							{d.id}
+							<span class="device"> · {device(d)}</span>
+						</span>
+						<span class="controls">
+							<span class="state" data-state aria-hidden="true" />
+							<button type="button" class="toggle" data-toggle aria-label="Video abspielen" hidden>
+								<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+									<path class="icon-play" d="M3 1.5v9l7.5-4.5z" />
+									<path class="icon-pause" d="M2.5 1.5h2.5v9h-2.5zM7 1.5h2.5v9h-2.5z" />
+								</svg>
+							</button>
+						</span>
+					</div>
+					<div class="screen">
+						<div class="frame">
+							<video
+								poster={d.poster}
+								width={d.width}
+								height={d.height}
+								muted
+								playsinline
+								preload="none"
+								controls
+								disablepictureinpicture
+								disableremoteplayback
+								aria-describedby={`demo-cap-${d.id}`}
+								data-video
+								data-duration={d.duration}
+							>
+								{/* H.264 first (hardware decoding, Safari/iOS); VP9 for Chromium builds without H.264. */}
+								<source src={d.src} type="video/mp4" />
+								<source src={d.src.replace(/\.mp4$/, '.webm')} type="video/webm" />
+							</video>
+						</div>
+						<div class="end" data-end hidden>
+							<button type="button" data-replay>↻ Nochmal</button>
+							<button type="button" data-next hidden />
+						</div>
+					</div>
+				</div>
+
+				<ol class="chapters" aria-label="Kapitel" data-chapters hidden>
+					{d.chapters.map((c) => (
+						<li style={`--at: ${c.t / d.duration}`}>
+							<button type="button" data-seek={c.t} aria-label={`Kapitel ${c.label} (${clock(c.t)})`}>
+								<span class="pad" aria-hidden="true" />
+								<span class="label">{c.label}</span>
+							</button>
+						</li>
+					))}
+				</ol>
+
+				<figcaption id={`demo-cap-${d.id}`}>
+					<h3>
+						<a href={`/projects/${d.id}`}>{d.title}</a>
+					</h3>
+					<p class="caption">{d.caption}</p>
+					<p class="meta">Echter Lauf auf der Live-Demo · beschleunigt · ohne Ton · {clock(d.duration)}</p>
+					<p class="links">
+						<a href={`/projects/${d.id}`}>Projekt lesen</a>
+						{d.liveUrl && (
+							<a href={d.liveUrl} target="_blank" rel="noopener noreferrer">
+								{d.liveLabel ?? 'Live ansehen'}
+								<span class="sr-only"> (öffnet in neuem Tab)</span>
+							</a>
+						)}
+					</p>
+				</figcaption>
+			</figure>
+		))
+	}
+</div>
+
+<script is:inline>
+	(() => {
+		const reel = document.querySelector('[data-demo-reel]');
+		if (!reel || reel.dataset.ready) return;
+		reel.dataset.ready = 'true';
+
+		const tabs = [...reel.querySelectorAll('[data-tab]')];
+		const panels = [...reel.querySelectorAll('[data-panel]')];
+		const videos = panels.map((p) => p.querySelector('[data-video]'));
+		const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const saveData = Boolean(navigator.connection && navigator.connection.saveData);
+		// Autoplay only where nobody asked for less motion or less data.
+		const mayAutoplay = !reduceMotion && !saveData;
+
+		let active = 0;
+		let inView = false;
+		// Set once the visitor pauses by hand: scrolling back must not override that.
+		let userPaused = false;
+
+		reel.dataset.enhanced = 'true';
+		reel.querySelector('[data-tabs]').hidden = false;
+
+		panels.forEach((panel, i) => {
+			const video = videos[i];
+			const toggle = panel.querySelector('[data-toggle]');
+			const end = panel.querySelector('[data-end]');
+			const next = panel.querySelector('[data-next]');
+			const chapters = panel.querySelector('[data-chapters]');
+			const seeks = [...panel.querySelectorAll('[data-seek]')];
+
+			panel.setAttribute('role', 'tabpanel');
+			panel.hidden = i !== active;
+			video.controls = false;
+			toggle.hidden = false;
+			chapters.hidden = false;
+
+			if (panels.length > 1) {
+				const target = (i + 1) % panels.length;
+				next.textContent = `Weiter: ${tabs[target].querySelector('.tab-title').textContent} →`;
+				next.hidden = false;
+				next.addEventListener('click', () => activate(target, true));
+			}
+
+			const sync = () => {
+				const playing = !video.paused && !video.ended;
+				panel.dataset.playing = String(playing);
+				toggle.setAttribute('aria-label', playing ? 'Video pausieren' : 'Video abspielen');
+				panel.querySelector('[data-state]').textContent = video.ended ? '■ Ende' : playing ? '● läuft' : '❚❚ pausiert';
+			};
+
+			const progress = () => {
+				const duration = video.duration || Number(video.dataset.duration);
+				const p = Math.min(1, video.currentTime / duration);
+				panel.style.setProperty('--p', p);
+				tabs[i].style.setProperty('--p', p);
+				let current = 0;
+				seeks.forEach((s, k) => {
+					if (video.currentTime >= Number(s.dataset.seek) - 0.05) current = k;
+				});
+				seeks.forEach((s, k) => s.toggleAttribute('data-current', k === current));
+			};
+
+			video.addEventListener('play', () => {
+				end.hidden = true;
+				sync();
+			});
+			video.addEventListener('pause', sync);
+			video.addEventListener('ended', () => {
+				end.hidden = false;
+				sync();
+			});
+			video.addEventListener('timeupdate', progress);
+			video.addEventListener('seeked', progress);
+
+			const playOrPause = () => {
+				if (video.paused || video.ended) {
+					userPaused = false;
+					start(i);
+				} else {
+					userPaused = true;
+					video.pause();
+				}
+			};
+			toggle.addEventListener('click', playOrPause);
+			video.addEventListener('click', playOrPause);
+
+			end.querySelector('[data-replay]').addEventListener('click', () => {
+				video.currentTime = 0;
+				userPaused = false;
+				start(i);
+			});
+
+			seeks.forEach((s) =>
+				s.addEventListener('click', () => {
+					video.currentTime = Number(s.dataset.seek);
+					userPaused = false;
+					start(i);
+				}),
+			);
+
+			sync();
+		});
+
+		function start(i) {
+			const attempt = videos[i].play();
+			// Autoplay blocked or data unavailable: stay on the poster with the play button.
+			if (attempt) attempt.catch(() => {});
+		}
+
+		function activate(i, byUser) {
+			if (i === active && !byUser) return;
+			videos[active].pause();
+			tabs.forEach((t, k) => {
+				t.setAttribute('aria-selected', String(k === i));
+				t.tabIndex = k === i ? 0 : -1;
+			});
+			panels.forEach((p, k) => (p.hidden = k !== i));
+			active = i;
+			if (byUser) {
+				userPaused = false;
+				if (videos[i].ended) videos[i].currentTime = 0;
+				start(i);
+			} else if (mayAutoplay && inView && !userPaused) {
+				start(i);
+			}
+		}
+
+		tabs.forEach((tab, i) => {
+			tab.addEventListener('click', () => activate(i, true));
+			tab.addEventListener('keydown', (e) => {
+				const last = tabs.length - 1;
+				const to = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: last }[e.key];
+				if (to === undefined) return;
+				e.preventDefault();
+				const target = (to + tabs.length) % tabs.length;
+				tabs[target].focus();
+				activate(target, true);
+			});
+		});
+
+		if ('IntersectionObserver' in window) {
+			new IntersectionObserver(
+				(entries) => {
+					// Half the reel in view, or (reel taller than the screen) half the screen filled by it.
+					const e = entries[entries.length - 1];
+					const was = inView;
+					inView = e.isIntersecting && (e.intersectionRatio >= 0.5 || e.intersectionRect.height >= innerHeight * 0.5);
+					if (inView === was) return;
+					// Act only on the change: a clip started by hand keeps playing while half visible.
+					const video = videos[active];
+					if (!inView) video.pause();
+					else if (mayAutoplay && !userPaused && video.paused && !video.ended) start(active);
+				},
+				{ threshold: [0, 0.25, 0.5, 0.75] },
+			).observe(reel);
+		}
+
+		document.addEventListener('visibilitychange', () => {
+			if (document.hidden) videos[active].pause();
+			else if (mayAutoplay && inView && !userPaused && !videos[active].ended) start(active);
+		});
+	})();
+</script>
+
+<style>
+	.reel {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+		margin-top: 1.5rem;
+	}
+
+	.reel[data-enhanced] {
+		gap: 1rem;
+	}
+
+	/* Tabs: a row of three on small screens, a column next to the stage from 1024px. */
+	.tabs {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.4rem;
+	}
+
+	.tabs[hidden] {
+		display: none;
+	}
+
+	[role='tab'] {
+		display: grid;
+		gap: 0.15rem;
+		min-width: 0;
+		padding: 0.55rem 0.7rem 0;
+		border: 1px solid var(--color-border);
+		border-radius: 0.5rem;
+		background-color: var(--color-surface);
+		color: var(--color-text-muted);
+		text-align: left;
+		cursor: pointer;
+		overflow: hidden;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
+	}
+
+	[role='tab']:hover {
+		border-color: var(--color-border-strong);
+		color: var(--color-text);
+	}
+
+	[role='tab'][aria-selected='true'] {
+		border-color: var(--color-accent);
+		background-color: var(--color-accent-soft);
+		color: var(--color-text);
+	}
+
+	.tab-title {
+		overflow: hidden;
+		font: 600 13px var(--font-mono);
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	[aria-selected='true'] .tab-title {
+		color: var(--color-accent);
+	}
+
+	.tab-sub {
+		display: none;
+		overflow: hidden;
+		font-size: 12.5px;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	.tab-progress {
+		display: block;
+		height: 2px;
+		margin: 0.45rem -0.7rem 0;
+		background: linear-gradient(to right, var(--color-accent) calc(var(--p, 0) * 100%), transparent 0);
+	}
+
+	[aria-selected='false'] .tab-progress {
+		opacity: 0.45;
+	}
+
+	/* Stage: same frame language as the agent console in the hero. */
+	.stage {
+		overflow: hidden;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 0.75rem;
+		background-color: var(--color-surface);
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		border-bottom: 1px dashed var(--color-border-strong);
+		padding: 0.45rem 0.6rem 0.45rem 0.875rem;
+		font: 12px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.where {
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	.controls {
+		display: flex;
+		flex: none;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.state {
+		color: var(--color-text-muted);
+	}
+
+	[data-playing='true'] .state {
+		color: var(--color-live);
+	}
+
+	.toggle {
+		display: grid;
+		place-items: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 0.375rem;
+		background: none;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.toggle:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.toggle[hidden] {
+		display: none;
+	}
+
+	.toggle path {
+		fill: currentColor;
+	}
+
+	.icon-pause,
+	[data-playing='true'] .icon-play {
+		display: none;
+	}
+
+	[data-playing='true'] .icon-pause {
+		display: inline;
+	}
+
+	/* Schematic paper behind the recording, same 24px grid as the page. */
+	.screen {
+		position: relative;
+		display: grid;
+		place-items: center;
+		padding: 0.75rem;
+		background-color: var(--color-surface-raised);
+		background-image:
+			linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+			linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+		background-size: 24px 24px;
+	}
+
+	.frame {
+		width: 100%;
+		overflow: hidden;
+		border: 1px solid var(--color-border);
+		border-radius: 0.4rem;
+		background-color: var(--color-bg);
+	}
+
+	video {
+		display: block;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 16 / 10;
+	}
+
+	[data-format='mobile'] .frame {
+		width: auto;
+		max-width: 100%;
+		border: 6px solid var(--color-surface);
+		border-radius: 1.75rem;
+		outline: 1px solid var(--color-border-strong);
+	}
+
+	[data-format='mobile'] video {
+		width: auto;
+		height: min(70svh, 34rem);
+		max-width: 100%;
+		aspect-ratio: 390 / 664;
+		object-fit: cover;
+	}
+
+	/*
+	 * With the script, every clip shares one stage size so switching tabs
+	 * never moves the page: square on small screens (tall enough for the
+	 * phone clip), 16:10 next to the tab column on wide ones. Inside it the
+	 * phone frame is sized by height, a desktop clip by width.
+	 */
+	[data-enhanced] .screen {
+		aspect-ratio: 1 / 1;
+		max-height: min(72svh, 36rem);
+		width: 100%;
+	}
+
+	[data-enhanced] [data-format='mobile'] .frame {
+		height: 100%;
+		aspect-ratio: 390 / 664;
+	}
+
+	[data-enhanced] [data-format='mobile'] video {
+		width: 100%;
+		height: 100%;
+	}
+
+	[data-enhanced] video {
+		cursor: pointer;
+	}
+
+	.end {
+		position: absolute;
+		inset: auto 0 1.25rem;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0 1rem;
+	}
+
+	.end[hidden] {
+		display: none;
+	}
+
+	.end button {
+		padding: 0.45rem 0.8rem;
+		border: 1px solid var(--color-border-strong);
+		border-radius: 0.5rem;
+		background-color: var(--color-surface);
+		box-shadow: 0 2px 10px rgb(0 0 0 / 0.18);
+		font: 12.5px var(--font-mono);
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.end button:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.end button[hidden] {
+		display: none;
+	}
+
+	/* Chapter marks on a trace, like the one along the page margin. */
+	.chapters {
+		position: relative;
+		height: 2.4rem;
+		margin: 0.9rem 0.4rem 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.chapters[hidden] {
+		display: none;
+	}
+
+	.chapters::before {
+		content: '';
+		position: absolute;
+		inset: 0.35rem 0 auto;
+		height: 2px;
+		background: linear-gradient(to right, var(--color-accent) calc(var(--p, 0) * 100%), var(--color-border) 0);
+	}
+
+	.chapters li {
+		position: absolute;
+		top: 0;
+		left: calc(var(--at) * 100%);
+		translate: -0.4rem 0;
+	}
+
+	.chapters li:last-child:not(:first-child) {
+		translate: calc(-100% + 0.4rem) 0;
+	}
+
+	.chapters li:last-child:not(:first-child) button {
+		align-items: flex-end;
+	}
+
+	.chapters button {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.3rem;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+
+	.pad {
+		width: 0.8rem;
+		height: 0.8rem;
+		border: 2px solid var(--color-border-strong);
+		border-radius: 50%;
+		background-color: var(--color-bg);
+		transition:
+			border-color 0.2s,
+			background-color 0.2s;
+	}
+
+	.chapters button:hover .pad,
+	[data-current] .pad {
+		border-color: var(--color-accent);
+	}
+
+	[data-current] .pad {
+		background-color: var(--color-accent);
+	}
+
+	.label {
+		font: 11px var(--font-mono);
+		white-space: nowrap;
+	}
+
+	[data-current] .label,
+	.chapters button:hover .label {
+		color: var(--color-text);
+	}
+
+	figure {
+		margin: 0;
+	}
+
+	figcaption {
+		margin-top: 0.75rem;
+	}
+
+	h3 {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+	}
+
+	h3 a {
+		color: var(--color-text);
+		text-decoration: none;
+	}
+
+	h3 a:hover {
+		color: var(--color-accent);
+	}
+
+	.caption {
+		max-width: 44rem;
+		margin: 0.3rem 0 0;
+		font-size: 0.9rem;
+		line-height: 1.6;
+		color: var(--color-text-muted);
+	}
+
+	.meta {
+		margin: 0.5rem 0 0;
+		font: 12px var(--font-mono);
+		color: var(--color-text-muted);
+	}
+
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
+		margin: 0.6rem 0 0;
+		font: 13px var(--font-mono);
+	}
+
+	.links a {
+		color: var(--color-accent);
+		text-decoration: none;
+		border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+	}
+
+	.links a:hover {
+		border-bottom-color: var(--color-accent);
+	}
+
+	/* Small screens: only the current chapter's label, the rest are dots. */
+	@media (max-width: 40rem) {
+		.device {
+			display: none;
+		}
+
+		[role='tab'] {
+			padding-inline: 0.5rem;
+			text-align: center;
+		}
+
+		.tab-title {
+			font-size: 12px;
+		}
+
+		.tab-progress {
+			margin-inline: -0.5rem;
+		}
+
+		.label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+
+		[data-current] .label {
+			position: static;
+			width: auto;
+			height: auto;
+			clip-path: none;
+		}
+
+		.chapters li:has([data-current]) {
+			z-index: 1;
+		}
+	}
+
+	@media (min-width: 64rem) {
+		.reel[data-enhanced] {
+			grid-template-columns: minmax(0, 1fr) 16rem;
+			align-items: start;
+		}
+
+		.tabs {
+			grid-column: 2;
+			grid-row: 1;
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0.5rem;
+		}
+
+		.tab-sub {
+			display: block;
+		}
+
+		[role='tab'] {
+			padding: 0.75rem 0.9rem 0;
+		}
+
+		.tab-progress {
+			margin-inline: -0.9rem;
+			margin-top: 0.6rem;
+		}
+
+		[data-enhanced] [data-panel] {
+			grid-column: 1;
+			grid-row: 1;
+		}
+
+		[data-enhanced] .screen {
+			aspect-ratio: 16 / 10;
+			max-height: none;
+		}
+
+		[data-enhanced] [data-format='desktop'] .frame {
+			width: auto;
+			height: 100%;
+			aspect-ratio: 16 / 10;
+		}
+
+		[data-enhanced] [data-format='desktop'] video {
+			height: 100%;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		[role='tab'],
+		.pad {
+			transition: none;
+		}
+	}
+</style>
