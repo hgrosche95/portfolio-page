@@ -36,13 +36,16 @@ const scenarios: { name: string; steps: Step[] }[] = [
 		name: 'Reiseplan',
 		steps: [
 			{ text: '› 4 Tage Porto im Mai, mittleres Budget', tone: 'user', wire: 'web-api', lit: ['web', 'api'] },
-			{ text: '→ llm.chat(tools = [...])', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
-			{ text: '← tool_call: search_flights("Porto", Mai)', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
-			{ text: '← tool_call: search_hotels("Porto", mittel)', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
-			{ text: '← tool_call: show_destination_on_globe("Porto")', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
-			{ text: '← tool_call: save_itinerary(4 Tage)', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
-			{ text: '→ Postgres: Reiseplan gespeichert', tone: 'out', wire: 'api-db', lit: ['api', 'db'] },
-			{ text: '← Tagesplan an den Chat', tone: 'in', wire: 'web-api', back: true, lit: ['api', 'web'] },
+			{ text: '→ planner: llm.chat(Anfrage) ohne tools', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
+			{ text: '← Aufgaben: Wetter, Unterkünfte, Anreise, Wissensbasis', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
+			{ text: '→ research: get_weather · search_lodging · estimate_transport', tone: 'out', wire: 'api-ext', lit: ['api', 'ext'] },
+			{ text: '→ research: search_travel_knowledge("Porto")', tone: 'out', wire: 'api-rag', lit: ['api', 'rag'] },
+			{ text: '← Recherche fertig (parallel, ohne LLM)', tone: 'in', wire: 'api-ext', back: true, lit: ['ext', 'api'] },
+			{ text: '→ planner: llm.chat(Recherche → Tagesplan)', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
+			{ text: '← Tagesplan als Entwurf', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
+			{ text: '· budget + critic: Regeln in Code, 0 Tokens', tone: 'dim', wire: 'api-check', lit: ['api'] },
+			{ text: '→ planner: llm.chat(Antwort schreiben)', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
+			{ text: '← Antwort und Entwurf an den Chat', tone: 'in', wire: 'web-api', back: true, lit: ['api', 'web'] },
 			{ text: '· trace → Langfuse (kein Text)', tone: 'dim', wire: 'api-obs', lit: ['api', 'obs'] },
 		],
 	},
@@ -51,21 +54,23 @@ const scenarios: { name: string; steps: Step[] }[] = [
 /** Boxes, hand-placed in a 520 × 150 drawing. */
 const nodes = [
 	{ id: 'web', label: 'Next.js', sub: 'Chat', x: 10, y: 22, w: 94, h: 44 },
-	{ id: 'api', label: 'NestJS Agent', sub: 'Tool-Loop', x: 176, y: 18, w: 120, h: 44 },
-	{ id: 'llm', label: 'LLM', sub: 'Groq · Claude', x: 396, y: 10, w: 114, h: 36 },
-	{ id: 'obs', label: 'Langfuse', sub: 'ohne Text', x: 396, y: 56, w: 114, h: 34 },
+	{ id: 'api', label: 'NestJS Agent', sub: 'Planer · Kritiker', x: 176, y: 18, w: 120, h: 44 },
+	{ id: 'llm', label: 'LLM', sub: 'Groq · Claude', x: 396, y: 2, w: 114, h: 32 },
+	{ id: 'obs', label: 'Langfuse', sub: 'ohne Text', x: 396, y: 39, w: 114, h: 32 },
+	{ id: 'ext', label: 'Wetter · OSM', sub: 'öffentliche APIs', x: 396, y: 76, w: 114, h: 32 },
 	{ id: 'rag', label: 'RAG-Service', sub: 'FastAPI', x: 176, y: 96, w: 120, h: 44 },
-	{ id: 'db', label: 'pgvector', sub: 'Neon', x: 396, y: 100, w: 114, h: 36, data: true },
+	{ id: 'db', label: 'pgvector', sub: 'Neon', x: 396, y: 113, w: 114, h: 32, data: true },
 ];
 
 /** Wire paths between the boxes, in the direction of the request. */
 const wires = {
 	'web-api': 'M104 44 H176',
-	'api-llm': 'M296 36 H330 V28 H396',
-	'api-obs': 'M296 52 H340 V73 H396',
+	'api-llm': 'M296 28 H340 V18 H396',
+	'api-obs': 'M296 40 H330 V55 H396',
+	'api-ext': 'M296 58 H372 V92 H396',
 	'api-rag': 'M236 62 V96',
-	'rag-db': 'M296 118 H396',
-	'api-db': 'M270 62 V80 H350 V112 H396',
+	'rag-db': 'M296 118 H340 V129 H396',
+	'api-check': 'M196 18 V8 H276 V18',
 };
 ---
 
