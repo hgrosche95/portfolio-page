@@ -47,7 +47,7 @@ const MAX_TAGS = 4;
 							{/* The live button sits right beside the title, so "you can try
 							    this" is the first thing seen, not a footnote in the label column. */}
 							<span class="title-row">
-								<h3>
+								<h3 style={`view-transition-name: project-${entry.id}`}>
 									<a href={`/projects/${entry.id}`}>{data.title}</a>
 								</h3>
 								{data.liveUrl && (

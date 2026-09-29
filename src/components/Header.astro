@@ -26,6 +26,7 @@ const searchProjects = (await getCollection('projects')).map((entry) => ({
 
 <header
 	class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg-translucent)] backdrop-blur"
+	style="view-transition-name: site-header"
 >
 	<div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3.5">
 		<a

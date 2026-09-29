@@ -208,6 +208,35 @@ body::after {
   background: radial-gradient(ellipse at 50% 0%, var(--color-accent-glow), transparent 70%);
 }
 
+/*
+ * Grid light: the same 24px grid as body::before, drawn again in copper with
+ * a solder dot at every crossing, but only visible inside a soft circle around
+ * the mouse (--mx/--my, set by BaseLayout). Same size and origin as the base
+ * grid, so its lines land exactly on top of the faint ones. Stays at opacity 0
+ * unless the script switched it on, so touch and reduced motion never see it.
+ */
+.grid-light {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+  background-image:
+    radial-gradient(circle at center, var(--color-accent) 1.5px, transparent 2px),
+    linear-gradient(to right, color-mix(in srgb, var(--color-accent) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-accent) 55%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  /* The dot layer is centred in its tile; shifting it half a tile puts the dots on the crossings. */
+  background-position: -12px -12px, 0 0, 0 0;
+  -webkit-mask-image: radial-gradient(circle 220px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
+  mask-image: radial-gradient(circle 220px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
+}
+
+.grid-light.on {
+  opacity: 1;
+}
+
 /* Ring with a filled centre, the way a solder pad looks on a board. Marks
    section headings as stations along the trace. */
 .solder-pad {
@@ -226,6 +255,30 @@ body::after {
   inset: 2px;
   border-radius: 50%;
   background-color: var(--color-accent);
+}
+
+/*
+ * Page transitions between the homepage and project pages: the browser's own
+ * cross-document view transitions, so no client-side router and every script
+ * on the site keeps running as on a normal page load. Browsers without support
+ * simply navigate as before. A project title on the homepage and the heading
+ * on its project page share a view-transition-name, so the title moves across
+ * instead of the whole page just fading. The header has its own name so it
+ * stays put during the fade.
+ */
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
+
+::view-transition-group(*) {
+  animation-duration: 0.4s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* Consistent keyboard focus treatment across links, buttons and summaries. */
