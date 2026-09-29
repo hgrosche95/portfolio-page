@@ -50,6 +50,13 @@ function PipelineCanvas({ nodes, edges, stacked }: PipelineCanvasProps) {
       nodesConnectable={false}
       elementsSelectable={false}
       nodesFocusable={false}
+      // The library's hidden hints tell screen-reader users to "press enter to
+      // select" and "use the arrow keys to move" nodes, none of which works here.
+      ariaLabelConfig={{
+        'node.a11yDescription.default': '',
+        'node.a11yDescription.keyboardDisabled': '',
+        'edge.a11yDescription.default': '',
+      }}
       panOnDrag={false}
       panOnScroll={false}
       zoomOnScroll={false}
@@ -64,6 +71,15 @@ function PipelineCanvas({ nodes, edges, stacked }: PipelineCanvasProps) {
 export default function DeployPipeline() {
   const [activeStage, setActiveStage] = useState(-1);
   const [stacked, setStacked] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReduceMotion(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     // The section caps out at max-w-5xl (~992px usable), but the four
@@ -78,10 +94,14 @@ export default function DeployPipeline() {
   }, []);
 
   useEffect(() => {
-    stages.forEach((_, index) => {
-      setTimeout(() => setActiveStage(index), index * 500);
-    });
-  }, []);
+    // With reduced motion the stages are simply all lit, no stepwise reveal.
+    if (reduceMotion) {
+      setActiveStage(stages.length - 1);
+      return;
+    }
+    const timers = stages.map((_, index) => setTimeout(() => setActiveStage(index), index * 500));
+    return () => timers.forEach(clearTimeout);
+  }, [reduceMotion]);
 
   const nodes: Node<StageNodeData>[] = stages.map((stage, index) => ({
     id: stage.id,
@@ -95,11 +115,16 @@ export default function DeployPipeline() {
     id: `${stages[index].id}-${stage.id}`,
     source: stages[index].id,
     target: stage.id,
-    animated: index < activeStage,
+    animated: !reduceMotion && index < activeStage,
   }));
 
   return (
-    <div className="static-flow" style={{ height: stacked ? 360 : 200 }}>
+    <div
+      className="static-flow"
+      role="group"
+      aria-label="Deployment-Pipeline dieser Seite: Commit, Test, Build, Deploy, Live"
+      style={{ height: stacked ? 360 : 200 }}
+    >
       <ReactFlowProvider>
         <PipelineCanvas nodes={nodes} edges={edges} stacked={stacked} />
       </ReactFlowProvider>
