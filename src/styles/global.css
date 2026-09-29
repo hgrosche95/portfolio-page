@@ -229,8 +229,8 @@ body::after {
   background-size: 24px 24px;
   /* The dot layer is centred in its tile; shifting it half a tile puts the dots on the crossings. */
   background-position: -12px -12px, 0 0, 0 0;
-  -webkit-mask-image: radial-gradient(circle 220px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
-  mask-image: radial-gradient(circle 220px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
+  -webkit-mask-image: radial-gradient(circle 100px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
+  mask-image: radial-gradient(circle 100px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
 }
 
 .grid-light.on {
