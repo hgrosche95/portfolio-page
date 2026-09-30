@@ -393,7 +393,7 @@ const device = (d: (typeof demos)[number]) =>
 		gap: 1rem;
 	}
 
-	/* Tabs: a row of three on small screens, a column next to the stage from 1024px. */
+	/* Tabs: a row of three above the stage, at every width. */
 	.tabs {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -579,7 +579,7 @@ const device = (d: (typeof demos)[number]) =>
 	/*
 	 * With the script, every clip shares one stage size so switching tabs
 	 * never moves the page: square on small screens (tall enough for the
-	 * phone clip), 16:10 next to the tab column on wide ones. Inside it the
+	 * phone clip), 16:10 and full width on wide ones. Inside it the
 	 * phone frame is sized by height, a desktop clip by width.
 	 */
 	[data-enhanced] .screen {
@@ -804,16 +804,13 @@ const device = (d: (typeof demos)[number]) =>
 		}
 	}
 
+	/*
+	 * Wide screens keep the tabs as a row above the stage instead of a column
+	 * beside it: the recordings are full 1280px desktop UIs, and a side column
+	 * shrank them to about half size. Full width makes their text readable.
+	 */
 	@media (min-width: 64rem) {
-		.reel[data-enhanced] {
-			grid-template-columns: minmax(0, 1fr) 16rem;
-			align-items: start;
-		}
-
 		.tabs {
-			grid-column: 2;
-			grid-row: 1;
-			grid-template-columns: minmax(0, 1fr);
 			gap: 0.5rem;
 		}
 
@@ -830,14 +827,10 @@ const device = (d: (typeof demos)[number]) =>
 			margin-top: 0.6rem;
 		}
 
-		[data-enhanced] [data-panel] {
-			grid-column: 1;
-			grid-row: 1;
-		}
-
 		[data-enhanced] .screen {
 			aspect-ratio: 16 / 10;
 			max-height: none;
+			padding: 0.4rem;
 		}
 
 		[data-enhanced] [data-format='desktop'] .frame {
