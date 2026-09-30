@@ -11,8 +11,11 @@ const formattedTimestamp = new Date(deployInfo.timestamp).toLocaleString('de-DE'
   timeStyle: 'short',
 });
 
+// A merge commit's "from owner/branch" tail is noise in a box this small; the PR number says it.
+const commitMessage = deployInfo.message.replace(/^(Merge pull request #\d+) from \S+$/, '$1');
+
 const stages: { id: string; label: string; sublabel: string }[] = [
-  { id: 'commit', label: 'Commit', sublabel: `${deployInfo.shortSha} — ${deployInfo.message}` },
+  { id: 'commit', label: 'Commit', sublabel: `${deployInfo.shortSha} · ${commitMessage}` },
   { id: 'test', label: 'Test', sublabel: 'Vitest · Frontend + API' },
   { id: 'build', label: 'Build', sublabel: `Astro · ${deployInfo.branch}` },
   { id: 'deploy', label: 'Deploy', sublabel: 'Azure Static Web Apps' },
@@ -37,7 +40,7 @@ function PipelineCanvas({ nodes, edges, stacked }: PipelineCanvasProps) {
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    fitView({ padding: stacked ? 0.04 : 0.2 });
+    fitView({ padding: stacked ? 0.04 : 0.02 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, stacked]);
 
@@ -123,7 +126,7 @@ export default function DeployPipeline() {
       className="static-flow"
       role="group"
       aria-label="Deployment-Pipeline dieser Seite: Commit, Test, Build, Deploy, Live"
-      style={{ height: stacked ? 360 : 200 }}
+      style={{ height: stacked ? 380 : 120 }}
     >
       <ReactFlowProvider>
         <PipelineCanvas nodes={nodes} edges={edges} stacked={stacked} />

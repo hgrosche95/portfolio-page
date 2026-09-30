@@ -177,6 +177,18 @@ const device = (d: (typeof demos)[number]) =>
 		const mayAutoplay = !reduceMotion && !saveData;
 
 		let active = 0;
+		// On a phone a desktop recording shrinks to an unreadable strip, so the
+		// reel opens on the first phone recording there instead.
+		if (tabs.length && matchMedia('(max-width: 639px)').matches) {
+			const phone = panels.findIndex((p) => p.dataset.format === 'mobile');
+			if (phone > 0) {
+				active = phone;
+				tabs.forEach((t, k) => {
+					t.setAttribute('aria-selected', String(k === phone));
+					t.tabIndex = k === phone ? 0 : -1;
+				});
+			}
+		}
 		let inView = false;
 		// Set once the visitor pauses by hand: scrolling back must not override that.
 		let userPaused = false;

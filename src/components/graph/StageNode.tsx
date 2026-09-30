@@ -27,8 +27,9 @@ export default function StageNode({ data }: NodeProps & { data: StageNodeData })
         style={{ visibility: 'hidden' }}
       />
       <div>{data.label}</div>
+      {/* Wraps instead of truncating: a cut-off commit message or branch name hides the one fact the box is for. */}
       {data.sublabel && (
-        <div className={['truncate', data.vertical ? 'text-sm' : 'text-xs'].join(' ')} title={data.sublabel}>
+        <div className={['[overflow-wrap:anywhere]', data.vertical ? 'text-sm' : 'text-xs'].join(' ')}>
           {data.sublabel}
         </div>
       )}

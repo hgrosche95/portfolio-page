@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import Schematic from './Schematic.astro';
 import githubStats from '../data/github-stats.json';
+import { kindLabels } from '../lib/project-kinds';
 
 interface Props {
 	projects: CollectionEntry<'projects'>[];
@@ -11,13 +12,6 @@ const { projects } = Astro.props;
 
 type RepoStats = { stars: number; language: string | null; lastPushedAt: string };
 const stats = githubStats as Record<string, RepoStats | undefined>;
-
-const kindLabels = {
-	fullstack: 'Full-Stack',
-	agent: 'KI-Agent',
-	orchestration: 'Orchestrierung',
-	static: 'Statische Seite',
-} as const;
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' });
 
@@ -36,7 +30,7 @@ const MAX_TAGS = 4;
 			const extraTags = data.techStack.length - MAX_TAGS;
 			const decision = data.decisions?.[0];
 			return (
-				<article class="row" data-project-tags={data.techStack.join('|')} data-reveal>
+				<article class="row" data-project-kind={data.kind} data-reveal>
 					{/* The head is plain content, not part of the toggle: its links
 					    (title → project page, live button → demo) must stay real links,
 					    and interactive elements inside a <summary> would swallow the
@@ -51,7 +45,7 @@ const MAX_TAGS = 4;
 									<a href={`/projects/${entry.id}`}>{data.title}</a>
 								</h3>
 								{data.liveUrl && (
-									<a class="live" href={data.liveUrl} target="_blank" rel="noopener noreferrer">
+									<a class="live-link" href={data.liveUrl} target="_blank" rel="noopener noreferrer">
 										{data.liveLabel ?? 'Live ansehen'}
 										<span class="sr-only"> (öffnet in neuem Tab)</span>
 									</a>
@@ -136,7 +130,7 @@ const MAX_TAGS = 4;
 
 <style>
 	.index {
-		margin-top: 1.5rem;
+		margin-top: 2.5rem;
 	}
 
 	.index-rule {
@@ -206,43 +200,6 @@ const MAX_TAGS = 4;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem 1rem;
-	}
-
-	/* A real button, not a link-sized hint: trying the app is the point. */
-	.live {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.45rem 0.9rem;
-		border: 1px solid var(--color-live);
-		border-radius: 0.4rem;
-		background-color: color-mix(in srgb, var(--color-live) 12%, transparent);
-		font: 500 13px var(--font-mono);
-		color: var(--color-live);
-		text-decoration: none;
-		white-space: nowrap;
-		transition:
-			background-color 0.2s,
-			color 0.2s;
-	}
-
-	.live:hover {
-		background-color: var(--color-live);
-		color: var(--color-bg);
-	}
-
-	.live:focus-visible {
-		outline: 2px solid var(--color-live);
-		outline-offset: 2px;
-	}
-
-	.live::before {
-		content: "";
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background-color: currentColor;
-		box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent);
 	}
 
 	.main {
@@ -352,7 +309,7 @@ const MAX_TAGS = 4;
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem 1rem;
-		font: 13px var(--font-mono);
+		font: 500 13.5px var(--font-sans);
 	}
 
 	.links a {
@@ -391,7 +348,6 @@ const MAX_TAGS = 4;
 
 	@media (prefers-reduced-motion: reduce) {
 		.toggle,
-		.live,
 		h3 {
 			transition: none;
 		}
