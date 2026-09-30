@@ -77,7 +77,7 @@ const wires = {
 <div class="console" data-agent-console data-xray="AgentConsole.astro · statisches SVG + Inline-Skript" data-xray-kind="static">
 	<div class="bar">
 		<span>ai-trip-planer · agent.run()</span>
-		<span class="replay">● Replay</span>
+		<span class="replay">Aufzeichnung</span>
 	</div>
 	<svg viewBox="0 0 520 150" aria-hidden="true">
 		{Object.entries(wires).map(([id, d]) => <path class="wire" data-wire={id} d={d} />)}
@@ -246,7 +246,7 @@ const wires = {
 	}
 
 	.replay {
-		color: var(--color-live);
+		color: var(--color-text-muted);
 	}
 
 	svg {
@@ -268,8 +268,8 @@ const wires = {
 	}
 
 	.node.on rect {
+		fill: var(--color-accent-soft);
 		stroke: var(--color-accent);
-		filter: drop-shadow(0 0 6px var(--color-accent-glow));
 	}
 
 	.node text {
@@ -296,7 +296,6 @@ const wires = {
 
 	.packet {
 		fill: var(--color-accent);
-		filter: drop-shadow(0 0 5px var(--color-accent-glow));
 	}
 
 	.log {

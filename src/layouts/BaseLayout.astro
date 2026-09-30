@@ -28,9 +28,25 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 	<head>
 		<script is:inline>
 			(function () {
-				const stored = localStorage.getItem('theme');
-				const isDark = stored ? stored === 'dark' : true;
-				document.documentElement.classList.toggle('dark', isDark);
+				// An explicit choice from the toggle wins; otherwise follow the system
+				// setting, and keep following it if it changes while the page is open.
+				let stored = null;
+				try {
+					stored = localStorage.getItem('theme');
+				} catch (e) {
+					// Storage blocked: fall back to the system setting.
+				}
+				const media = window.matchMedia('(prefers-color-scheme: dark)');
+				document.documentElement.classList.toggle('dark', stored ? stored === 'dark' : media.matches);
+				if (!stored) {
+					media.addEventListener('change', function (event) {
+						let chosen = null;
+						try {
+							chosen = localStorage.getItem('theme');
+						} catch (e) {}
+						if (!chosen) document.documentElement.classList.toggle('dark', event.matches);
+					});
+				}
 			})();
 		</script>
 		<script is:inline>

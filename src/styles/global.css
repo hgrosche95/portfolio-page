@@ -34,12 +34,8 @@
    */
   --color-accent: #a4531f;
   --color-accent-soft: #f6ece5;
-  /* Accent at low alpha, for glows and hover washes in either theme. */
-  --color-accent-glow: rgb(164 83 31 / 0.14);
   /* Backdrop for the sticky header, so content blurs through it. */
   --color-bg-translucent: rgb(237 240 242 / 0.82);
-  /* Background grid lines, deliberately fainter than any border. */
-  --color-grid: rgb(18 26 36 / 0.045);
   /*
    * Status, not decoration: "running / reachable". Kept apart from the
    * accent so a live signal never blends into the copper around it.
@@ -58,9 +54,7 @@
   --color-text-muted: #8f9ba7;
   --color-accent: #e08a4f;
   --color-accent-soft: #2a1e16;
-  --color-accent-glow: rgb(224 138 79 / 0.14);
   --color-bg-translucent: rgb(15 21 27 / 0.82);
-  --color-grid: rgb(228 233 238 / 0.035);
   --color-live: #5cc98f;
 }
 
@@ -79,23 +73,6 @@ body {
   h3 {
     font-family: var(--font-display);
   }
-}
-
-/*
- * Depth layer: a faint 24px grid across the whole page, like the paper a
- * schematic is drawn on, plus a soft accent glow behind the hero. Purely
- * decorative and non-interactive.
- */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
-  background-size: 24px 24px;
 }
 
 /*
@@ -138,7 +115,6 @@ body::before {
     transform-origin: top;
     transform: scaleY(var(--trace-progress, 0.04));
     background-color: var(--color-accent);
-    box-shadow: 0 0 10px var(--color-accent-glow);
   }
 
   /*
@@ -182,10 +158,6 @@ body::before {
   .reached .trace-branch::before {
     background-color: var(--color-accent);
   }
-
-  .reached .trace-branch {
-    box-shadow: 0 0 8px var(--color-accent-glow);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -193,19 +165,6 @@ body::before {
   .trace-branch::before {
     transition: none;
   }
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 50%;
-  z-index: -1;
-  height: 420px;
-  width: min(1100px, 100vw);
-  translate: -50% 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, var(--color-accent-glow), transparent 70%);
 }
 
 /* Ring with a filled centre, the way a solder pad looks on a board. Marks
@@ -553,7 +512,6 @@ body::after {
   fill: none;
   stroke: var(--color-accent);
   stroke-width: 2;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 60%, transparent));
 }
 
 .boot-pad {
@@ -567,33 +525,29 @@ body::after {
 }
 
 .boot-packet {
-  fill: #ffc79e;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 90%, transparent));
+  /* Text colour, so it stays visible on the copper line it runs along. */
+  fill: var(--color-text);
 }
 
 [data-boot-name] .ch {
   transition:
     opacity 0.25s,
-    color 0.6s,
-    text-shadow 0.9s;
+    color 0.6s;
 }
 
 html[data-hero-booting] [data-boot-name] .ch {
   opacity: 0.08;
 }
 
+/* Lit in copper, no glow: the colour change carries the moment on its own. */
 [data-boot-name] .ch.lit {
   opacity: 1;
-  color: #ffd7b8;
-  text-shadow:
-    0 0 18px var(--color-accent),
-    0 0 2px #ffd7b8;
+  color: var(--color-accent);
 }
 
 /* After its flash each letter settles back to the normal heading colour. */
 [data-boot-name] .ch.set {
   color: inherit;
-  text-shadow: none;
 }
 
 /* Everything after the name fades in one piece at a time: each step carries

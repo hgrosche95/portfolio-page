@@ -484,7 +484,7 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 	}
 
 	.node.lit rect {
-		filter: drop-shadow(0 0 6px var(--color-accent-glow));
+		fill: var(--color-accent-soft);
 	}
 
 	.node.selected rect {
@@ -505,7 +505,6 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 
 	.packet {
 		fill: var(--color-accent);
-		filter: drop-shadow(0 0 5px var(--color-accent-glow));
 	}
 
 	.probe {
@@ -553,9 +552,7 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 	.side h3,
 	.component h3 {
 		margin: 0 0 0.5rem;
-		font: 500 11.5px var(--font-mono);
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
+		font: 600 13px var(--font-sans);
 		color: var(--color-text-muted);
 	}
 

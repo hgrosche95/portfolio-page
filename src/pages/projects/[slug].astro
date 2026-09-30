@@ -107,7 +107,7 @@ const sheet = [
 								href={entry.data.liveUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="inline-flex items-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2 font-mono text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
+								class="inline-flex items-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
 							>
 								{entry.data.liveLabel ?? 'Live ansehen'}
 								<span class="sr-only">(öffnet in neuem Tab)</span>
@@ -118,7 +118,7 @@ const sheet = [
 						href={repoUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-4 py-2 font-mono text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+						class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-4 py-2.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
 					>
 						Code auf GitHub
 						<span class="sr-only">(öffnet in neuem Tab)</span>
@@ -145,14 +145,14 @@ const sheet = [
 				{
 					sheet.map(([term, value]) => (
 						<>
-							<dt class="border-b border-[var(--color-border)] py-2.5 pr-5 font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase">
+							<dt class="border-b border-[var(--color-border)] py-2.5 pr-5 text-xs font-medium text-[var(--color-text-muted)]">
 								{term}
 							</dt>
 							<dd class="border-b border-[var(--color-border)] py-2 text-[var(--color-text)] tabular-nums">{value}</dd>
 						</>
 					))
 				}
-				<dt class="border-b border-[var(--color-border)] py-2.5 pr-5 font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase">
+				<dt class="border-b border-[var(--color-border)] py-2.5 pr-5 text-xs font-medium text-[var(--color-text-muted)]">
 					Repo
 				</dt>
 				<dd class="border-b border-[var(--color-border)] py-2">
@@ -229,7 +229,7 @@ const sheet = [
 			>
 				&times;
 			</button>
-			<img id="lightbox-img" src="" alt="" class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+			<img id="lightbox-img" alt="" class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
 		</div>
 
 		<a
@@ -237,7 +237,7 @@ const sheet = [
 			class="group mt-14 flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]"
 		>
 			<span>
-				<span class="font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase">
+				<span class="text-xs font-medium text-[var(--color-text-muted)]">
 					Nächstes Projekt
 				</span>
 				<span
@@ -268,7 +268,7 @@ const sheet = [
 					lightbox.classList.add('hidden');
 					lightbox.classList.remove('flex');
 					document.body.style.overflow = '';
-					lightboxImg.src = '';
+					lightboxImg.removeAttribute('src');
 				}
 
 				thumbs.forEach(function (img) {

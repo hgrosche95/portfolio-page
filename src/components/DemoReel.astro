@@ -38,7 +38,11 @@ const demos = Astro.props.projects
 const versioned = (path: string) =>
 	`${path}?v=${createHash('sha256').update(readFileSync(join(process.cwd(), 'public', path))).digest('hex').slice(0, 10)}`;
 
-const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+// Round the total first: rounding only the seconds turns 59.8s into "0:60".
+const clock = (s: number) => {
+	const total = Math.round(s);
+	return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
 const device = (d: (typeof demos)[number]) =>
 	d.format === 'mobile' ? `Mobil · iPhone ${d.width / 2}×${d.height / 2}` : `Live-Demo · ${d.width}×${d.height}`;
 ---
@@ -119,7 +123,7 @@ const device = (d: (typeof demos)[number]) =>
 							</video>
 						</div>
 						<div class="end" data-end hidden>
-							<button type="button" data-replay>↻ Nochmal</button>
+							<button type="button" data-replay>Nochmal abspielen</button>
 							<button type="button" data-next hidden />
 						</div>
 					</div>
@@ -144,7 +148,7 @@ const device = (d: (typeof demos)[number]) =>
 						</h3>
 					)}
 					<p class="caption">{d.caption}</p>
-					<p class="meta">Echter Lauf auf der Live-Demo · beschleunigt · ohne Ton · {clock(d.duration)}</p>
+					<p class="meta">Echter Lauf auf der Live-Demo, beschleunigt und ohne Ton, {clock(d.duration)}</p>
 					{!single && (
 					<p class="links">
 						<a href={`/projects/${d.id}`}>Projekt lesen</a>
@@ -253,7 +257,7 @@ const device = (d: (typeof demos)[number]) =>
 				const playing = !video.paused && !video.ended;
 				panel.dataset.playing = String(playing);
 				toggle.setAttribute('aria-label', playing ? 'Video pausieren' : 'Video abspielen');
-				panel.querySelector('[data-state]').textContent = video.ended ? '■ Ende' : playing ? '● läuft' : '❚❚ pausiert';
+				panel.querySelector('[data-state]').textContent = video.ended ? 'Ende' : playing ? 'läuft' : 'pausiert';
 			};
 
 			const progress = () => {
@@ -533,17 +537,12 @@ const device = (d: (typeof demos)[number]) =>
 		display: inline;
 	}
 
-	/* Schematic paper behind the recording, same 24px grid as the page. */
 	.screen {
 		position: relative;
 		display: grid;
 		place-items: center;
 		padding: 0.75rem;
 		background-color: var(--color-surface-raised);
-		background-image:
-			linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
-			linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
-		background-size: 24px 24px;
 	}
 
 	.frame {

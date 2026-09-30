@@ -47,8 +47,17 @@
 
 		button.addEventListener('click', function () {
 			const isDark = root.classList.toggle('dark');
-			localStorage.setItem('theme', isDark ? 'dark' : 'light');
+			try {
+				localStorage.setItem('theme', isDark ? 'dark' : 'light');
+			} catch (e) {
+				// Storage blocked: the switch still works for this page view.
+			}
 			sync();
+		});
+
+		// The page may follow a system theme change (see BaseLayout); keep the label in step.
+		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+			setTimeout(sync);
 		});
 
 		sync();
