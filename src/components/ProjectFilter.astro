@@ -56,7 +56,7 @@ const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-sof
 		const INACTIVE = ['border-[var(--color-border)]', 'text-[var(--color-text-muted)]'];
 		const ACTIVE = ['border-[var(--color-accent)]', 'bg-[var(--color-accent-soft)]', 'text-[var(--color-accent)]'];
 
-		// Every project on the page (featured cards and index rows) declares its
+		// Every project row on the page declares its
 		// own kind; nothing here needs to know how many exist or where they live.
 		function apply(selected: string) {
 			const all = Array.from(document.querySelectorAll<HTMLElement>('[data-project-kind]'));

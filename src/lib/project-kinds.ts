@@ -1,4 +1,4 @@
-/** Display names for a project's `kind`, shared by the index, the featured cards and the filter. */
+/** Display names for a project's `kind`, shared by the index and the filter. */
 export const kindLabels = {
 	fullstack: 'Full-Stack',
 	agent: 'KI-Agent',

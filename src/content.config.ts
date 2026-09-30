@@ -109,19 +109,6 @@ const projects = defineCollection({
     /** Optional screen recording for the homepage reel. Needs liveUrl, since it shows the live demo. */
     demo: demo.optional(),
     /**
-     * Screenshot for the homepage's featured cards. Only projects with a cover
-     * are featured there, in project order; the rest stay in the compact index.
-     * 16:10 landscape, like the other captures in public/projects/.
-     */
-    cover: z
-      .object({
-        src: z.string().startsWith('/projects/'),
-        alt: z.string(),
-        width: z.number().int().positive(),
-        height: z.number().int().positive(),
-      })
-      .optional(),
-    /**
      * Architecture decisions shown beside the write-up: what was chosen, what
      * was considered and dropped, and why. Structured rather than prose so
      * the rejected options can be shown as such, not buried in a sentence.

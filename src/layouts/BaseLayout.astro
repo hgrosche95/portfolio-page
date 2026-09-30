@@ -217,8 +217,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 					schedule();
 				}
 				if (held) {
+					// "hero:booted" fires while the hero's own steps are still fading
+					// in (the console last, 460ms delay + 600ms); wait until they are
+					// done, so the next section follows the hero instead of joining it.
 					document.addEventListener('hero:booted', function () {
-						setTimeout(release, 200);
+						setTimeout(release, 800);
 					}, { once: true });
 					setTimeout(release, 8000);
 				}
