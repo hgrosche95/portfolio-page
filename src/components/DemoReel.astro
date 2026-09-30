@@ -1,5 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Homepage reel: short screen recordings of the live demos, one at a time,
@@ -9,22 +12,44 @@ import type { CollectionEntry } from 'astro:content';
  * Without JS every clip is simply a figure with native controls, stacked.
  * The script turns that into tabs and removes the native controls in favour
  * of the pause button and chapter marks.
+ *
+ * `single` is the project-page variant: one clip, no tabs, no title or links
+ * (the page header has them). A phone recording sits beside its caption and
+ * a chapter list there instead of on a wide stage.
  */
 interface Props {
 	projects: CollectionEntry<'projects'>[];
+	single?: boolean;
 }
+
+const single = Astro.props.single ?? false;
 
 const demos = Astro.props.projects
 	.filter((p) => p.data.demo)
 	.sort((a, b) => a.data.demo!.order - b.data.demo!.order)
 	.map((p) => ({ id: p.id, title: p.data.title, liveUrl: p.data.liveUrl, liveLabel: p.data.liveLabel, ...p.data.demo! }));
 
+/*
+ * The videos are cached for a week (staticwebapp.config.json) under a fixed
+ * file name, so a re-recorded clip would keep playing the old version for
+ * returning visitors. A short content hash in the query string gives every
+ * new recording its own URL; unchanged files keep theirs and stay cached.
+ */
+const versioned = (path: string) =>
+	`${path}?v=${createHash('sha256').update(readFileSync(join(process.cwd(), 'public', path))).digest('hex').slice(0, 10)}`;
+
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const device = (d: (typeof demos)[number]) =>
 	d.format === 'mobile' ? `Mobil · iPhone ${d.width / 2}×${d.height / 2}` : `Live-Demo · ${d.width}×${d.height}`;
 ---
 
-<div class="reel" data-demo-reel data-xray="DemoReel.astro · <video> + Inline-Skript" data-xray-kind="static">
+<div
+	class:list={['reel', { 'is-single': single }]}
+	data-demo-reel
+	data-xray="DemoReel.astro · <video> + Inline-Skript"
+	data-xray-kind="static"
+>
+	{!single && (
 	<div class="tabs" role="tablist" aria-label="Aufnahmen" data-tabs hidden>
 		{
 			demos.map((d, i) => (
@@ -44,10 +69,18 @@ const device = (d: (typeof demos)[number]) =>
 			))
 		}
 	</div>
+	)}
 
 	{
 		demos.map((d) => (
-			<figure class="panel" id={`demo-${d.id}`} aria-labelledby={`demo-tab-${d.id}`} data-panel data-format={d.format}>
+			<figure
+				class="panel"
+				id={`demo-${d.id}`}
+				aria-labelledby={single ? undefined : `demo-tab-${d.id}`}
+				aria-label={single ? `Aufnahme: ${d.title}` : undefined}
+				data-panel
+				data-format={d.format}
+			>
 				<div class="stage">
 					<div class="bar">
 						<span class="where">
@@ -67,7 +100,7 @@ const device = (d: (typeof demos)[number]) =>
 					<div class="screen">
 						<div class="frame">
 							<video
-								poster={d.poster}
+								poster={versioned(d.poster)}
 								width={d.width}
 								height={d.height}
 								muted
@@ -81,8 +114,8 @@ const device = (d: (typeof demos)[number]) =>
 								data-duration={d.duration}
 							>
 								{/* H.264 first (hardware decoding, Safari/iOS); VP9 for Chromium builds without H.264. */}
-								<source src={d.src} type="video/mp4" />
-								<source src={d.src.replace(/\.mp4$/, '.webm')} type="video/webm" />
+								<source src={versioned(d.src)} type="video/mp4" />
+								<source src={versioned(d.src.replace(/\.mp4$/, '.webm'))} type="video/webm" />
 							</video>
 						</div>
 						<div class="end" data-end hidden>
@@ -98,17 +131,21 @@ const device = (d: (typeof demos)[number]) =>
 							<button type="button" data-seek={c.t} aria-label={`Kapitel ${c.label} (${clock(c.t)})`}>
 								<span class="pad" aria-hidden="true" />
 								<span class="label">{c.label}</span>
+								<span class="time" aria-hidden="true">{clock(c.t)}</span>
 							</button>
 						</li>
 					))}
 				</ol>
 
 				<figcaption id={`demo-cap-${d.id}`}>
-					<h3>
-						<a href={`/projects/${d.id}`}>{d.title}</a>
-					</h3>
+					{!single && (
+						<h3>
+							<a href={`/projects/${d.id}`}>{d.title}</a>
+						</h3>
+					)}
 					<p class="caption">{d.caption}</p>
 					<p class="meta">Echter Lauf auf der Live-Demo · beschleunigt · ohne Ton · {clock(d.duration)}</p>
+					{!single && (
 					<p class="links">
 						<a href={`/projects/${d.id}`}>Projekt lesen</a>
 						{d.liveUrl && (
@@ -118,6 +155,7 @@ const device = (d: (typeof demos)[number]) =>
 							</a>
 						)}
 					</p>
+					)}
 				</figcaption>
 			</figure>
 		))
@@ -146,6 +184,12 @@ const device = (d: (typeof demos)[number]) =>
 		// Chapter labels that would run into each other drop to a second row;
 		// labels that would stick out of the trace are pulled back inside.
 		const layoutLabels = (list) => {
+			// The vertical chapter list (phone clip on a project page) needs no layout pass.
+			if (getComputedStyle(list).display === 'flex') {
+				list.classList.remove('two-rows');
+				list.querySelectorAll('.label').forEach((l) => (l.style.translate = ''));
+				return;
+			}
 			const labels = [...list.querySelectorAll('.label')];
 			labels.forEach((l) => (l.style.translate = ''));
 			const box = list.getBoundingClientRect();
@@ -167,7 +211,8 @@ const device = (d: (typeof demos)[number]) =>
 		const labelObserver = 'ResizeObserver' in window ? new ResizeObserver((entries) => entries.forEach((e) => layoutLabels(e.target))) : null;
 
 		reel.dataset.enhanced = 'true';
-		reel.querySelector('[data-tabs]').hidden = false;
+		const tablist = reel.querySelector('[data-tabs]');
+		if (tablist) tablist.hidden = false;
 
 		panels.forEach((panel, i) => {
 			const video = videos[i];
@@ -177,7 +222,7 @@ const device = (d: (typeof demos)[number]) =>
 			const chapters = panel.querySelector('[data-chapters]');
 			const seeks = [...panel.querySelectorAll('[data-seek]')];
 
-			panel.setAttribute('role', 'tabpanel');
+			if (tabs.length) panel.setAttribute('role', 'tabpanel');
 			panel.hidden = i !== active;
 			video.controls = false;
 			toggle.hidden = false;
@@ -203,7 +248,7 @@ const device = (d: (typeof demos)[number]) =>
 				const duration = video.duration || Number(video.dataset.duration);
 				const p = Math.min(1, video.currentTime / duration);
 				panel.style.setProperty('--p', p);
-				tabs[i].style.setProperty('--p', p);
+				tabs[i]?.style.setProperty('--p', p);
 				let current = 0;
 				seeks.forEach((s, k) => {
 					if (video.currentTime >= Number(s.dataset.seek) - 0.05) current = k;
@@ -792,6 +837,129 @@ const device = (d: (typeof demos)[number]) =>
 
 		[data-enhanced] [data-format='desktop'] video {
 			height: 100%;
+		}
+	}
+
+	.time {
+		display: none;
+	}
+
+	/*
+	 * Project page: one clip, so no shared stage size to keep. A desktop
+	 * recording gets the full width at 16:10; a phone recording is sized by
+	 * height and, from 48rem, sits beside its caption and chapter list.
+	 */
+	.reel.is-single {
+		margin-top: 0;
+	}
+
+	.reel.is-single[data-enhanced] .screen {
+		aspect-ratio: auto;
+		max-height: none;
+	}
+
+	.reel.is-single[data-enhanced] [data-format='desktop'] .frame {
+		width: 100%;
+		height: auto;
+		aspect-ratio: auto;
+	}
+
+	.reel.is-single[data-enhanced] [data-format='desktop'] video {
+		height: auto;
+	}
+
+	.reel.is-single[data-enhanced] [data-format='mobile'] .frame {
+		height: auto;
+	}
+
+	.reel.is-single[data-enhanced] [data-format='mobile'] video {
+		width: auto;
+		height: min(70svh, 34rem);
+	}
+
+	@media (min-width: 48rem) {
+		.is-single [data-format='mobile'] {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			/* Caption takes its own height, the chapter list starts right below it. */
+			grid-template-rows: auto 1fr;
+			column-gap: 2.5rem;
+			align-items: start;
+		}
+
+		.is-single [data-format='mobile'] .stage {
+			grid-row: 1 / span 2;
+		}
+
+		.is-single [data-format='mobile'] figcaption {
+			grid-column: 2;
+			grid-row: 1;
+			margin-top: 0.25rem;
+		}
+
+		.is-single [data-format='mobile'] .caption {
+			font-size: 1rem;
+		}
+
+		/* The chapters become a list beside the phone, with timestamps. */
+		.is-single [data-format='mobile'] .chapters:not([hidden]) {
+			grid-column: 2;
+			grid-row: 2;
+			display: flex;
+			flex-direction: column;
+			gap: 0.15rem;
+			height: auto;
+			margin: 1.25rem 0 0;
+			padding-left: 0;
+		}
+
+		.is-single [data-format='mobile'] .chapters::before {
+			inset: 0.9rem auto 0.9rem 0.4rem;
+			width: 2px;
+			height: auto;
+			background: var(--color-border);
+		}
+
+		.is-single [data-format='mobile'] .chapters li {
+			position: relative;
+			left: 0;
+			translate: none;
+		}
+
+		.is-single [data-format='mobile'] .chapters button {
+			flex-direction: row;
+			align-items: center;
+			gap: 0.75rem;
+			width: 100%;
+			padding: 0.45rem 0.5rem 0.45rem 0;
+			border-radius: 0.375rem;
+			text-align: left;
+		}
+
+		.is-single [data-format='mobile'] .chapters button:hover {
+			background-color: var(--color-surface);
+		}
+
+		.is-single [data-format='mobile'] .pad {
+			position: relative;
+			flex: none;
+		}
+
+		.is-single [data-format='mobile'] .label {
+			font-size: 13px;
+		}
+
+		.is-single [data-format='mobile'] .time {
+			display: inline;
+			margin-left: auto;
+			font: 11px var(--font-mono);
+			color: var(--color-text-muted);
+		}
+	}
+
+	@media (min-width: 64rem) {
+		.reel.is-single[data-enhanced] {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 
