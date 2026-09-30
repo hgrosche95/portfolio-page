@@ -55,7 +55,7 @@ const MAX_TAGS = 4;
 						</span>
 						<span class="facts">
 							<span class="stack">
-								{data.techStack.slice(0, MAX_TAGS).join(' · ')}
+								{data.techStack.slice(0, MAX_TAGS).join(', ')}
 								{extraTags > 0 && ` +${extraTags}`}
 							</span>
 							{repo && <span>{[repo.language, `zuletzt ${formatDate(repo.lastPushedAt)}`].filter(Boolean).join(' · ')}</span>}
@@ -78,7 +78,7 @@ const MAX_TAGS = 4;
 						<div class="aside">
 							{decision && (
 								<p class="decision">
-									<span class="label">Entscheidung · {decision.topic}</span>
+									<span class="label">Entscheidung: {decision.topic}</span>
 									{decision.rejected.length > 0 && (
 										<>
 											<s>{decision.rejected.join(' / ')}</s>
@@ -289,9 +289,7 @@ const MAX_TAGS = 4;
 	.decision .label {
 		display: block;
 		margin-bottom: 0.2rem;
-		font: 500 11px var(--font-mono);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		font: 600 12.5px var(--font-sans);
 		color: var(--color-accent);
 	}
 
