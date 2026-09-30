@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Schematic from '../../components/Schematic.astro';
 import DecisionNotes from '../../components/DecisionNotes.astro';
+import DemoReel from '../../components/DemoReel.astro';
 import githubStats from '../../data/github-stats.json';
 
 export async function getStaticPaths() {
@@ -161,6 +162,23 @@ const sheet = [
 				</dd>
 			</dl>
 		</header>
+
+		{
+			entry.data.demo && (
+				<section class="mt-14" aria-labelledby="demo-title">
+					<h2
+						id="demo-title"
+						class="relative mb-4 flex items-center gap-3 text-xl font-semibold tracking-tight text-[var(--color-text)]"
+						data-trace-stop
+					>
+						<span class="trace-branch" aria-hidden="true"></span>
+						<span class="solder-pad" aria-hidden="true"></span>
+						In Aktion
+					</h2>
+					<DemoReel projects={[entry]} single />
+				</section>
+			)
+		}
 
 		{
 			entry.data.architecture?.lanes && (
