@@ -12,7 +12,7 @@ interface Props {
 
 const {
 	title,
-	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche — mit interaktiven Architektur-Schaltplänen, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
+	description = 'Full-Stack-Entwickler Portfolio von Henrik Grosche, mit interaktiven Architektur-Schaltplänen, echten CI/CD-Daten und Projekten, die tatsächlich erklärt werden.',
 	// Generated at build time by scripts/generate-og-images.ts. The portrait is
 	// deliberately not used here: it is 800x1067 portrait, which social cards
 	// crop to a ~1.91:1 landscape strip.
@@ -69,7 +69,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 		<meta name="twitter:image" content={absoluteImageUrl} />
 	</head>
 	<body class="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
-		<div class="grid-light" aria-hidden="true"></div>
 		<Header />
 		<main class="relative flex-1">
 			<div class="trace" id="trace" aria-hidden="true"></div>
@@ -111,43 +110,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				window.addEventListener('scroll', schedule, { passive: true });
 				window.addEventListener('resize', schedule);
 				update();
-			})();
-		</script>
-
-		<script is:inline>
-			(function () {
-				// Copper light that follows the mouse across the background grid.
-				// Only for a real mouse and only when motion is allowed: on touch
-				// there is no pointer to follow, and it is decoration, not content.
-				if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-				const light = document.querySelector('.grid-light');
-				if (!light) return;
-				let x = 0;
-				let y = 0;
-				let queued = false;
-				function paint() {
-					queued = false;
-					light.style.setProperty('--mx', x + 'px');
-					light.style.setProperty('--my', y + 'px');
-				}
-				window.addEventListener(
-					'pointermove',
-					function (event) {
-						if (event.pointerType !== 'mouse') return;
-						x = event.clientX;
-						y = event.clientY;
-						light.classList.add('on');
-						if (!queued) {
-							queued = true;
-							window.requestAnimationFrame(paint);
-						}
-					},
-					{ passive: true },
-				);
-				document.documentElement.addEventListener('pointerleave', function () {
-					light.classList.remove('on');
-				});
 			})();
 		</script>
 

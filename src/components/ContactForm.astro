@@ -6,9 +6,9 @@
  * anyone without JavaScript.
  */
 const fieldClass =
-	'mt-1.5 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 font-mono text-sm text-[var(--color-text)] transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none';
-const labelClass = 'font-mono text-xs tracking-wider text-[var(--color-text-muted)] uppercase';
-const errorClass = 'mt-1 hidden font-mono text-xs text-[var(--color-accent)]';
+	'mt-1.5 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none';
+const labelClass = 'text-sm font-medium text-[var(--color-text)]';
+const errorClass = 'mt-1 hidden text-sm text-[var(--color-accent)]';
 ---
 
 <form
@@ -79,7 +79,7 @@ const errorClass = 'mt-1 hidden font-mono text-xs text-[var(--color-accent)]';
 		<button
 			id="contact-submit"
 			type="submit"
-			class="rounded-md bg-[var(--color-accent)] px-4 py-2 font-mono text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+			class="rounded-md bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			Nachricht senden
 		</button>
@@ -87,7 +87,7 @@ const errorClass = 'mt-1 hidden font-mono text-xs text-[var(--color-accent)]';
 			id="contact-status"
 			role="status"
 			aria-live="polite"
-			class="font-mono text-xs text-[var(--color-text-muted)]"
+			class="text-sm text-[var(--color-text-muted)]"
 		>
 		</p>
 	</div>
@@ -167,7 +167,7 @@ const errorClass = 'mt-1 hidden font-mono text-xs text-[var(--color-accent)]';
 
 				if (response.ok) {
 					form.reset();
-					status.textContent = 'Danke — die Nachricht ist angekommen.';
+					status.textContent = 'Danke, die Nachricht ist angekommen.';
 					return;
 				}
 

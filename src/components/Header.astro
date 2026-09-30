@@ -6,9 +6,9 @@ import ThemeToggle from './ThemeToggle.astro';
 // Logo + every link + the theme toggle does not fit on a 375px viewport, so the
 // least essential link is dropped there rather than letting the bar overflow.
 const navLinks = [
-	{ href: '/#projects', label: 'projekte', mobile: true },
-	{ href: '/#erfahrung', label: 'werdegang', mobile: false },
-	{ href: '/#kontakt', label: 'kontakt', mobile: true },
+	{ href: '/#projects', label: 'Projekte', mobile: true },
+	{ href: '/#erfahrung', label: 'Werdegang', mobile: false },
+	{ href: '/#kontakt', label: 'Kontakt', mobile: true },
 ];
 
 // Fetched here rather than passed in as a prop: Header renders on every page
@@ -35,13 +35,13 @@ const searchProjects = (await getCollection('projects')).map((entry) => ({
 		>
 			henrik<span class="text-[var(--color-accent)]">.</span>grosche
 		</a>
-		<nav class="flex items-center gap-1 font-mono text-xs sm:gap-2 sm:text-sm">
+		<nav class="flex items-center gap-1 text-sm sm:gap-2">
 			{
 				navLinks.map((link) => (
 					<a
 						href={link.href}
 						class:list={[
-							'rounded px-1.5 py-1 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
+							'rounded px-2 py-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
 							link.mobile ? '' : 'hidden sm:inline-block',
 						]}
 					>

@@ -208,35 +208,6 @@ body::after {
   background: radial-gradient(ellipse at 50% 0%, var(--color-accent-glow), transparent 70%);
 }
 
-/*
- * Grid light: the same 24px grid as body::before, drawn again in copper with
- * a solder dot at every crossing, but only visible inside a soft circle around
- * the mouse (--mx/--my, set by BaseLayout). Same size and origin as the base
- * grid, so its lines land exactly on top of the faint ones. Stays at opacity 0
- * unless the script switched it on, so touch and reduced motion never see it.
- */
-.grid-light {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s;
-  background-image:
-    radial-gradient(circle at center, var(--color-accent) 1.5px, transparent 2px),
-    linear-gradient(to right, color-mix(in srgb, var(--color-accent) 55%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-accent) 55%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-  /* The dot layer is centred in its tile; shifting it half a tile puts the dots on the crossings. */
-  background-position: -12px -12px, 0 0, 0 0;
-  -webkit-mask-image: radial-gradient(circle 100px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
-  mask-image: radial-gradient(circle 100px at var(--mx, 50%) var(--my, 50%), rgb(0 0 0 / 0.9), transparent);
-}
-
-.grid-light.on {
-  opacity: 1;
-}
-
 /* Ring with a filled centre, the way a solder pad looks on a board. Marks
    section headings as stations along the trace. */
 .solder-pad {
@@ -279,6 +250,50 @@ body::after {
 ::view-transition-group(*) {
   animation-duration: 0.4s;
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Live-demo button (project index + featured cards). A real button, not a
+   link-sized hint: trying the app is the point. */
+.live-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-live);
+  border-radius: 0.4rem;
+  background-color: color-mix(in srgb, var(--color-live) 12%, transparent);
+  font: 500 13px var(--font-sans);
+  color: var(--color-live);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.live-link:hover {
+  background-color: var(--color-live);
+  color: var(--color-bg);
+}
+
+.live-link:focus-visible {
+  outline: 2px solid var(--color-live);
+  outline-offset: 2px;
+}
+
+.live-link::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-link {
+    transition: none;
+  }
 }
 
 /* Consistent keyboard focus treatment across links, buttons and summaries. */

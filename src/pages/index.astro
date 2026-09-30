@@ -6,6 +6,9 @@ import SectionHeading from '../components/SectionHeading.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import DemoReel from '../components/DemoReel.astro';
 import ProjectFilter from '../components/ProjectFilter.astro';
+import FeaturedProjects from '../components/FeaturedProjects.astro';
+import Skills from '../components/Skills.astro';
+import { kindLabels, type ProjectKind } from '../lib/project-kinds';
 import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
 import ContactForm from '../components/ContactForm.astro';
@@ -15,24 +18,23 @@ const projectEntries = (await getCollection('projects')).sort(
 	(a, b) => a.data.order - b.data.order,
 );
 
-// Derived from the same content the index already uses, not hand-picked:
-// a tag only earns a filter chip by actually recurring across projects.
-// A one-off tag (a project's only Python dependency, say) would just be a
-// filter with one possible result, which isn't a filter, just a relabelled
-// link to that project.
-const tagCounts = new Map<string, number>();
+// Projects with a cover screenshot lead as picture cards (at most three, in
+// project order); everything else stays in the compact index below them.
+const featured = projectEntries.filter((entry) => entry.data.cover).slice(0, 3);
+const rest = projectEntries.filter((entry) => !featured.includes(entry));
+
+// Filter chips are derived from the content, most common kind first, so a
+// new project needs no change here.
+const kindCounts = new Map<ProjectKind, number>();
 for (const entry of projectEntries) {
-	for (const tag of entry.data.techStack) {
-		tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-	}
+	kindCounts.set(entry.data.kind, (kindCounts.get(entry.data.kind) ?? 0) + 1);
 }
-const filterTags = [...tagCounts.entries()]
-	.filter(([, count]) => count >= 2)
-	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-	.map(([tag]) => tag);
+const filterKinds = [...kindCounts.entries()]
+	.sort((a, b) => b[1] - a[1] || kindLabels[a[0]].localeCompare(kindLabels[b[0]]))
+	.map(([kind, count]) => ({ kind, count }));
 ---
 
-<BaseLayout title="Henrik Grosche — Full-Stack-Entwickler">
+<BaseLayout title="Henrik Grosche · Full-Stack-Entwickler">
 	<Hero />
 
 	<section id="demos" class="mx-auto max-w-5xl px-4 pb-20">
@@ -46,11 +48,12 @@ const filterTags = [...tagCounts.entries()]
 
 	<section id="projects" class="mx-auto max-w-5xl px-4 pb-20">
 		<SectionHeading
-			title={`Private Projekte · ${projectEntries.length}`}
-			subtitle="Eine Zeile aufklappen für den Schaltplan, die wichtigste Entscheidung und die Links."
+			title="Projekte"
+			subtitle="Private Projekte. Im Index darunter klappt jede Zeile auf, mit Schaltplan, wichtigster Entscheidung und Links."
 		/>
-		<ProjectFilter tags={filterTags} />
-		<ProjectIndex projects={projectEntries} />
+		<ProjectFilter kinds={filterKinds} total={projectEntries.length} />
+		<FeaturedProjects projects={featured} />
+		<ProjectIndex projects={rest} />
 	</section>
 
 	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-20">
@@ -72,12 +75,13 @@ const filterTags = [...tagCounts.entries()]
 	<section id="erfahrung" class="mx-auto max-w-5xl px-4 pb-20">
 		<SectionHeading title="Stationen" />
 		<Timeline />
+		<Skills />
 	</section>
 
 	<section id="kontakt" class="mx-auto max-w-5xl px-4 pb-24">
 		<SectionHeading
 			title="Lass uns sprechen"
-			subtitle="Offen für Anfragen — am schnellsten per E-Mail."
+			subtitle="Offen für Anfragen, am schnellsten per E-Mail."
 		/>
 		<ContactForm />
 		<Contact />

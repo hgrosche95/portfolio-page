@@ -17,25 +17,40 @@ const { decisions } = Astro.props;
 			decisions.map((decision) => (
 				<li>
 					<p class="topic">{decision.topic}</p>
-					<p class="choice">
-						{decision.rejected.map((option, i) => (
-							<>
-								{i > 0 && ' / '}
-								<s>{option}</s>
-							</>
-						))}
-						{decision.rejected.length > 0 && (
-							<>
-								{/* Strikethrough isn't announced by screen readers, so say it. */}
-								<span class="sr-only">(verworfen), stattdessen:</span>
-								<span class="arrow" aria-hidden="true">
-									→
-								</span>
-							</>
+					{/* Question, choice, reasoning, result: the same order on every project page. */}
+					<dl>
+						<div>
+							<dt>Entscheidung</dt>
+							<dd class="choice">
+								{decision.rejected.map((option, i) => (
+									<>
+										{i > 0 && ' / '}
+										<s>{option}</s>
+									</>
+								))}
+								{decision.rejected.length > 0 && (
+									<>
+										{/* Strikethrough isn't announced by screen readers, so say it. */}
+										<span class="sr-only">(verworfen), stattdessen:</span>
+										<span class="arrow" aria-hidden="true">
+											→
+										</span>
+									</>
+								)}
+								<strong>{decision.chosen}</strong>
+							</dd>
+						</div>
+						<div>
+							<dt>Warum</dt>
+							<dd>{decision.reason}</dd>
+						</div>
+						{decision.outcome && (
+							<div>
+								<dt>Ergebnis</dt>
+								<dd>{decision.outcome}</dd>
+							</div>
 						)}
-						<strong>{decision.chosen}</strong>
-					</p>
-					<p class="reason">{decision.reason}</p>
+					</dl>
 				</li>
 			))
 		}
@@ -76,11 +91,28 @@ const { decisions } = Astro.props;
 		color: var(--color-accent);
 	}
 
+	dl {
+		display: grid;
+		gap: 0.5rem;
+		margin: 0.4rem 0 0;
+	}
+
+	dt {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	dd {
+		margin: 0.1rem 0 0;
+		font-size: 13.5px;
+		line-height: 1.5;
+		color: var(--color-text-muted);
+	}
+
 	.choice {
-		margin-top: 0.25rem;
 		font-size: 14.5px;
 		line-height: 1.45;
-		color: var(--color-text-muted);
 	}
 
 	.arrow {
@@ -95,12 +127,5 @@ const { decisions } = Astro.props;
 	strong {
 		font-weight: 600;
 		color: var(--color-text);
-	}
-
-	.reason {
-		margin-top: 0.3rem;
-		font-size: 13.5px;
-		line-height: 1.5;
-		color: var(--color-text-muted);
 	}
 </style>

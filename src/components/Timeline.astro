@@ -67,21 +67,25 @@ const entries = [
 ];
 ---
 
-<div class="mt-4 space-y-2 font-mono text-sm" data-xray="Timeline.astro · statisch" data-xray-kind="static">
+<div class="mt-4 space-y-2 text-sm" data-xray="Timeline.astro · statisch" data-xray-kind="static">
 	{
 		entries.map((entry) => (
 			<details class="group rounded border border-[var(--color-border)] px-4 py-3 open:border-[var(--color-accent)]">
-				<summary class="flex cursor-pointer list-none items-center justify-between gap-4">
-					<span>
-						<span class="text-[var(--color-text)]">{entry.role}</span>{' '}
-						<span class="text-[var(--color-text-muted)]">— {entry.company}</span>
+				<summary class="flex cursor-pointer list-none items-start justify-between gap-4">
+					<span class="min-w-0">
+						<span class="font-medium text-[var(--color-text)]">{entry.role}</span>
+						<span class="block text-[var(--color-text-muted)] sm:inline">
+							<span class="hidden sm:inline" aria-hidden="true"> · </span>
+							{entry.company}
+						</span>
 					</span>
-					<span class="flex shrink-0 items-center gap-2 text-xs">
+					{/* Dates stay monospace: they are data, and the columns line up. */}
+					<span class="flex shrink-0 items-center gap-2 pt-0.5 font-mono text-xs tabular-nums">
 						<span class="text-[var(--color-accent)]">{entry.period}</span>
-						<span class="text-[var(--color-text-muted)] transition-transform group-open:rotate-180">▾</span>
+						<span class="text-[var(--color-text-muted)] transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
 					</span>
 				</summary>
-				<ul class="mt-3 list-inside list-disc space-y-1 text-xs text-[var(--color-text-muted)]">
+				<ul class="mt-3 list-inside list-disc space-y-1 leading-relaxed text-[var(--color-text-muted)]">
 					{entry.details.map((detail) => (
 						<li>{detail}</li>
 					))}
