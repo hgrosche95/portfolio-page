@@ -6,7 +6,6 @@ import SectionHeading from '../components/SectionHeading.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import DemoReel from '../components/DemoReel.astro';
 import ProjectFilter from '../components/ProjectFilter.astro';
-import FeaturedProjects from '../components/FeaturedProjects.astro';
 import Skills from '../components/Skills.astro';
 import { kindLabels, type ProjectKind } from '../lib/project-kinds';
 import DeployPipeline from '../components/DeployPipeline';
@@ -17,11 +16,6 @@ import Contact from '../components/Contact.astro';
 const projectEntries = (await getCollection('projects')).sort(
 	(a, b) => a.data.order - b.data.order,
 );
-
-// Projects with a cover screenshot lead as picture cards (at most three, in
-// project order); everything else stays in the compact index below them.
-const featured = projectEntries.filter((entry) => entry.data.cover).slice(0, 3);
-const rest = projectEntries.filter((entry) => !featured.includes(entry));
 
 // Filter chips are derived from the content, most common kind first, so a
 // new project needs no change here.
@@ -49,11 +43,10 @@ const filterKinds = [...kindCounts.entries()]
 	<section id="projects" class="mx-auto max-w-5xl px-4 pb-20">
 		<SectionHeading
 			title="Projekte"
-			subtitle="Private Projekte. Im Index darunter klappt jede Zeile auf, mit Schaltplan, wichtigster Entscheidung und Links."
+			subtitle="Private Projekte. Jede Zeile klappt auf, mit Schaltplan, wichtigster Entscheidung und Links."
 		/>
 		<ProjectFilter kinds={filterKinds} total={projectEntries.length} />
-		<FeaturedProjects projects={featured} />
-		<ProjectIndex projects={rest} />
+		<ProjectIndex projects={projectEntries} />
 	</section>
 
 	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-20">

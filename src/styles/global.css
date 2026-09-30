@@ -211,7 +211,7 @@ body {
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Live-demo button (project index + featured cards). A real button, not a
+/* Live-demo button in the project index. A real button, not a
    link-sized hint: trying the app is the point. */
 .live-link {
   display: inline-flex;
