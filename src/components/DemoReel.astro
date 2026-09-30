@@ -143,6 +143,29 @@ const device = (d: (typeof demos)[number]) =>
 		// Set once the visitor pauses by hand: scrolling back must not override that.
 		let userPaused = false;
 
+		// Chapter labels that would run into each other drop to a second row;
+		// labels that would stick out of the trace are pulled back inside.
+		const layoutLabels = (list) => {
+			const labels = [...list.querySelectorAll('.label')];
+			labels.forEach((l) => (l.style.translate = ''));
+			const box = list.getBoundingClientRect();
+			const rowEnds = [-Infinity, -Infinity];
+			let twoRows = false;
+			for (const label of labels) {
+				const r = label.getBoundingClientRect();
+				if (r.width <= 1) continue; // hidden (small screens show only the current label)
+				let shift = 0;
+				if (r.right > box.right) shift = box.right - r.right;
+				if (r.left + shift < box.left) shift = box.left - r.left;
+				const row = r.left + shift >= rowEnds[0] + 8 ? 0 : 1;
+				rowEnds[row] = r.right + shift;
+				if (row) twoRows = true;
+				if (shift || row) label.style.translate = `${shift}px ${row ? '1.1rem' : '0'}`;
+			}
+			list.classList.toggle('two-rows', twoRows);
+		};
+		const labelObserver = 'ResizeObserver' in window ? new ResizeObserver((entries) => entries.forEach((e) => layoutLabels(e.target))) : null;
+
 		reel.dataset.enhanced = 'true';
 		reel.querySelector('[data-tabs]').hidden = false;
 
@@ -159,6 +182,8 @@ const device = (d: (typeof demos)[number]) =>
 			video.controls = false;
 			toggle.hidden = false;
 			chapters.hidden = false;
+			labelObserver?.observe(chapters);
+			let shownChapter = -1;
 
 			if (panels.length > 1) {
 				const target = (i + 1) % panels.length;
@@ -184,6 +209,10 @@ const device = (d: (typeof demos)[number]) =>
 					if (video.currentTime >= Number(s.dataset.seek) - 0.05) current = k;
 				});
 				seeks.forEach((s, k) => s.toggleAttribute('data-current', k === current));
+				if (current !== shownChapter) {
+					shownChapter = current;
+					layoutLabels(chapters);
+				}
 			};
 
 			video.addEventListener('play', () => {
@@ -280,6 +309,9 @@ const device = (d: (typeof demos)[number]) =>
 				{ threshold: [0, 0.25, 0.5, 0.75] },
 			).observe(reel);
 		}
+
+		// Web fonts change label widths after the first layout.
+		document.fonts?.ready.then(() => panels.forEach((p) => layoutLabels(p.querySelector('[data-chapters]'))));
 
 		document.addEventListener('visibilitychange', () => {
 			if (document.hidden) videos[active].pause();
@@ -576,12 +608,8 @@ const device = (d: (typeof demos)[number]) =>
 		translate: -0.4rem 0;
 	}
 
-	.chapters li:last-child:not(:first-child) {
-		translate: calc(-100% + 0.4rem) 0;
-	}
-
-	.chapters li:last-child:not(:first-child) button {
-		align-items: flex-end;
+	.chapters.two-rows {
+		height: 3.5rem;
 	}
 
 	.chapters button {
