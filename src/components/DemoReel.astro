@@ -1,5 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Homepage reel: short screen recordings of the live demos, one at a time,
@@ -18,6 +21,15 @@ const demos = Astro.props.projects
 	.filter((p) => p.data.demo)
 	.sort((a, b) => a.data.demo!.order - b.data.demo!.order)
 	.map((p) => ({ id: p.id, title: p.data.title, liveUrl: p.data.liveUrl, liveLabel: p.data.liveLabel, ...p.data.demo! }));
+
+/*
+ * The videos are cached for a week (staticwebapp.config.json) under a fixed
+ * file name, so a re-recorded clip would keep playing the old version for
+ * returning visitors. A short content hash in the query string gives every
+ * new recording its own URL; unchanged files keep theirs and stay cached.
+ */
+const versioned = (path: string) =>
+	`${path}?v=${createHash('sha256').update(readFileSync(join(process.cwd(), 'public', path))).digest('hex').slice(0, 10)}`;
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const device = (d: (typeof demos)[number]) =>
@@ -67,7 +79,7 @@ const device = (d: (typeof demos)[number]) =>
 					<div class="screen">
 						<div class="frame">
 							<video
-								poster={d.poster}
+								poster={versioned(d.poster)}
 								width={d.width}
 								height={d.height}
 								muted
@@ -81,8 +93,8 @@ const device = (d: (typeof demos)[number]) =>
 								data-duration={d.duration}
 							>
 								{/* H.264 first (hardware decoding, Safari/iOS); VP9 for Chromium builds without H.264. */}
-								<source src={d.src} type="video/mp4" />
-								<source src={d.src.replace(/\.mp4$/, '.webm')} type="video/webm" />
+								<source src={versioned(d.src)} type="video/mp4" />
+								<source src={versioned(d.src.replace(/\.mp4$/, '.webm'))} type="video/webm" />
 							</video>
 						</div>
 						<div class="end" data-end hidden>
