@@ -53,6 +53,11 @@ const demo = z
      * button to turn the sound on.
      */
     sound: z.boolean().optional(),
+    /**
+     * Cut trailer without a soundtrack: labelled "Trailer" like a clip with
+     * `sound`, but no speaker button. (`sound` already implies a trailer.)
+     */
+    trailer: z.boolean().optional(),
     /** Overrides the default meta line ("Echter Lauf auf der Live-Demo, ..."). */
     meta: z.string().optional(),
     chapters: z.array(z.object({ t: z.number().min(0), label: z.string() })).min(1),
