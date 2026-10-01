@@ -118,7 +118,11 @@ cutting scripts are Playwright plus ffmpeg, and each clip's chapters live in its
 frontmatter, checked at build time like the scenarios. The roguelike is the one exception to "silent": its
 clip is a cut trailer with a soundtrack (recorded and cut by `tools/trailer/` in its own repo),
 flagged `sound: true`. It still autoplays muted like the rest, and a speaker button next to the
-pause button turns the sound on; nothing on the page ever starts making noise by itself.
+pause button turns the sound on; nothing on the page ever starts making noise by itself. The
+trip planner also shows a cut trailer (titles, explanations, zooms; cut by
+`scripts/demo-video/trailer.py` in its repo) instead of a calm run, but a silent one, flagged
+`trailer: true`: it explains more features than a single run can show, and still fits the
+2.5 MB budget.
 
 **Impressum/Datenschutzerklärung included**, using city + email only rather than a full home
 address. German TMG/DSGVO Impressum obligations are a legal grey area for a non-commercial
