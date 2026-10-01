@@ -115,7 +115,10 @@ Cocktail Orders is recorded in portrait because guests use it on their phones. W
 clips are plain `<video controls>` figures. Files are H.264 MP4 (≤ 2.5 MB, `+faststart`,
 `preload="none"`) with a VP9 WebM fallback for Chromium builds without H.264; recording and
 cutting scripts are Playwright plus ffmpeg, and each clip's chapters live in its project's
-frontmatter, checked at build time like the scenarios.
+frontmatter, checked at build time like the scenarios. The roguelike is the one exception to "silent": its
+clip is a cut trailer with a soundtrack (recorded and cut by `tools/trailer/` in its own repo),
+flagged `sound: true`. It still autoplays muted like the rest, and a speaker button next to the
+pause button turns the sound on; nothing on the page ever starts making noise by itself.
 
 **Impressum/Datenschutzerklärung included**, using city + email only rather than a full home
 address. German TMG/DSGVO Impressum obligations are a legal grey area for a non-commercial

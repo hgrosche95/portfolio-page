@@ -47,6 +47,14 @@ const demo = z
     duration: z.number().positive(),
     /** One sentence: what the clip shows. Also the video's text alternative. */
     caption: z.string(),
+    /**
+     * Clip has a soundtrack (a cut trailer rather than a raw screen recording).
+     * It still starts muted, as autoplay requires; the reel adds a speaker
+     * button to turn the sound on.
+     */
+    sound: z.boolean().optional(),
+    /** Overrides the default meta line ("Echter Lauf auf der Live-Demo, ..."). */
+    meta: z.string().optional(),
     chapters: z.array(z.object({ t: z.number().min(0), label: z.string() })).min(1),
   })
   // Chapters must be in order and inside the clip, or a seek button would lie.
