@@ -36,10 +36,10 @@
     "esbuild": true
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
-    "satori": "^0.33.5",
+    "@types/node": "^26.6.4",
+    "satori": "^0.35.0",
     "sharp": "^0.35.5",
-    "vitest": "^5.0.2",
+    "vitest": "^5.0.3",
     "wawoff2": "^2.0.1"
   }
 }
