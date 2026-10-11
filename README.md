@@ -34,7 +34,10 @@ Live: https://henrikgrosche.is-a.dev
 - **Erreichbarkeits-Check für Live-Demos mit Scale-to-Zero-Backend**
   (alle Projekte mit `liveStatusCheck: true` im Frontmatter): schläft der Container gerade,
   zeigt die Seite das an, statt dass der erste Klick nach 30–40 s wie ein
-  kaputtes Deployment aussieht.
+  kaputtes Deployment aussieht. Geprüft wird erst bei Hover, Fokus oder
+  Antippen des Live-Buttons, nicht beim Seitenaufruf: Jede Prüfung weckt den
+  Container (und kostet ein paar Minuten Laufzeit), das soll nicht jeder
+  Crawler auslösen.
 - **Kontaktformular** über eine eigene Azure Function (Versand via Brevo),
   mit Honeypot-Feld und Rate-Limiting statt eines simplen `mailto:`-Links.
 - Dark Mode per Default mit Light-Toggle, Impressum/Datenschutz.
