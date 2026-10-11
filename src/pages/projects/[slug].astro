@@ -104,6 +104,7 @@ const sheet = [
 					{
 						entry.data.liveUrl && (
 							<a
+								id="live-link"
 								href={entry.data.liveUrl}
 								target="_blank"
 								rel="noopener noreferrer"
@@ -130,8 +131,9 @@ const sheet = [
 						<p
 							id="live-status"
 							data-project={entry.id}
-							class="mt-2 font-mono text-xs text-[var(--color-text-muted)]"
-							data-xray="Live-Status · Inline-Skript, ruft /api/live-status"
+							class="invisible mt-2 font-mono text-xs text-[var(--color-text-muted)]"
+							aria-live="polite"
+							data-xray="Live-Status · Inline-Skript, ruft /api/live-status erst beim Hover/Fokus auf den Live-Button"
 							data-xray-kind="static"
 						>
 							Prüfe, ob der Server gerade wach ist…
@@ -300,28 +302,47 @@ const sheet = [
 		<script is:inline>
 			(function () {
 				const el = document.getElementById('live-status');
-				if (!el) return;
+				const link = document.getElementById('live-link');
+				if (!el || !link) return;
 
 				const project = el.dataset.project;
+				let started = false;
 
-				fetch('/api/live-status?project=' + encodeURIComponent(project))
-					.then(function (response) {
-						if (!response.ok) throw new Error('live-status request failed');
-						return response.json();
-					})
-					.then(function (data) {
-						if (data.awake) {
-							el.textContent = '● Server ist gerade wach';
-							el.classList.add('text-[var(--color-live)]');
-						} else {
-							el.textContent = '○ Server schläft gerade, wacht beim Öffnen in ca. 30–40s auf';
-						}
-					})
-					.catch(function () {
-						// No status is better than a wrong one: this is a "nice to
-						// know", not something worth showing an error state for.
-						el.hidden = true;
-					});
+				// The probe reaches the demo's backend, and any request to a
+				// scale-to-zero container wakes it up and keeps it billed for a
+				// few minutes. Probing on page load meant every page view - bots
+				// and crawlers included - started the container. Waiting for a
+				// sign of intent on the live button limits that to visitors who
+				// are about to open the demo anyway, where the early wake-up even
+				// shortens their wait.
+				function check() {
+					if (started) return;
+					started = true;
+					el.classList.remove('invisible');
+
+					fetch('/api/live-status?project=' + encodeURIComponent(project))
+						.then(function (response) {
+							if (!response.ok) throw new Error('live-status request failed');
+							return response.json();
+						})
+						.then(function (data) {
+							if (data.awake) {
+								el.textContent = '● Server ist gerade wach';
+								el.classList.add('text-[var(--color-live)]');
+							} else {
+								el.textContent = '○ Server wacht gerade auf, das dauert ca. 30–40s';
+							}
+						})
+						.catch(function () {
+							// No status is better than a wrong one: this is a "nice to
+							// know", not something worth showing an error state for.
+							el.classList.add('invisible');
+						});
+				}
+
+				link.addEventListener('pointerenter', check, { once: true });
+				link.addEventListener('focus', check, { once: true });
+				link.addEventListener('touchstart', check, { once: true, passive: true });
 			})();
 		</script>
 	</article>
