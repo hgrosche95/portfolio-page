@@ -15,11 +15,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@azure/functions": "^4.16.5"
+    "@azure/functions": "^4.17.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.5"
   }
 }
