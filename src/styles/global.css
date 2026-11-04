@@ -205,6 +205,70 @@ body {
   text-transform: uppercase;
 }
 
+/*
+ * Stations on the homepage trace (TraceSection): every project row and every
+ * timeline entry gets its own small node on the trace line, level with its
+ * first line (--station-y). Opening the entry's <details> fills the node and
+ * draws a short branch from the trace to it. Only inside a TraceSection; the
+ * node is grey until the scroll fill reaches it (html.trace-live, .reached).
+ */
+.ts-content .trace-station {
+  position: relative;
+}
+
+.ts-content .trace-station::before,
+.ts-content .trace-station::after {
+  content: "";
+  position: absolute;
+  top: var(--station-y, 1.5rem);
+  pointer-events: none;
+}
+
+/* The branch: from the trace line to the entry's left edge. */
+.ts-content .trace-station::before {
+  left: calc(var(--rail-w) / -2);
+  width: calc(var(--rail-w) / 2);
+  height: 2px;
+  translate: 0 -50%;
+  transform-origin: left;
+  transform: scaleX(0);
+  background-color: var(--accent);
+  transition: transform 0.3s ease;
+}
+
+.ts-content .trace-station:has(> details[open])::before {
+  transform: scaleX(1);
+}
+
+.ts-content .trace-station::after {
+  left: calc(var(--rail-w) / -2);
+  width: 8px;
+  height: 8px;
+  translate: -50% -50%;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background-color: var(--bg);
+  transition:
+    border-color 0.3s,
+    background-color 0.3s;
+}
+
+html.trace-live .ts-content .trace-station:not(.reached)::after {
+  border-color: var(--color-border-strong);
+}
+
+.ts-content .trace-station:has(> details[open])::after {
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-content .trace-station::before,
+  .ts-content .trace-station::after {
+    transition: none;
+  }
+}
+
 /* Ring with a filled centre, the way a solder pad looks on a board. Marks
    section headings as stations along the trace. */
 .solder-pad {

@@ -157,6 +157,12 @@ poster size), widened the content to 1240px and removed the "Röntgenblick" over
 explained the islands architecture but competed with the content for attention. Project pages
 keep the original margin trace.
 
+A follow-up turned the trace into a reading guide: it starts grey and fills with copper down to
+a reading line as the page scrolls, and every project row and every career entry is a station
+with its own node on it, so the list and the timeline read as parts of the same circuit. Without
+JavaScript it simply stays copper. The hero's stretch of the trace stays lit throughout, since
+the branch to the agent console starts on it.
+
 Uses an actual personal photo rather than an icon/initials treatment, for the same reason a face
 usually helps in recruiting contexts: it builds trust faster than an abstraction.
 
