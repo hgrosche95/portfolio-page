@@ -70,6 +70,8 @@ const entries = [
 <div class="mt-4 space-y-2 text-sm">
 	{
 		entries.map((entry) => (
+			// Each entry is a station on the homepage trace (see .trace-station in global.css).
+			<div class="trace-station" style="--station-y: 1.4rem" data-trace-stop>
 			<details class="group rounded border border-[var(--color-border)] px-4 open:border-[var(--color-accent)]">
 				<summary class="flex min-h-11 cursor-pointer list-none items-start justify-between gap-4 py-3">
 					<span class="min-w-0">
@@ -91,6 +93,7 @@ const entries = [
 					))}
 				</ul>
 			</details>
+			</div>
 		))
 	}
 </div>
