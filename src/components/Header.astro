@@ -28,10 +28,10 @@ const searchProjects = (await getCollection('projects')).map((entry) => ({
 	class="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg-translucent)] backdrop-blur"
 	style="view-transition-name: site-header"
 >
-	<div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3.5">
+	<div class="mx-auto flex max-w-[calc(var(--content-max)+2*var(--gutter))] items-center justify-between gap-3 px-[var(--gutter)] py-2">
 		<a
 			href="/"
-			class="shrink-0 font-display text-base font-semibold tracking-tight text-[var(--color-text)] transition-colors hover:text-[var(--color-accent)]"
+			class="inline-flex min-h-11 shrink-0 items-center font-display text-base font-semibold tracking-tight text-[var(--color-text)] transition-colors hover:text-[var(--color-accent)]"
 		>
 			henrik<span class="text-[var(--color-accent)]">.</span>grosche
 		</a>
@@ -41,8 +41,8 @@ const searchProjects = (await getCollection('projects')).map((entry) => ({
 					<a
 						href={link.href}
 						class:list={[
-							'rounded px-2 py-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
-							link.mobile ? '' : 'hidden sm:inline-block',
+							'min-h-11 items-center rounded px-2 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
+							link.mobile ? 'inline-flex' : 'hidden sm:inline-flex',
 						]}
 					>
 						{link.label}

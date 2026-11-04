@@ -12,6 +12,7 @@ import DeployPipeline from '../components/DeployPipeline';
 import Timeline from '../components/Timeline.astro';
 import ContactForm from '../components/ContactForm.astro';
 import Contact from '../components/Contact.astro';
+import TraceSection from '../components/TraceSection.astro';
 
 const projectEntries = (await getCollection('projects')).sort(
 	(a, b) => a.data.order - b.data.order,
@@ -28,55 +29,53 @@ const filterKinds = [...kindCounts.entries()]
 	.map(([kind, count]) => ({ kind, count }));
 ---
 
-<BaseLayout title="Henrik Grosche · Full-Stack-Entwickler">
-	<Hero />
+<BaseLayout title="Henrik Grosche · Full-Stack-Entwickler" marginTrace={false}>
+	{/* One trace from the hero down to the contact form, see TraceSection. */}
+	<TraceSection variant="start" nodeY="calc(var(--hero-top) + 2.25rem + var(--text-hero) * 0.45)">
+		<Hero />
+	</TraceSection>
 
-	<section id="demos" class="mx-auto max-w-5xl px-4 pb-20">
+	<TraceSection id="demos">
 		<SectionHeading
 			title="Aus den Live-Demos"
 			subtitle="Bildschirmaufnahmen echter Läufe, gekürzt, beschleunigt und ohne Ton. Jede App lässt sich selbst ausprobieren."
 			desktopHint="Die Punkte unter dem Video springen zu einzelnen Stellen."
 		/>
 		<DemoReel projects={projectEntries} />
-	</section>
+	</TraceSection>
 
-	<section id="projects" class="mx-auto max-w-5xl px-4 pb-20">
+	<TraceSection id="projects">
 		<SectionHeading
 			title="Projekte"
 			subtitle="Private Projekte. Jede Zeile klappt auf, mit Schaltplan, wichtigster Entscheidung und Links."
 		/>
 		<ProjectFilter kinds={filterKinds} total={projectEntries.length} />
 		<ProjectIndex projects={projectEntries} />
-	</section>
+	</TraceSection>
 
-	<section id="ci-cd" class="mx-auto max-w-5xl px-4 pb-20">
+	<TraceSection id="ci-cd">
 		<SectionHeading
 			title="Diese Seite deployt sich selbst"
 			subtitle="Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker)."
 			desktopHint="Jeder Push läuft erst durch Tests, jeder Pull Request bekommt automatisch eine eigene Vorschau-Umgebung."
 		/>
-		<div
-			data-reveal
-			class="mt-6"
-			data-xray="DeployPipeline.tsx · React-Island, client:visible"
-			data-xray-kind="island"
-		>
+		<div data-reveal class="mt-6">
 			<DeployPipeline client:visible />
 		</div>
-	</section>
+	</TraceSection>
 
-	<section id="erfahrung" class="mx-auto max-w-5xl px-4 pb-20">
+	<TraceSection id="erfahrung">
 		<SectionHeading title="Stationen" />
 		<Timeline />
 		<Skills />
-	</section>
+	</TraceSection>
 
-	<section id="kontakt" class="mx-auto max-w-5xl px-4 pb-24">
+	<TraceSection id="kontakt" variant="end">
 		<SectionHeading
 			title="Lass uns sprechen"
 			subtitle="Offen für Anfragen, am schnellsten per E-Mail."
 		/>
 		<ContactForm />
 		<Contact />
-	</section>
+	</TraceSection>
 </BaseLayout>

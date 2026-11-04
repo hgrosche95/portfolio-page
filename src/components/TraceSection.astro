@@ -1,0 +1,135 @@
+---
+/**
+ * One stretch of the homepage trace: a narrow column on the left with a 2px
+ * copper line, the content on the right. Sections stack without margins, so
+ * the lines of neighbouring sections meet and read as one trace from the hero
+ * down to the contact form. Each section has a node on its title.
+ *
+ * - `start`: the line comes in horizontally from the left edge of the
+ *   viewport, turns at the node and runs down from there (hero).
+ * - `middle`: line over the full height, node at the title.
+ * - `end`: line only down to the node, which is larger and filled; nothing
+ *   after it (contact).
+ *
+ * Purely decorative: the whole column is aria-hidden and ignores the pointer.
+ */
+interface Props {
+	id?: string;
+	variant?: 'start' | 'middle' | 'end';
+	/** Vertical position of the node, measured from the top of the section. */
+	nodeY?: string;
+	class?: string;
+}
+
+const { id, variant = 'middle', nodeY, class: className } = Astro.props;
+---
+
+<section id={id} class:list={['trace-section', className]} data-variant={variant}>
+	<div class="ts-wrap" style={nodeY ? `--node-y: ${nodeY}` : undefined}>
+		<div class="ts-rail" aria-hidden="true">
+			{variant === 'start' && <span class="ts-lead" />}
+			<span class="ts-line" />
+			<span class="ts-node" data-trace-node />
+		</div>
+		<div class="ts-content">
+			<slot />
+		</div>
+	</div>
+</section>
+
+<style>
+	.trace-section {
+		/* The start lead reaches out to the viewport edge; never let it, or
+		   anything else, cause sideways scrolling. */
+		overflow-x: clip;
+	}
+
+	.ts-wrap {
+		/* Centre of the first line of a section title (h2, line-height 0.95). */
+		--node-y: calc(var(--text-section) * 0.475);
+		display: flex;
+		max-width: calc(var(--content-max) + 2 * var(--gutter));
+		margin-inline: auto;
+		padding-inline: var(--gutter);
+	}
+
+	.ts-rail {
+		position: relative;
+		/* Above the hero's boot graphic, so the node always sits on top of the line. */
+		z-index: 2;
+		flex: none;
+		width: var(--rail-w);
+		pointer-events: none;
+	}
+
+	/* The spacing sits on the content, not on the wrapper: the rail stretches
+	   along with it, so the line runs on into the next section without a gap. */
+	.ts-content {
+		flex: 1;
+		min-width: 0;
+		padding-bottom: var(--section-gap);
+	}
+
+	[data-variant='start'] .ts-content {
+		padding-top: var(--hero-top);
+	}
+
+	.ts-line {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: calc(50% - 1px);
+		width: 2px;
+		background-color: var(--accent);
+	}
+
+	[data-variant='start'] .ts-line {
+		top: var(--node-y);
+	}
+
+	[data-variant='end'] .ts-line {
+		bottom: auto;
+		height: var(--node-y);
+	}
+
+	/* 100vw to the left of the node: whatever the viewport, it starts off screen. */
+	.ts-lead {
+		position: absolute;
+		top: var(--node-y);
+		right: 50%;
+		width: 100vw;
+		height: 2px;
+		translate: 0 -50%;
+		background-color: var(--accent);
+		transition: opacity 0.3s;
+	}
+
+	/* While the hero boot sequence draws this line in, the static one waits. */
+	:global(html[data-hero-booting]) .ts-lead {
+		opacity: 0;
+	}
+
+	.ts-node {
+		position: absolute;
+		top: var(--node-y);
+		left: 50%;
+		width: 10px;
+		height: 10px;
+		translate: -50% -50%;
+		border: 2px solid var(--accent);
+		border-radius: 50%;
+		background-color: var(--bg);
+	}
+
+	[data-variant='end'] .ts-node {
+		width: 14px;
+		height: 14px;
+		background-color: var(--accent);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ts-lead {
+			transition: none;
+		}
+	}
+</style>

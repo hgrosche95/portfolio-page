@@ -10,7 +10,7 @@ interface Props {
 const { kinds, total } = Astro.props;
 
 const baseChipClass =
-	'rounded border px-2.5 py-1.5 text-sm transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]';
+	'inline-flex min-h-11 items-center gap-1 rounded border px-3 text-sm transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]';
 const inactiveChipClass = 'border-[var(--color-border)] text-[var(--color-text-muted)]';
 const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]';
 ---
@@ -23,8 +23,6 @@ const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-sof
 <div
 	data-reveal
 	class="mt-6 flex flex-wrap items-center gap-2"
-	data-xray="ProjectFilter.astro · Inline-Skript, kein Bundle"
-	data-xray-kind="static"
 >
 	<div id="project-filter" role="group" aria-label="Projekte nach Art filtern" class="flex flex-wrap gap-1.5">
 		<button type="button" data-filter-kind="" class={`${baseChipClass} ${activeChipClass}`} aria-pressed="true">

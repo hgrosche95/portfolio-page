@@ -56,8 +56,6 @@ const device = (d: (typeof demos)[number]) =>
 	class:list={['reel', { 'is-single': single }]}
 	data-demo-reel
 	data-reveal
-	data-xray="DemoReel.astro · <video> + Inline-Skript"
-	data-xray-kind="static"
 >
 	{!single && (
 	<div class="tabs" role="tablist" aria-label="Aufnahmen" data-tabs hidden>
@@ -264,7 +262,7 @@ const device = (d: (typeof demos)[number]) =>
 
 			if (panels.length > 1) {
 				const target = (i + 1) % panels.length;
-				next.textContent = `Weiter: ${tabs[target].querySelector('.tab-title').textContent} →`;
+				next.textContent = `Weiter: ${tabs[target].querySelector('.tab-title').textContent}`;
 				next.hidden = false;
 				next.addEventListener('click', () => activate(target, true));
 			}
@@ -445,6 +443,7 @@ const device = (d: (typeof demos)[number]) =>
 		display: grid;
 		gap: 0.15rem;
 		min-width: 0;
+		min-height: 2.75rem;
 		padding: 0.55rem 0.7rem 0;
 		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
@@ -550,6 +549,17 @@ const device = (d: (typeof demos)[number]) =>
 		background: none;
 		color: var(--color-text);
 		cursor: pointer;
+	}
+
+	/* The visible button stays small in the bar; the hit area is 44px. */
+	.toggle {
+		position: relative;
+	}
+
+	.toggle::after {
+		content: '';
+		position: absolute;
+		inset: -9px;
 	}
 
 	.toggle:hover {
@@ -664,6 +674,7 @@ const device = (d: (typeof demos)[number]) =>
 	}
 
 	.end button {
+		min-height: 2.75rem;
 		padding: 0.45rem 0.8rem;
 		border: 1px solid var(--color-border-strong);
 		border-radius: 0.5rem;
@@ -716,6 +727,7 @@ const device = (d: (typeof demos)[number]) =>
 	}
 
 	.chapters button {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
@@ -725,6 +737,16 @@ const device = (d: (typeof demos)[number]) =>
 		background: none;
 		color: var(--color-text-muted);
 		cursor: pointer;
+	}
+
+	/* A 44px hit area around the small pad, centred on it. */
+	.chapters button::after {
+		content: '';
+		position: absolute;
+		top: calc(0.4rem - 22px);
+		left: calc(0.4rem - 22px);
+		width: 44px;
+		height: 44px;
 	}
 
 	.pad {
@@ -803,13 +825,18 @@ const device = (d: (typeof demos)[number]) =>
 	}
 
 	.links a {
+		display: inline-flex;
+		align-items: center;
+		min-width: 2.75rem;
+		min-height: 2.75rem;
 		color: var(--color-accent);
-		text-decoration: none;
-		border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+		text-underline-offset: 3px;
 	}
 
 	.links a:hover {
-		border-bottom-color: var(--color-accent);
+		text-decoration-color: var(--color-accent);
 	}
 
 	/* Small screens: only the current chapter's label, the rest are dots. */

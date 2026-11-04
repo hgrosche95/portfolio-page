@@ -67,11 +67,11 @@ const entries = [
 ];
 ---
 
-<div class="mt-4 space-y-2 text-sm" data-xray="Timeline.astro · statisch" data-xray-kind="static">
+<div class="mt-4 space-y-2 text-sm">
 	{
 		entries.map((entry) => (
-			<details class="group rounded border border-[var(--color-border)] px-4 py-3 open:border-[var(--color-accent)]">
-				<summary class="flex cursor-pointer list-none items-start justify-between gap-4">
+			<details class="group rounded border border-[var(--color-border)] px-4 open:border-[var(--color-accent)]">
+				<summary class="flex min-h-11 cursor-pointer list-none items-start justify-between gap-4 py-3">
 					<span class="min-w-0">
 						<span class="font-medium text-[var(--color-text)]">{entry.role}</span>
 						<span class="block text-[var(--color-text-muted)] sm:inline">
@@ -85,7 +85,7 @@ const entries = [
 						<span class="text-[var(--color-text-muted)] transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
 					</span>
 				</summary>
-				<ul class="mt-3 list-inside list-disc space-y-1 leading-relaxed text-[var(--color-text-muted)]">
+				<ul class="pb-3 list-inside list-disc space-y-1 leading-relaxed text-[var(--color-text-muted)]">
 					{entry.details.map((detail) => (
 						<li>{detail}</li>
 					))}
