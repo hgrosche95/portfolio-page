@@ -10,21 +10,27 @@ const { title, subtitle, desktopHint } = Astro.props;
 ---
 
 <div data-reveal>
-	{/* data-trace-stop + .trace-branch: hangs this heading off the margin trace (see global.css). */}
-	<h2
-		class="relative flex items-center gap-3 text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl"
-		data-trace-stop
-	>
-		<span class="trace-branch" aria-hidden="true"></span>
-		<span class="solder-pad" aria-hidden="true"></span>
-		{title}
-	</h2>
+	{/* The node on the homepage trace (TraceSection) marks this heading, so it needs no pad of its own. */}
+	<h2 class="section-title">{title}</h2>
 	{
 		subtitle && (
-			<p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
+			<p class="mt-4 max-w-2xl text-base leading-relaxed text-[var(--muted)]">
 				{subtitle}
 				{desktopHint && <span class="hidden sm:inline"> {desktopHint}</span>}
 			</p>
 		)
 	}
 </div>
+
+<style>
+	.section-title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: var(--text-section);
+		font-weight: 700;
+		line-height: 0.95;
+		letter-spacing: -0.03em;
+		color: var(--ink);
+		text-wrap: balance;
+	}
+</style>

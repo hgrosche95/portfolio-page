@@ -8,6 +8,11 @@ interface Props {
 	description?: string;
 	/** Relative path to the social-preview image; resolved to an absolute URL. */
 	image?: string;
+	/**
+	 * The margin trace with scroll progress. The homepage draws its own trace
+	 * through TraceSection, so it turns this one off.
+	 */
+	marginTrace?: boolean;
 }
 
 const {
@@ -17,6 +22,7 @@ const {
 	// deliberately not used here: it is 800x1067 portrait, which social cards
 	// crop to a ~1.91:1 landscape strip.
 	image = '/og/default.png',
+	marginTrace = true,
 } = Astro.props;
 
 const absoluteImageUrl = new URL(image, Astro.site ?? Astro.url).toString();
@@ -87,7 +93,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 	<body class="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
 		<Header />
 		<main class="relative flex-1">
-			<div class="trace" id="trace" aria-hidden="true"></div>
+			{marginTrace && <div class="trace" id="trace" aria-hidden="true"></div>}
 			<slot />
 		</main>
 		<Footer />
@@ -126,64 +132,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				window.addEventListener('scroll', schedule, { passive: true });
 				window.addEventListener('resize', schedule);
 				update();
-			})();
-		</script>
-
-		{/* Desktop only: the labels would cover the content on a phone. */}
-		<div class="fixed right-4 bottom-4 z-50 hidden flex-col items-end gap-2 sm:flex">
-			<div
-				id="xray-legend"
-				hidden
-				class="max-w-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-xs leading-relaxed text-[var(--color-text-muted)] shadow-lg"
-			>
-				<p>
-					<span class="font-mono text-[var(--color-accent)]">durchgezogen</span> = React-Island, lädt
-					JavaScript
-				</p>
-				<p class="mt-1">
-					<span class="font-mono">gestrichelt</span> = statisches HTML aus dem Astro-Build, kein
-					JS-Bundle
-				</p>
-				<p class="mt-2">
-					Diese Seite lädt React nur für die Deploy-Pipeline, und die erst beim Hineinscrollen
-					(<span class="font-mono">client:visible</span>). Die Schaltpläne sind statisches SVG
-					mit ein paar Zeilen Inline-Skript.
-				</p>
-			</div>
-			<button
-				id="xray-toggle"
-				type="button"
-				aria-pressed="false"
-				class="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 font-mono text-xs text-[var(--color-text-muted)] shadow-lg transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] aria-pressed:border-[var(--color-accent)] aria-pressed:text-[var(--color-accent)]"
-			>
-				<svg
-					class="size-4"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
-				>
-					<rect x="3" y="3" width="18" height="18" rx="2"></rect>
-					<path d="M3 9h18M9 9v12"></path>
-				</svg>
-				Röntgenblick
-			</button>
-		</div>
-
-		<script is:inline>
-			(function () {
-				const button = document.getElementById('xray-toggle');
-				const legend = document.getElementById('xray-legend');
-				if (!button) return;
-
-				button.addEventListener('click', function () {
-					const active = document.documentElement.classList.toggle('xray');
-					button.setAttribute('aria-pressed', String(active));
-					legend.hidden = !active;
-				});
 			})();
 		</script>
 

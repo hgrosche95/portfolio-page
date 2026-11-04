@@ -20,13 +20,14 @@
   --font-display: "Bricolage Grotesque Variable", "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
   --color-bg: #edf0f2;
-  --color-surface: #f8fafb;
+  --color-surface: #f7f9fa;
   /* Raised surface for cards that sit on top of --color-surface. */
   --color-surface-raised: #e4e8eb;
-  --color-border: #cdd4da;
+  --color-border: #c9d1d9;
   --color-border-strong: #a3aeb8;
   --color-text: #121a24;
-  --color-text-muted: #56616d;
+  /* ~6.6:1 on --color-bg, ~6.1:1 on --color-surface-raised. */
+  --color-text-muted: #4b5563;
   /*
    * Contrast kept at WCAG AA for the normal-size text the accent is used as
    * (eyebrows, chip labels, links): ~4.8:1 on --color-bg, ~4.7:1 on
@@ -39,9 +40,10 @@
   /*
    * Status, not decoration: "running / reachable". Kept apart from the
    * accent so a live signal never blends into the copper around it.
-   * ~5.2:1 on --color-bg.
+   * ~6.6:1 on --color-bg, and still above 4.5:1 on the live button's own
+   * 12% tint of it.
    */
-  --color-live: #1f7a4d;
+  --color-live: #17603c;
 }
 
 .dark {
@@ -56,6 +58,33 @@
   --color-accent-soft: #2a1e16;
   --color-bg-translucent: rgb(15 21 27 / 0.82);
   --color-live: #5cc98f;
+}
+
+/*
+ * Short names from the design handoff. They point at the theme colours above,
+ * so there is one source per value and both themes follow automatically.
+ * Every text/background pair they form stays at or above 4.5:1.
+ */
+:root {
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --ink: var(--color-text);
+  --muted: var(--color-text-muted);
+  --line: var(--color-border);
+  --accent: var(--color-accent);
+
+  /* Type scale (design handoff, section 2). */
+  --text-hero: clamp(56px, 9.5vw, 136px);
+  --text-section: clamp(36px, 4.6vw, 64px);
+  --text-project: clamp(24px, 2.6vw, 34px);
+  --text-intro: clamp(19px, 1.7vw, 23px);
+
+  /* Layout: content width, side gutter and the trace column. */
+  --content-max: 1240px;
+  --gutter: 20px;
+  --rail-w: clamp(20px, 3vw, 40px);
+  --section-gap: clamp(72px, 9vw, 120px);
+  --hero-top: clamp(56px, 8vw, 104px);
 }
 
 body {
@@ -167,6 +196,15 @@ body {
   }
 }
 
+/* Small monospace label above or beside content (hero kicker, project kind). */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.35;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
 /* Ring with a filled centre, the way a solder pad looks on a board. Marks
    section headings as stations along the trace. */
 .solder-pad {
@@ -217,6 +255,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 2.75rem;
   padding: 0.45rem 0.9rem;
   border: 1px solid var(--color-live);
   border-radius: 0.4rem;
@@ -288,58 +327,6 @@ body {
     opacity: 1;
     translate: 0 0;
   }
-}
-
-/*
- * X-ray mode. Toggled by the button in BaseLayout, which puts .xray on <html>.
- * Every [data-xray] element is outlined and labelled with the component that
- * renders it, so the islands architecture can be inspected on the live page
- * rather than only described. Labels sit inside the top-left corner: an element
- * flush against the sticky header would push an outside label off screen.
- */
-.xray [data-xray] {
-  position: relative;
-  outline: 1px dashed var(--color-border-strong);
-  outline-offset: 4px;
-}
-
-.xray [data-xray][data-xray-kind='island'] {
-  outline-color: var(--color-accent);
-  outline-style: solid;
-}
-
-.xray [data-xray]::after {
-  content: attr(data-xray);
-  position: absolute;
-  top: 0;
-  left: 8px;
-  /* Straddle the outline instead of sitting on the content underneath. */
-  translate: 0 -50%;
-  z-index: 40;
-  pointer-events: none;
-  white-space: nowrap;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 3px;
-  background-color: var(--color-surface);
-  padding: 1px 5px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-}
-
-.xray [data-xray][data-xray-kind='island']::after {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-/*
- * The first section's top edge sits flush under the sticky header, where a
- * straddling label would be half hidden behind it. It opts into sitting fully
- * inside instead, which reads fine because that section opens with padding.
- */
-.xray [data-xray][data-xray-pos='inside']::after {
-  translate: 0 0;
 }
 
 /*

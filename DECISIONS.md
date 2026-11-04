@@ -148,6 +148,15 @@ portfolios, so it read as templated, the opposite of what it was chosen for. The
 fits the actual subject better: the site is about systems wired together, and every project page
 now shows its architecture as an interactive schematic in the same visual language.
 
+A later pass made the trace the backbone of the homepage instead of a desktop-only margin
+detail: one copper line enters the hero from the left edge of the viewport, runs down a narrow
+column beside every section (`TraceSection.astro`) with a node at each section title, branches
+out to an opened project, and ends in a filled node at the contact form. It stays visible on
+phones. The same pass set a larger type scale (the name and section titles in Bricolage at
+poster size), widened the content to 1240px and removed the "Röntgenblick" overlay, which
+explained the islands architecture but competed with the content for attention. Project pages
+keep the original margin trace.
+
 Uses an actual personal photo rather than an icon/initials treatment, for the same reason a face
 usually helps in recruiting contexts: it builds trust faster than an abstraction.
 
