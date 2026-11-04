@@ -35,3 +35,6 @@ public/og/
 api/node_modules/
 api/dist/
 api/local.settings.json
+
+# Impeccable: live-server runtime state (critique snapshots are kept)
+.impeccable/live/
