@@ -72,6 +72,37 @@ const wires = {
 	'rag-db': 'M296 118 H340 V129 H396',
 	'api-check': 'M196 18 V8 H276 V18',
 };
+
+/*
+ * The same circuit, rearranged for narrow consoles (phones, and the hero
+ * column on mid-size screens): two columns in a 300 x 230 drawing, so the
+ * labels render at ~12px instead of being scaled down to ~6px. Same node and
+ * wire ids, so the script animates whichever drawing is visible.
+ */
+const tallNodes = [
+	{ id: 'web', x: 8, y: 14 },
+	{ id: 'api', x: 168, y: 14 },
+	{ id: 'llm', x: 8, y: 70 },
+	{ id: 'rag', x: 168, y: 70 },
+	{ id: 'obs', x: 8, y: 126 },
+	{ id: 'db', x: 168, y: 126 },
+	{ id: 'ext', x: 8, y: 182 },
+].map((place) => ({ ...nodes.find((node) => node.id === place.id)!, ...place, w: 124, h: 40 }));
+
+const tallWires = {
+	'web-api': 'M132 34 H168',
+	'api-llm': 'M176 54 V58 H142 V90 H132',
+	'api-obs': 'M182 54 V62 H150 V146 H132',
+	'api-ext': 'M188 54 V66 H158 V202 H132',
+	'api-rag': 'M230 54 V70',
+	'rag-db': 'M230 110 V126',
+	'api-check': 'M188 14 V6 H272 V14',
+};
+
+const drawings = [
+	{ variant: 'wide', viewBox: '0 0 520 150', nodes, wires },
+	{ variant: 'tall', viewBox: '0 0 300 230', nodes: tallNodes, wires: tallWires },
+];
 ---
 
 <div class="console" data-agent-console>
@@ -79,20 +110,24 @@ const wires = {
 		<span>ai-trip-planer · agent.run()</span>
 		<span class="replay">Aufzeichnung</span>
 	</div>
-	<svg viewBox="0 0 520 150" aria-hidden="true">
-		{Object.entries(wires).map(([id, d]) => <path class="wire" data-wire={id} d={d} />)}
+	<div class="diagram">
 		{
-			nodes.map((node) => (
-				<g class:list={['node', { data: node.data }]} data-node={node.id}>
-					<rect x={node.x} y={node.y} width={node.w} height={node.h} rx="6" />
-					<text x={node.x + 10} y={node.y + node.h / 2 - 3}>{node.label}</text>
-					<text class="sub" x={node.x + 10} y={node.y + node.h / 2 + 11}>{node.sub}</text>
-				</g>
+			drawings.map((drawing) => (
+				<svg class={drawing.variant} viewBox={drawing.viewBox} aria-hidden="true" data-drawing>
+					{Object.entries(drawing.wires).map(([id, d]) => <path class="wire" data-wire={id} d={d} />)}
+					{drawing.nodes.map((node) => (
+						<g class:list={['node', { data: node.data }]} data-node={node.id}>
+							<rect x={node.x} y={node.y} width={node.w} height={node.h} rx="6" />
+							<text x={node.x + 10} y={node.y + node.h / 2 - 3}>{node.label}</text>
+							<text class="sub" x={node.x + 10} y={node.y + node.h / 2 + 11}>{node.sub}</text>
+						</g>
+					))}
+					<circle class="packet" data-packet r="4" cx="-20" cy="-20" />
+					<path data-probe d="M0 0" fill="none" stroke="none" />
+				</svg>
 			))
 		}
-		<circle class="packet" data-packet r="4" cx="-20" cy="-20"></circle>
-		<path data-probe d="M0 0" fill="none" stroke="none"></path>
-	</svg>
+	</div>
 	{/* Without JS this is simply the first run as a list; the script takes it over and types it out. */}
 	<ol class="log" data-log>
 		{scenarios[0].steps.map((step) => <li class={step.tone}>{step.text}</li>)}
@@ -117,8 +152,12 @@ const wires = {
 
 		const scenarios = JSON.parse(box.querySelector('[data-scenarios]').textContent);
 		const log = box.querySelector('[data-log]');
-		const packet = box.querySelector('[data-packet]');
-		const probe = box.querySelector('[data-probe]');
+		// Two drawings of the same circuit (wide and tall); only one is displayed.
+		// Each has its own packet and probe; the visible one is looked up per
+		// step, so resizing mid-run simply continues in the other drawing.
+		const drawings = Array.from(box.querySelectorAll('[data-drawing]'));
+		const shown = () => drawings.find((svg) => svg.getClientRects().length) || drawings[0];
+		const resetPackets = () => box.querySelectorAll('[data-packet]').forEach((p) => p.setAttribute('cx', '-20'));
 		const buttons = box.querySelectorAll('[data-play]');
 		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -147,7 +186,11 @@ const wires = {
 		}
 
 		function travel(step, token) {
-			probe.setAttribute('d', box.querySelector(`[data-wire="${step.wire}"]`).getAttribute('d'));
+			const svg = shown();
+			const packet = svg.querySelector('[data-packet]');
+			const probe = svg.querySelector('[data-probe]');
+			resetPackets();
+			probe.setAttribute('d', svg.querySelector(`[data-wire="${step.wire}"]`).getAttribute('d'));
 			const length = probe.getTotalLength();
 			const duration = Math.max(420, length * 3.4);
 			const start = performance.now();
@@ -201,7 +244,7 @@ const wires = {
 				if (token !== run) return;
 				log.textContent = '';
 				light([], '');
-				packet.setAttribute('cx', '-20');
+				resetPackets();
 			}
 		}
 
@@ -249,11 +292,35 @@ const wires = {
 		color: var(--color-text-muted);
 	}
 
+	.console {
+		container-type: inline-size;
+	}
+
+	.diagram {
+		border-bottom: 1px dashed var(--color-border-strong);
+	}
+
 	svg {
 		display: block;
 		width: 100%;
 		height: auto;
-		border-bottom: 1px dashed var(--color-border-strong);
+	}
+
+	/* Below ~440px the wide drawing would scale its labels under ~9px. */
+	svg.tall {
+		display: none;
+		max-width: 26rem;
+		margin-inline: auto;
+	}
+
+	@container (max-width: 439px) {
+		svg.wide {
+			display: none;
+		}
+
+		svg.tall {
+			display: block;
+		}
 	}
 
 	.node rect {
@@ -278,7 +345,7 @@ const wires = {
 	}
 
 	.node text.sub {
-		font-size: 9.5px;
+		font-size: 10px;
 		fill: var(--color-text-muted);
 	}
 
