@@ -917,6 +917,42 @@ const device = (d: (typeof demos)[number]) =>
 		[data-enhanced] [data-format='desktop'] video {
 			height: 100%;
 		}
+
+		/*
+		 * Homepage reel: the recording no longer spans the full content width
+		 * (it outweighed the hero and repeated three projects at poster size).
+		 * Stage and tabs stop at ~900px, which still shows the 1280px desktop
+		 * recordings at about 70 % (a side column with the tabs once shrank them
+		 * to half); title, caption and links sit beside the stage instead of
+		 * below it, so the whole section also gets shorter.
+		 */
+		.reel:not(.is-single) .tabs {
+			max-width: 56rem;
+		}
+
+		.reel:not(.is-single) .panel:not([hidden]) {
+			display: grid;
+			grid-template-columns: minmax(0, 56rem) minmax(14rem, 1fr);
+			column-gap: 2.5rem;
+			align-items: start;
+		}
+
+		.reel:not(.is-single) .panel > .stage {
+			grid-column: 1;
+			grid-row: 1;
+		}
+
+		.reel:not(.is-single) .panel > .chapters {
+			grid-column: 1;
+			grid-row: 2;
+		}
+
+		.reel:not(.is-single) .panel > figcaption {
+			grid-column: 2;
+			grid-row: 1 / span 2;
+			margin-top: 0;
+			padding-top: 0.25rem;
+		}
 	}
 
 	.time {
