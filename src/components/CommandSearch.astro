@@ -40,7 +40,7 @@ const { projects } = Astro.props;
 	</svg>
 </button>
 
-<div id="cmdk-backdrop" class="fixed inset-0 z-[60] hidden bg-black/50" data-cmdk-close></div>
+<div id="cmdk-backdrop" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-[2px]" data-cmdk-close></div>
 <div
 	id="cmdk-modal"
 	role="dialog"
@@ -64,6 +64,7 @@ const { projects } = Astro.props;
 		<input
 			id="cmdk-input"
 			type="text"
+			aria-label="Projekte nach Titel oder Technologie durchsuchen"
 			placeholder="Projekt oder Technologie…"
 			autocomplete="off"
 			class="flex-1 bg-transparent font-mono text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
@@ -82,7 +83,8 @@ const { projects } = Astro.props;
 	</div>
 	<ul id="cmdk-results" class="max-h-72 overflow-y-auto p-1.5"></ul>
 	<p id="cmdk-empty" class="hidden px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]">
-		Keine Treffer.
+		Keine Treffer. Gesucht wird in Projekttiteln und Technologien.<br />
+		<a href="/#projects" data-cmdk-close class="mt-2 inline-flex min-h-11 items-center text-[var(--color-accent)] underline underline-offset-2">Alle Projekte ansehen</a>
 	</p>
 </div>
 
@@ -95,6 +97,11 @@ const { projects } = Astro.props;
 		const resultsEl = document.getElementById('cmdk-results');
 		const emptyEl = document.getElementById('cmdk-empty');
 		if (!trigger || !backdrop || !modal || !input || !resultsEl || !emptyEl) return;
+
+		// The header's backdrop-filter makes it the containing block for fixed
+		// children, so inside it the backdrop would only cover the header. Move
+		// both layers to <body> so they cover the viewport.
+		document.body.append(backdrop, modal);
 
 		let matches = [];
 		let activeIndex = 0;

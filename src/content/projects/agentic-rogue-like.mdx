@@ -4,9 +4,22 @@ summary: "Roguelike, dessen Run-Inhalt nicht aus einer festen Drop-Tabelle kommt
 githubRepo: "agentic-rogue-like"
 techStack: ["Python", "Pydantic", "LangGraph", "Groq", "LoRA/QLoRA", "Hugging Face", "Ollama", "llama.cpp", "FastAPI", "React", "Vite", "TypeScript", "pytest", "uv", "ruff", "Docker", "Azure", "GitHub Actions"]
 order: 2
+metrics:
+  items:
+    - value: "310"
+      label: "Aufrufe Groq-Baseline, gemessen vor dem Training"
+    - value: "100 %"
+      label: "schemakonform, eigenes 1,5B-Modell lokal"
+    - value: "0,95 / 0,67"
+      label: "eindeutige Namen, lokal gegen Groq"
+    - value: "3,6 s / 1,1 s"
+      label: "Latenz, der Preis dafür"
+  source:
+    label: "Alle Zahlen: training/RESULTS.md"
+    url: "https://github.com/hgrosche95/agentic-rogue-like/blob/master/training/RESULTS.md"
 kind: agent
 liveUrl: "https://witty-rock-0f2836f0f.6.azurestaticapps.net/"
-liveLabel: "Jetzt spielen"
+liveLabel: "Live-Demo öffnen"
 liveStatusCheck: true
 hosting: "Container Apps · Static Web Apps"
 demo:

@@ -6,9 +6,9 @@
  * anyone without JavaScript.
  */
 const fieldClass =
-	'mt-1.5 min-h-11 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none';
+	'mt-1.5 min-h-11 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none aria-invalid:border-[var(--color-danger)]';
 const labelClass = 'text-sm font-medium text-[var(--color-text)]';
-const errorClass = 'mt-1 hidden text-sm text-[var(--color-accent)]';
+const errorClass = 'mt-1 hidden text-sm text-[var(--color-danger)]';
 ---
 
 <form
@@ -100,10 +100,21 @@ const errorClass = 'mt-1 hidden text-sm text-[var(--color-accent)]';
 		const status = document.getElementById('contact-status');
 		const errors = form.querySelectorAll('[data-error-for]');
 
+		// Each error is tied to its field (aria-invalid + aria-describedby), so a
+		// screen reader announces it when the field gets focus, not only visually.
+		errors.forEach(function (el) {
+			el.id = 'contact-error-' + el.getAttribute('data-error-for');
+		});
+
 		function clearErrors() {
 			errors.forEach(function (el) {
 				el.textContent = '';
 				el.classList.add('hidden');
+				const field = form.querySelector('[name="' + el.getAttribute('data-error-for') + '"]');
+				if (field) {
+					field.removeAttribute('aria-invalid');
+					field.removeAttribute('aria-describedby');
+				}
 			});
 		}
 
@@ -113,6 +124,11 @@ const errorClass = 'mt-1 hidden text-sm text-[var(--color-accent)]';
 				if (!el) return;
 				el.textContent = fieldErrors[field];
 				el.classList.remove('hidden');
+				const input = form.querySelector('[name="' + field + '"]');
+				if (input) {
+					input.setAttribute('aria-invalid', 'true');
+					input.setAttribute('aria-describedby', el.id);
+				}
 			});
 		}
 

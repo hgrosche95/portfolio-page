@@ -30,7 +30,7 @@ interface Props {
 const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 ---
 
-<section id={id} class:list={['trace-section', className]} data-variant={variant}>
+<section id={id} class:list={['trace-section', className]} data-variant={variant} aria-labelledby={id ? `${id}-title` : undefined}>
 	<div class="ts-wrap" style={nodeY ? `--node-y: ${nodeY}` : undefined}>
 		<div class="ts-rail" aria-hidden="true">
 			{variant === 'start' && <span class="ts-lead" />}

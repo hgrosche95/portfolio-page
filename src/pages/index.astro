@@ -13,6 +13,7 @@ import Timeline from '../components/Timeline.astro';
 import ContactForm from '../components/ContactForm.astro';
 import Contact from '../components/Contact.astro';
 import TraceSection from '../components/TraceSection.astro';
+import deployInfo from '../data/deploy-info.json';
 
 const projectEntries = (await getCollection('projects')).sort(
 	(a, b) => a.data.order - b.data.order,
@@ -35,17 +36,9 @@ const filterKinds = [...kindCounts.entries()]
 		<Hero />
 	</TraceSection>
 
-	<TraceSection id="demos">
-		<SectionHeading
-			title="Aus den Live-Demos"
-			subtitle="Bildschirmaufnahmen echter Läufe, gekürzt, beschleunigt und ohne Ton. Jede App lässt sich selbst ausprobieren."
-			desktopHint="Die Punkte unter dem Video springen zu einzelnen Stellen."
-		/>
-		<DemoReel projects={projectEntries} />
-	</TraceSection>
-
 	<TraceSection id="projects">
 		<SectionHeading
+			id="projects-title"
 			title="Projekte"
 			subtitle="Private Projekte. Jede Zeile klappt auf, mit Schaltplan, wichtigster Entscheidung und Links."
 		/>
@@ -53,8 +46,19 @@ const filterKinds = [...kindCounts.entries()]
 		<ProjectIndex projects={projectEntries} />
 	</TraceSection>
 
+	<TraceSection id="demos">
+		<SectionHeading
+			id="demos-title"
+			title="Aus den Live-Demos"
+			subtitle="Bildschirmaufnahmen echter Läufe, gekürzt, beschleunigt und meist ohne Ton. Jede App lässt sich selbst ausprobieren."
+			desktopHint="Die Punkte unter dem Video springen zu einzelnen Stellen."
+		/>
+		<DemoReel projects={projectEntries} />
+	</TraceSection>
+
 	<TraceSection id="ci-cd">
 		<SectionHeading
+			id="ci-cd-title"
 			title="Diese Seite deployt sich selbst"
 			subtitle="Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker)."
 			desktopHint="Jeder Push läuft erst durch Tests, jeder Pull Request bekommt automatisch eine eigene Vorschau-Umgebung."
@@ -62,16 +66,26 @@ const filterKinds = [...kindCounts.entries()]
 		<div data-reveal class="mt-6">
 			<DeployPipeline client:visible />
 		</div>
+		{
+			deployInfo.runUrl && (
+				<p data-reveal class="mt-3">
+					<a class="run-link" href={deployInfo.runUrl} target="_blank" rel="noopener noreferrer">
+						Diesen CI-Lauf auf GitHub ansehen<span class="sr-only"> (öffnet in neuem Tab)</span>
+					</a>
+				</p>
+			)
+		}
 	</TraceSection>
 
 	<TraceSection id="erfahrung">
-		<SectionHeading title="Stationen" />
+		<SectionHeading id="erfahrung-title" title="Werdegang" />
 		<Timeline />
 		<Skills />
 	</TraceSection>
 
 	<TraceSection id="kontakt" variant="end">
 		<SectionHeading
+			id="kontakt-title"
 			title="Lass uns sprechen"
 			subtitle="Offen für Anfragen, am schnellsten per E-Mail."
 		/>
@@ -79,3 +93,20 @@ const filterKinds = [...kindCounts.entries()]
 		<Contact />
 	</TraceSection>
 </BaseLayout>
+
+<style>
+	.run-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		font: 13px var(--font-mono);
+		color: var(--accent);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+		text-underline-offset: 3px;
+	}
+
+	.run-link:hover {
+		text-decoration-color: var(--accent);
+	}
+</style>

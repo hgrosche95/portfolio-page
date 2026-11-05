@@ -14,9 +14,17 @@ const formattedTimestamp = new Date(deployInfo.timestamp).toLocaleString('de-DE'
 // A merge commit's "from owner/branch" tail is noise in a box this small; the PR number says it.
 const commitMessage = deployInfo.message.replace(/^(Merge pull request #\d+) from \S+$/, '$1');
 
+/** Real numbers from this deploy's CI run when there are any, else just the tools. */
+function testSummary(): string {
+  const tests = deployInfo.tests as { passed: number; total: number; durationMs: number } | null | undefined;
+  if (!tests) return 'Vitest · Frontend + API';
+  const seconds = (tests.durationMs / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 });
+  return `${tests.passed}/${tests.total} Tests grün · ${seconds}\u00a0s`;
+}
+
 const stages: { id: string; label: string; sublabel: string }[] = [
   { id: 'commit', label: 'Commit', sublabel: `${deployInfo.shortSha} · ${commitMessage}` },
-  { id: 'test', label: 'Test', sublabel: 'Vitest · Frontend + API' },
+  { id: 'test', label: 'Test', sublabel: testSummary() },
   { id: 'build', label: 'Build', sublabel: `Astro · ${deployInfo.branch}` },
   { id: 'deploy', label: 'Deploy', sublabel: 'Azure Static Web Apps' },
   { id: 'live', label: 'Live', sublabel: formattedTimestamp },
@@ -120,6 +128,21 @@ export default function DeployPipeline() {
     target: stage.id,
     animated: !reduceMotion && index < activeStage,
   }));
+
+  // Narrow screens get a plain vertical list at body size instead of the
+  // diagram: fitView would scale five stacked boxes down to unreadable text.
+  if (stacked) {
+    return (
+      <ol className="pipeline-list" aria-label="Deployment-Pipeline dieser Seite">
+        {stages.map((stage, index) => (
+          <li key={stage.id} data-active={index <= activeStage ? '' : undefined}>
+            <span className="stage">{stage.label}</span>
+            <span className="detail">{stage.sublabel}</span>
+          </li>
+        ))}
+      </ol>
+    );
+  }
 
   return (
     <div

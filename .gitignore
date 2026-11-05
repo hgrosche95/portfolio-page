@@ -21,6 +21,8 @@ pnpm-debug.log*
 # scripts/fetch-github-stats.ts — always regenerated via npm pre-scripts
 src/data/deploy-info.json
 src/data/github-stats.json
+# Vitest JSON reports written by the CI test steps, read by the build
+.ci/
 
 # macOS-specific files
 .DS_Store
@@ -35,3 +37,6 @@ public/og/
 api/node_modules/
 api/dist/
 api/local.settings.json
+
+# Impeccable: live-server runtime state (critique snapshots are kept)
+.impeccable/live/

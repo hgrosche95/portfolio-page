@@ -3,7 +3,18 @@ title: "AI Trip Planner"
 summary: "Chat-Agent, der einen Reiseplan im Dialog erarbeitet. Wahlweise als Multi-Agent-System mit Planer, paralleler Recherche, Budget und einem Kritiker, der jeden Entwurf prüft. Faktenfragen beantwortet er über eine eigene RAG-Wissensbasis mit sichtbaren Quellen, statt zu raten."
 githubRepo: "ai-trip-planer"
 techStack: ["TypeScript", "Next.js", "NestJS", "Prisma", "PostgreSQL", "pgvector", "Python", "FastAPI", "Groq", "Claude API", "MCP", "Langfuse", "Docker", "Azure", "Bicep", "Playwright", "GitHub Actions"]
-order: 3
+order: 1
+metrics:
+  items:
+    - value: "12"
+      label: "Eval-Szenarien, jede Nacht gegen den echten Stack"
+    - value: "3"
+      label: "Prompt-Injection-Versuche im Golden Dataset"
+    - value: "Recall@3 · MRR"
+      label: "RAG-Qualität, plus LLM-as-Judge"
+  source:
+    label: "Aktueller Stand live: /evals"
+    url: "https://witty-pond-0504bdc0f.7.azurestaticapps.net/evals"
 kind: agent
 liveUrl: "https://witty-pond-0504bdc0f.7.azurestaticapps.net"
 liveLabel: "Live-Demo öffnen"

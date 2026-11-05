@@ -52,6 +52,24 @@ const MAX_TAGS = 4;
 								)}
 							</span>
 							<span class="summary">{data.summary}</span>
+							{/* Measured results, visible even with the row closed: the
+							    evidence behind the hero's "measurable agents". */}
+							{data.metrics && (
+								<span class="metrics">
+									<span class="metric-list" role="list">
+										{data.metrics.items.map((m) => (
+											<span class="metric" role="listitem">
+												<span class="value">{m.value}</span>
+												<span class="mlabel">{m.label}</span>
+											</span>
+										))}
+									</span>
+									<a class="metric-source" href={data.metrics.source.url} target="_blank" rel="noopener noreferrer">
+										{data.metrics.source.label}
+										<span class="sr-only"> (öffnet in neuem Tab)</span>
+									</a>
+								</span>
+							)}
 						</span>
 						<span class="facts">
 							<span class="stack">
@@ -119,7 +137,7 @@ const MAX_TAGS = 4;
 			const head = row.querySelector('.head');
 			const details = row.querySelector('details');
 			head.addEventListener('click', function (event) {
-				if (event.target.closest('a')) return;
+				if (event.target.closest('a, .metrics')) return;
 				// Selecting text to copy it should not toggle the row.
 				if (window.getSelection().toString()) return;
 				details.open = !details.open;
@@ -242,6 +260,55 @@ const MAX_TAGS = 4;
 		font-size: 0.925rem;
 		line-height: 1.55;
 		color: var(--color-text-muted);
+	}
+
+	.metrics {
+		display: grid;
+		gap: 0.25rem;
+		margin-top: 0.5rem;
+		cursor: auto;
+	}
+
+	.metric-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+		gap: 0.75rem 1.25rem;
+		padding: 0.75rem 0 0.75rem 0.85rem;
+		border-left: 2px solid var(--accent);
+	}
+
+	.metric {
+		display: grid;
+		align-content: start;
+		gap: 0.15rem;
+	}
+
+	.metric .value {
+		font: 600 1.05rem/1.2 var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		color: var(--ink);
+	}
+
+	.metric .mlabel {
+		font-size: 0.8rem;
+		line-height: 1.4;
+		color: var(--muted);
+	}
+
+	.metric-source {
+		display: inline-flex;
+		align-items: center;
+		justify-self: start;
+		min-height: 2.75rem;
+		font: 12.5px var(--font-mono);
+		color: var(--accent);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+		text-underline-offset: 3px;
+	}
+
+	.metric-source:hover {
+		text-decoration-color: var(--accent);
 	}
 
 	.facts {

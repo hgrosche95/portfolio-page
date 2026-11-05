@@ -119,6 +119,19 @@ const projects = defineCollection({
     liveStatusCheck: z.boolean().optional(),
     /** Where it runs, one line for the project page's data sheet. */
     hosting: z.string().optional(),
+    /**
+     * Measured results, shown in the project's row on the homepage so the
+     * claim "measurable agents" has numbers behind it. Only figures the
+     * project's own repo documents; `source` links to where they come from.
+     * Values that change with every run (nightly evals) don't belong here as
+     * numbers: describe what is measured and link the live result instead.
+     */
+    metrics: z
+      .object({
+        items: z.array(z.object({ value: z.string(), label: z.string() })).min(1).max(4),
+        source: z.object({ label: z.string(), url: z.string().url() }),
+      })
+      .optional(),
     /** Optional screen recording for the homepage reel. Needs liveUrl, since it shows the live demo. */
     demo: demo.optional(),
     /**

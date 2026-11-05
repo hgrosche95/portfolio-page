@@ -36,13 +36,16 @@ jobs:
           cache: "npm"
       - name: Install frontend dependencies
         run: npm ci
+      # Both test steps also write a JSON report to .ci/. The build reads it
+      # (scripts/generate-deploy-info.ts), so the pipeline on the homepage shows
+      # this run's real test count and duration and links to the run.
       - name: Test frontend
-        run: npm test
+        run: npm test -- --reporter=default --reporter=json --outputFile=.ci/test-frontend.json
       - name: Install API dependencies
         run: npm ci
         working-directory: api
       - name: Test API
-        run: npm test
+        run: npm test -- --reporter=default --reporter=json --outputFile=../.ci/test-api.json
         working-directory: api
       - name: Build And Deploy
         id: builddeploy
