@@ -13,6 +13,7 @@ import Timeline from '../components/Timeline.astro';
 import ContactForm from '../components/ContactForm.astro';
 import Contact from '../components/Contact.astro';
 import TraceSection from '../components/TraceSection.astro';
+import deployInfo from '../data/deploy-info.json';
 
 const projectEntries = (await getCollection('projects')).sort(
 	(a, b) => a.data.order - b.data.order,
@@ -49,7 +50,7 @@ const filterKinds = [...kindCounts.entries()]
 		<SectionHeading
 			id="demos-title"
 			title="Aus den Live-Demos"
-			subtitle="Bildschirmaufnahmen echter Läufe, gekürzt, beschleunigt und ohne Ton. Jede App lässt sich selbst ausprobieren."
+			subtitle="Bildschirmaufnahmen echter Läufe, gekürzt, beschleunigt und meist ohne Ton. Jede App lässt sich selbst ausprobieren."
 			desktopHint="Die Punkte unter dem Video springen zu einzelnen Stellen."
 		/>
 		<DemoReel projects={projectEntries} />
@@ -65,10 +66,19 @@ const filterKinds = [...kindCounts.entries()]
 		<div data-reveal class="mt-6">
 			<DeployPipeline client:visible />
 		</div>
+		{
+			deployInfo.runUrl && (
+				<p data-reveal class="mt-3">
+					<a class="run-link" href={deployInfo.runUrl} target="_blank" rel="noopener noreferrer">
+						Diesen CI-Lauf auf GitHub ansehen<span class="sr-only"> (öffnet in neuem Tab)</span>
+					</a>
+				</p>
+			)
+		}
 	</TraceSection>
 
 	<TraceSection id="erfahrung">
-		<SectionHeading id="erfahrung-title" title="Stationen" />
+		<SectionHeading id="erfahrung-title" title="Werdegang" />
 		<Timeline />
 		<Skills />
 	</TraceSection>
@@ -83,3 +93,20 @@ const filterKinds = [...kindCounts.entries()]
 		<Contact />
 	</TraceSection>
 </BaseLayout>
+
+<style>
+	.run-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		font: 13px var(--font-mono);
+		color: var(--accent);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+		text-underline-offset: 3px;
+	}
+
+	.run-link:hover {
+		text-decoration-color: var(--accent);
+	}
+</style>
