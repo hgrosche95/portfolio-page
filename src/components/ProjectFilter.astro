@@ -10,7 +10,7 @@ interface Props {
 const { kinds, total } = Astro.props;
 
 const baseChipClass =
-	'inline-flex min-h-11 items-center gap-1 rounded border px-3 text-sm transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]';
+	'inline-flex min-h-11 items-center gap-1 rounded-md border px-3 text-sm transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]';
 const inactiveChipClass = 'border-[var(--color-border)] text-[var(--color-text-muted)]';
 const activeChipClass = 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]';
 ---

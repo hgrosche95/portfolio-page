@@ -1,6 +1,6 @@
 ---
 title: "Great Galguti Game"
-summary: "Echtzeit-Multiplayer-Kartenspiel für 3–8 Spieler:innen, mit Nutzerkonten, serverseitig validierten Zügen und Live-Spielstand über mehrere Clients hinweg."
+summary: "Echtzeit-Multiplayer-Kartenspiel für 3-8 Spieler:innen, mit Nutzerkonten, serverseitig validierten Zügen und Live-Spielstand über mehrere Clients hinweg."
 githubRepo: "great_galguti_game"
 techStack: ["TypeScript", "React", "Node.js", "WebSocket", "PostgreSQL", "Prisma", "JWT", "Vitest", "Docker", "Azure", "GitHub Actions"]
 order: 3
@@ -8,7 +8,7 @@ kind: fullstack
 liveUrl: "https://blue-sea-08b19cb0f.7.azurestaticapps.net/"
 liveLabel: "Live-Demo öffnen"
 liveStatusCheck: true
-hosting: "Static Web Apps · Container Apps · Neon"
+hosting: "Static Web Apps, Container Apps, Neon"
 decisions:
   - topic: "Spiellogik"
     rejected: ["im Server duplizieren"]
@@ -31,7 +31,7 @@ architecture:
     - id: others
       label: "Weitere Clients"
       kind: frontend
-      sub: "3–8 am Tisch"
+      sub: "3-8 am Tisch"
       lane: 0
       row: 1.3
       description: "Alle anderen Spieler:innen. Jede Änderung kommt per WebSocket an."

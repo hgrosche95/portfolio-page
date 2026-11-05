@@ -1,6 +1,5 @@
 ---
 import AgentConsole from './AgentConsole.astro';
-import { coreSkills, otherSkillCount } from '../data/skills';
 
 ---
 
@@ -67,14 +66,6 @@ import { coreSkills, otherSkillCount } from '../data/skills';
 				</a>
 			</div>
 
-			{/* Only the core stack here; the long tail sits under the career timeline,
-			    so the hero makes one claim instead of listing everything. */}
-			{/* Plain text, not chips: chips on this page are filter buttons, and these are not clickable. */}
-			<p data-boot-step style="--boot-delay: 280ms" class="hero-stack dot-list mt-7">
-				<span class="sr-only">Kern-Stack: </span>
-				{coreSkills.map((skill) => <span class="dot-item">{skill.name}</span>)}
-				<a href="#kenntnisse" class="more dot-item">und {otherSkillCount} weitere</a>
-			</p>
 			</div>
 		</div>
 
@@ -274,29 +265,6 @@ import { coreSkills, otherSkillCount } from '../data/skills';
 		font-weight: 400;
 		line-height: 1.4;
 		color: var(--ink);
-	}
-
-	.hero-stack {
-		max-width: 40rem;
-		font: 13px/1.6 var(--font-mono);
-		color: var(--ink);
-	}
-
-	.hero-stack .more {
-		display: inline-flex;
-		align-items: center;
-		min-height: 2.75rem;
-		font-family: var(--font-sans);
-		font-size: 14px;
-		color: var(--muted);
-		text-decoration: underline;
-		text-decoration-color: color-mix(in srgb, var(--muted) 40%, transparent);
-		text-underline-offset: 3px;
-	}
-
-	.hero-stack .more:hover {
-		color: var(--accent);
-		text-decoration-color: var(--accent);
 	}
 
 	.hero-intro strong {

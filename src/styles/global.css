@@ -83,6 +83,16 @@
   --text-project: clamp(24px, 2.6vw, 34px);
   --text-intro: clamp(19px, 1.7vw, 23px);
 
+  /*
+   * Corner radii, one rule for the whole site: 12px (0.75rem, rounded-xl)
+   * for frames around content (console, schematic, player, form, cards,
+   * dialogs); 6px (0.375rem, rounded-md) for controls and rows (buttons,
+   * inputs, tabs, chips, timeline entries). Exceptions: the phone frame in
+   * the player imitates a device, and circles stay circles.
+   */
+  --radius-frame: 0.75rem;
+  --radius-control: 0.375rem;
+
   /* Layout: content width, side gutter and the trace column. */
   --content-max: 1240px;
   --gutter: 20px;
@@ -350,19 +360,20 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
 }
 
 /* Live-demo button in the project index. A real button, not a
-   link-sized hint: trying the app is the point. Outline only, so it stays
-   quieter than the project title it sits next to; it fills on hover. */
+   link-sized hint: trying the app is the point. In the one accent (copper),
+   outline only, so it stays quieter than the project title beside it; it
+   fills on hover. Green stays reserved for real status (the "server awake"
+   check on project pages), so no decorative dot here. */
 .live-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.45rem 0.9rem;
-  border: 1px solid color-mix(in srgb, var(--color-live) 45%, transparent);
-  border-radius: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
+  border-radius: 0.375rem;
   background-color: transparent;
   font: 500 13px var(--font-sans);
-  color: var(--color-live);
+  color: var(--color-accent);
   text-decoration: none;
   white-space: nowrap;
   transition:
@@ -371,22 +382,8 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
 }
 
 .live-link:hover {
-  background-color: var(--color-live);
+  background-color: var(--color-accent);
   color: var(--color-bg);
-}
-
-.live-link:focus-visible {
-  outline: 2px solid var(--color-live);
-  outline-offset: 2px;
-}
-
-.live-link::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -467,7 +464,7 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
   height: 240px;
   object-fit: contain;
   background-color: var(--color-surface-raised);
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
 }
@@ -571,7 +568,7 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
 }
 
 .project-content code {
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   background-color: var(--color-surface-raised);
   padding: 0.1rem 0.3rem;
   font-family: var(--font-mono);

@@ -41,7 +41,7 @@ const searchProjects = (await getCollection('projects')).map((entry) => ({
 					<a
 						href={link.href}
 						class:list={[
-							'min-h-11 items-center rounded px-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
+							'min-h-11 items-center rounded-md px-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)] sm:px-2',
 							link.mobile ? 'inline-flex' : 'hidden sm:inline-flex',
 						]}
 					>
