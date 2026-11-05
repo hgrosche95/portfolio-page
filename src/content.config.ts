@@ -107,6 +107,12 @@ const projects = defineCollection({
     liveUrl: z.string().url().optional(),
     liveLabel: z.string().optional(),
     /**
+     * `demo`: something to try, shown as the prominent live button.
+     * `endpoint`: a technical endpoint (e.g. a health check returning JSON),
+     * shown as a plain link: it proves the service runs, but it is not a demo.
+     */
+    liveKind: z.enum(['demo', 'endpoint']).default('demo'),
+    /**
      * Shows a "server is awake / asleep" check next to the live button.
      * Only true for projects with a scale-to-zero backend behind the demo,
      * where the first request after idling can take 30-40s - without a
@@ -123,8 +129,9 @@ const projects = defineCollection({
      * Measured results, shown in the project's row on the homepage so the
      * claim "measurable agents" has numbers behind it. Only figures the
      * project's own repo documents; `source` links to where they come from.
-     * Values that change with every run (nightly evals) don't belong here as
-     * numbers: describe what is measured and link the live result instead.
+     * Values that change with every run (nightly evals) are read at build
+     * time instead (scripts/fetch-eval-stats.ts) and replace this field; here
+     * they stay as a fallback that only states what is measured.
      */
     metrics: z
       .object({

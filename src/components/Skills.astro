@@ -2,30 +2,41 @@
 import { skillGroups } from '../data/skills';
 ---
 
-{/* The full stack, grouped by domain. The hero shows only the core chips and links here. */}
-<div
-	data-reveal
-	class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
->
+{/*
+	The full stack, grouped by domain. Plain text lists, not chips: chips on
+	this page are filter buttons, and these are not clickable. Core skills
+	(the ones the hero claims) are set in full ink and weight, the rest muted.
+*/}
+<div id="kenntnisse" data-reveal class="mt-10 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
 	{
 		skillGroups.map((group) => (
 			<div>
-				<h3 class="text-sm font-semibold text-[var(--color-text)]">{group.label}</h3>
-				<div class="mt-3 flex flex-wrap gap-1.5">
+				<h3 class="kicker text-[var(--muted)]">{group.label}</h3>
+				<ul class="skills dot-list mt-3">
 					{group.skills.map((skill) => (
-						<span
-							class:list={[
-								'rounded border px-2 py-0.5 font-mono text-xs',
-								skill.core
-									? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-									: 'border-[var(--color-border)] text-[var(--color-text-muted)]',
-							]}
-						>
+						<li class:list={['dot-item', { core: skill.core }]}>
 							{skill.name}
-						</span>
+							{skill.core && <span class="sr-only"> (Schwerpunkt)</span>}
+						</li>
 					))}
-				</div>
+				</ul>
 			</div>
 		))
 	}
 </div>
+
+<style>
+	#kenntnisse {
+		scroll-margin-top: 5rem;
+	}
+
+	.skills {
+		font: 13px/1.7 var(--font-mono);
+		color: var(--muted);
+	}
+
+	.skills .core {
+		font-weight: 600;
+		color: var(--ink);
+	}
+</style>

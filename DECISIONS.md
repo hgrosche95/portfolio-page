@@ -137,7 +137,7 @@ but doing it well for the MVP would slow the initial ship.
 
 ## Visual identity
 
-Dark mode by default with a light-mode toggle, in a "Schaltplan" (circuit diagram) aesthetic:
+Follows the system colour scheme, with a toggle that remembers an explicit choice, in a "Schaltplan" (circuit diagram) aesthetic:
 cool slate neutrals on a faint 24px grid, copper as the single accent, solder-pad markers on
 section headings and a trace in the left margin that fills with scroll progress. Type is
 Bricolage Grotesque for headings, IBM Plex Sans for text and IBM Plex Mono for data.

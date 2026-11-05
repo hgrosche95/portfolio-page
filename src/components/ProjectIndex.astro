@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import Schematic from './Schematic.astro';
 import githubStats from '../data/github-stats.json';
+import evalStats from '../data/eval-stats.json';
 import { kindLabels } from '../lib/project-kinds';
 
 interface Props {
@@ -12,6 +13,11 @@ const { projects } = Astro.props;
 
 type RepoStats = { stars: number; language: string | null; lastPushedAt: string };
 const stats = githubStats as Record<string, RepoStats | undefined>;
+
+type Metrics = NonNullable<CollectionEntry<'projects'>['data']['metrics']>;
+// Results of the latest nightly eval run, fetched at build time
+// (scripts/fetch-eval-stats.ts); they replace the static fallback in the content file.
+const liveMetrics = evalStats as Record<string, Metrics | undefined>;
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' });
 
@@ -29,6 +35,7 @@ const MAX_TAGS = 4;
 			const repo = stats[data.githubRepo];
 			const extraTags = data.techStack.length - MAX_TAGS;
 			const decision = data.decisions?.[0];
+			const metrics = liveMetrics[entry.id] ?? data.metrics;
 			return (
 				<article class="row trace-station" data-project-kind={data.kind} data-trace-stop data-reveal>
 					{/* The head is plain content, not part of the toggle: its links
@@ -44,7 +51,9 @@ const MAX_TAGS = 4;
 								<h3 style={`view-transition-name: project-${entry.id}`}>
 									<a href={`/projects/${entry.id}`}>{data.title}</a>
 								</h3>
-								{data.liveUrl && (
+								{/* Only something to try gets the live button; a technical
+								    endpoint stays a plain link in the details below. */}
+								{data.liveUrl && data.liveKind === 'demo' && (
 									<a class="live-link" href={data.liveUrl} target="_blank" rel="noopener noreferrer">
 										{data.liveLabel ?? 'Live ansehen'}
 										<span class="sr-only"> (öffnet in neuem Tab)</span>
@@ -54,18 +63,18 @@ const MAX_TAGS = 4;
 							<span class="summary">{data.summary}</span>
 							{/* Measured results, visible even with the row closed: the
 							    evidence behind the hero's "measurable agents". */}
-							{data.metrics && (
+							{metrics && (
 								<span class="metrics">
 									<span class="metric-list" role="list">
-										{data.metrics.items.map((m) => (
+										{metrics.items.map((m) => (
 											<span class="metric" role="listitem">
 												<span class="value">{m.value}</span>
 												<span class="mlabel">{m.label}</span>
 											</span>
 										))}
 									</span>
-									<a class="metric-source" href={data.metrics.source.url} target="_blank" rel="noopener noreferrer">
-										{data.metrics.source.label}
+									<a class="metric-source" href={metrics.source.url} target="_blank" rel="noopener noreferrer">
+										{metrics.source.label}
 										<span class="sr-only"> (öffnet in neuem Tab)</span>
 									</a>
 								</span>

@@ -273,6 +273,38 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
   }
 }
 
+/*
+ * Inline list with a small copper dot between items (hero stack, skills).
+ * Every item carries the dot in front of it. The list is pulled left by
+ * exactly one separator, and that strip is clipped away: so the dot that
+ * would start a line is never shown, and no line begins or ends with one.
+ * Generous insets elsewhere keep focus rings visible.
+ */
+.dot-list {
+  --dot-gap: 0.6rem;
+  --dot-sep: calc(2 * var(--dot-gap) + 4px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.25rem;
+  /* margin-left only, so margin-top utilities on the element still apply. */
+  margin-left: calc(-1 * var(--dot-sep));
+  padding: 0;
+  clip-path: inset(-0.75rem -0.75rem -0.75rem var(--dot-sep));
+  list-style: none;
+}
+
+.dot-list > .dot-item::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin: 0 var(--dot-gap);
+  vertical-align: middle;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+}
+
 /* Ring with a filled centre, the way a solder pad looks on a board. Marks
    section headings as stations along the trace. */
 .solder-pad {
@@ -318,16 +350,17 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
 }
 
 /* Live-demo button in the project index. A real button, not a
-   link-sized hint: trying the app is the point. */
+   link-sized hint: trying the app is the point. Outline only, so it stays
+   quieter than the project title it sits next to; it fills on hover. */
 .live-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-live);
+  border: 1px solid color-mix(in srgb, var(--color-live) 45%, transparent);
   border-radius: 0.4rem;
-  background-color: color-mix(in srgb, var(--color-live) 12%, transparent);
+  background-color: transparent;
   font: 500 13px var(--font-sans);
   color: var(--color-live);
   text-decoration: none;
