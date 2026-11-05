@@ -64,6 +64,18 @@ const scenarioSteps = scenarios.map((scenario) =>
 	}),
 );
 
+/*
+ * Narrow fallback for the compact diagram: the lanes as stacked groups, in
+ * row order. A phone would otherwise shrink the whole drawing to ~6px text.
+ * The wiring is left out there; the project page has the full diagram.
+ */
+const stackedLanes = lanes.map((title, lane) => ({
+	title,
+	nodes: architecture.nodes
+		.filter((node) => (node.lane ?? 0) === lane)
+		.sort((a, b) => (a.row ?? 0) - (b.row ?? 0)),
+}));
+
 const TEXT_INSET = 12;
 const top = -30;
 const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
@@ -87,6 +99,25 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 	}
 	<div class="body">
 		<div class="stage">
+			{
+				compact && (
+					<ol class="stack" aria-label="Architektur nach Schichten">
+						{stackedLanes.map((lane) => (
+							<li>
+								<span class="stack-title">{lane.title}</span>
+								<span class="stack-nodes">
+									{lane.nodes.map((node) => (
+										<span class:list={['stack-node', kinds[node.kind].className]}>
+											<span class="stack-label">{node.label}</span>
+											{node.sub && <span class="stack-sub">{node.sub}</span>}
+										</span>
+									))}
+								</span>
+							</li>
+						))}
+					</ol>
+				)
+			}
 			<div class="canvas">
 				<svg viewBox={viewBox} role="img" aria-label={`Architektur: ${architecture.nodes.map((node) => node.label).join(', ')}`}>
 					{
@@ -675,6 +706,103 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 
 	.compact .node text.sub {
 		font-size: 12px;
+	}
+
+	/* The stacked fallback; shown instead of the drawing on narrow widths.
+	   Only one of the two is ever displayed, so screen readers get exactly
+	   one: the svg's role="img" label, or this list. */
+	.stack {
+		display: none;
+	}
+
+	@container (max-width: 559px) {
+		.compact .stack {
+			position: relative;
+			display: grid;
+			gap: 1.1rem;
+			margin: 0;
+			padding: 1rem 0.875rem 1rem 2.1rem;
+			list-style: none;
+		}
+
+		/* A trace through the lanes, top to bottom, like the request flows. */
+		.compact .stack::before {
+			content: '';
+			position: absolute;
+			top: 1.45rem;
+			bottom: 1.6rem;
+			left: 1.05rem;
+			width: 2px;
+			background-color: var(--color-accent);
+		}
+
+		.compact .stack > li {
+			position: relative;
+			display: grid;
+			gap: 0.5rem;
+		}
+
+		.compact .stack > li::before {
+			content: '';
+			position: absolute;
+			top: 0.3rem;
+			left: calc(-1.05rem - 5px);
+			width: 10px;
+			height: 10px;
+			border: 2px solid var(--color-accent);
+			border-radius: 50%;
+			background-color: var(--color-surface);
+			box-sizing: border-box;
+		}
+
+		.compact .stack-title {
+			font: 11px/1.4 var(--font-mono);
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+			color: var(--color-text-muted);
+		}
+
+		.compact .stack-nodes {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+			gap: 0.5rem;
+		}
+
+		.compact .stack-node {
+			display: grid;
+			gap: 0.1rem;
+			padding: 0.5rem 0.65rem;
+			border: 1px solid var(--color-border-strong);
+			border-radius: 6px;
+			background-color: var(--color-bg);
+		}
+
+		.compact .stack-node.k-client {
+			border-color: var(--color-text);
+		}
+
+		.compact .stack-node.k-external {
+			border-style: dashed;
+		}
+
+		.compact .stack-node.k-data {
+			border-color: var(--color-accent);
+			background-color: var(--color-accent-soft);
+		}
+
+		.compact .stack-label {
+			font: 13px/1.35 var(--font-mono);
+			color: var(--color-text);
+		}
+
+		.compact .stack-sub {
+			font: 11.5px/1.35 var(--font-mono);
+			color: var(--color-text-muted);
+		}
+
+		.compact .canvas {
+			display: none;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
