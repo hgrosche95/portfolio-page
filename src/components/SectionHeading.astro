@@ -4,17 +4,19 @@ interface Props {
 	subtitle?: string;
 	/** Appended to the subtitle, but only from the `sm` breakpoint up. */
 	desktopHint?: string;
+	/** Id for the h2, so the surrounding section can be named by it (aria-labelledby). */
+	id?: string;
 }
 
-const { title, subtitle, desktopHint } = Astro.props;
+const { title, subtitle, desktopHint, id } = Astro.props;
 ---
 
 <div data-reveal>
 	{/* The node on the homepage trace (TraceSection) marks this heading, so it needs no pad of its own. */}
-	<h2 class="section-title">{title}</h2>
+	<h2 id={id} class="section-title">{title}</h2>
 	{
 		subtitle && (
-			<p class="mt-4 max-w-2xl text-base leading-relaxed text-[var(--muted)]">
+			<p class="mt-4 max-w-[62ch] text-base leading-relaxed text-[var(--muted)]">
 				{subtitle}
 				{desktopHint && <span class="hidden sm:inline"> {desktopHint}</span>}
 			</p>

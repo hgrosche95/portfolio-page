@@ -53,16 +53,16 @@ const entries = [
 		],
 	},
 	{
-		role: 'Praktikum',
-		company: 'Heinrich-Heine-Universität, Düsseldorf',
-		period: '04/2019 – 08/2019',
-		details: ['Implementierung und Pflege von Datenbanken mit PHP und SQL'],
-	},
-	{
 		role: 'Bachelor Informatik',
 		company: 'Heinrich-Heine-Universität, Düsseldorf',
 		period: '2020',
 		details: ['Bachelorabschluss Informatik'],
+	},
+	{
+		role: 'Praktikum',
+		company: 'Heinrich-Heine-Universität, Düsseldorf',
+		period: '04/2019 – 08/2019',
+		details: ['Implementierung und Pflege von Datenbanken mit PHP und SQL'],
 	},
 ];
 ---
@@ -75,7 +75,7 @@ const entries = [
 			<details class="group rounded border border-[var(--color-border)] px-4 open:border-[var(--color-accent)]">
 				<summary class="flex min-h-11 cursor-pointer list-none items-start justify-between gap-4 py-3">
 					<span class="min-w-0">
-						<span class="font-medium text-[var(--color-text)]">{entry.role}</span>
+						<span class="font-medium text-[var(--color-text)] hyphens-auto [overflow-wrap:anywhere]">{entry.role}</span>
 						<span class="block text-[var(--color-text-muted)] sm:inline">
 							<span class="hidden sm:inline" aria-hidden="true"> · </span>
 							{entry.company}

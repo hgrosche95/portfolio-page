@@ -121,6 +121,21 @@ export default function DeployPipeline() {
     animated: !reduceMotion && index < activeStage,
   }));
 
+  // Narrow screens get a plain vertical list at body size instead of the
+  // diagram: fitView would scale five stacked boxes down to unreadable text.
+  if (stacked) {
+    return (
+      <ol className="pipeline-list" aria-label="Deployment-Pipeline dieser Seite">
+        {stages.map((stage, index) => (
+          <li key={stage.id} data-active={index <= activeStage ? '' : undefined}>
+            <span className="stage">{stage.label}</span>
+            <span className="detail">{stage.sublabel}</span>
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
   return (
     <div
       className="static-flow"

@@ -803,7 +803,8 @@ const device = (d: (typeof demos)[number]) =>
 	}
 
 	.caption {
-		max-width: 44rem;
+		/* Around 60 characters per line, the comfortable reading measure. */
+		max-width: 62ch;
 		margin: 0.3rem 0 0;
 		font-size: 0.9rem;
 		line-height: 1.6;
