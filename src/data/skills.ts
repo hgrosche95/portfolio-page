@@ -1,8 +1,7 @@
 /**
  * Skills grouped by domain rather than listed as one flat row, so the core
- * stack reads louder than the long tail. `core: true` marks the technologies
- * the hero actually claims as primary: only those are shown there, the full
- * list sits under the career timeline.
+ * stack reads louder than the long tail. `core: true` marks the primary
+ * technologies; the list under the career timeline sets them in full weight.
  */
 export const skillGroups = [
 	{
@@ -72,6 +71,3 @@ export const skillGroups = [
 		],
 	},
 ];
-
-export const coreSkills = skillGroups.flatMap((group) => group.skills.filter((skill) => skill.core));
-export const otherSkillCount = skillGroups.reduce((sum, group) => sum + group.skills.length, 0) - coreSkills.length;

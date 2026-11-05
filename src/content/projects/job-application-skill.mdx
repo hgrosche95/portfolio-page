@@ -9,7 +9,7 @@ liveUrl: "https://job-application-skill-dev-api.proudwave-8f5d275a.germanywestce
 liveLabel: "Health-Check öffnen"
 liveKind: endpoint
 liveStatusCheck: true
-hosting: "Container Apps · Bicep"
+hosting: "Container Apps, Bicep"
 decisions:
   - topic: "Zugang"
     rejected: ["nur MCP", "nur REST"]
@@ -88,7 +88,7 @@ architecture:
     - name: "Jobbörse (n8n)"
       steps:
         - { from: n8n, to: api, label: "match_job_posting", detail: "per REST" }
-        - { from: api, to: llm, label: "Abgleich", detail: "3–5 Anforderungen gegen den Lebenslauf" }
+        - { from: api, to: llm, label: "Abgleich", detail: "3-5 Anforderungen gegen den Lebenslauf" }
         - { from: llm, to: api, label: "Bewertung" }
         - { from: api, to: langfuse, label: "Trace" }
         - { from: api, to: n8n, label: "Treffer", detail: "bester: 5/5" }

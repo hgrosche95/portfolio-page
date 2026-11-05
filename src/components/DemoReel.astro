@@ -48,8 +48,8 @@ const clock = (s: number) => {
 };
 const device = (d: (typeof demos)[number]) =>
 	d.format === 'mobile'
-		? `Mobil · iPhone ${d.width / 2}×${d.height / 2}`
-		: `${d.sound || d.trailer ? 'Trailer' : 'Live-Demo'} · ${d.width}×${d.height}`;
+		? `Mobil, iPhone ${d.width / 2}×${d.height / 2}`
+		: `${d.sound || d.trailer ? 'Trailer' : 'Live-Demo'}, ${d.width}×${d.height}`;
 ---
 
 <div
@@ -446,7 +446,7 @@ const device = (d: (typeof demos)[number]) =>
 		min-height: 2.75rem;
 		padding: 0.55rem 0.7rem 0;
 		border: 1px solid var(--color-border);
-		border-radius: 0.5rem;
+		border-radius: 0.375rem;
 		background-color: var(--color-surface);
 		color: var(--color-text-muted);
 		text-align: left;
@@ -606,7 +606,7 @@ const device = (d: (typeof demos)[number]) =>
 		width: 100%;
 		overflow: hidden;
 		border: 1px solid var(--color-border);
-		border-radius: 0.4rem;
+		border-radius: 0.375rem;
 		background-color: var(--color-bg);
 	}
 
@@ -677,7 +677,7 @@ const device = (d: (typeof demos)[number]) =>
 		min-height: 2.75rem;
 		padding: 0.45rem 0.8rem;
 		border: 1px solid var(--color-border-strong);
-		border-radius: 0.5rem;
+		border-radius: 0.375rem;
 		background-color: var(--color-surface);
 		box-shadow: 0 2px 10px rgb(0 0 0 / 0.18);
 		font: 12.5px var(--font-mono);

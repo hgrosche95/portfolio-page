@@ -38,7 +38,7 @@ const scenarios: { name: string; steps: Step[] }[] = [
 			{ text: '› 4 Tage Porto im Mai, mittleres Budget', tone: 'user', wire: 'web-api', lit: ['web', 'api'] },
 			{ text: '→ planner: llm.chat(Anfrage) ohne tools', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
 			{ text: '← Aufgaben: Wetter, Unterkünfte, Anreise, Wissensbasis', tone: 'in', wire: 'api-llm', back: true, lit: ['llm', 'api'] },
-			{ text: '→ research: get_weather · search_lodging · estimate_transport', tone: 'out', wire: 'api-ext', lit: ['api', 'ext'] },
+			{ text: '→ research: get_weather, search_lodging, estimate_transport', tone: 'out', wire: 'api-ext', lit: ['api', 'ext'] },
 			{ text: '→ research: search_travel_knowledge("Porto")', tone: 'out', wire: 'api-rag', lit: ['api', 'rag'] },
 			{ text: '← Recherche fertig (parallel, ohne LLM)', tone: 'in', wire: 'api-ext', back: true, lit: ['ext', 'api'] },
 			{ text: '→ planner: llm.chat(Recherche → Tagesplan)', tone: 'out', wire: 'api-llm', lit: ['api', 'llm'] },
@@ -432,7 +432,7 @@ const drawings = [
 	.foot button {
 		position: relative;
 		border: 1px solid var(--color-border-strong);
-		border-radius: 0.3rem;
+		border-radius: 0.375rem;
 		padding: 0.3rem 0.65rem;
 		font: 500 12px var(--font-mono);
 		color: var(--color-text-muted);
