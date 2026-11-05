@@ -6,9 +6,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "predev": "node scripts/generate-deploy-info.ts && node scripts/fetch-github-stats.ts && node scripts/generate-og-images.ts",
+    "predev": "node scripts/generate-deploy-info.ts && node scripts/fetch-github-stats.ts && node scripts/fetch-eval-stats.ts && node scripts/generate-og-images.ts",
     "dev": "astro dev",
-    "prebuild": "node scripts/generate-deploy-info.ts && node scripts/fetch-github-stats.ts && node scripts/generate-og-images.ts",
+    "prebuild": "node scripts/generate-deploy-info.ts && node scripts/fetch-github-stats.ts && node scripts/fetch-eval-stats.ts && node scripts/generate-og-images.ts",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",

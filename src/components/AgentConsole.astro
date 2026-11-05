@@ -216,6 +216,9 @@ const drawings = [
 			log.textContent = '';
 
 			if (reduceMotion) {
+				// The whole run at once, so the log takes the height it needs
+				// instead of the fixed window the typing animation scrolls through.
+				log.style.height = 'auto';
 				for (const step of steps) {
 					const li = document.createElement('li');
 					li.className = step.tone;
@@ -363,6 +366,12 @@ const drawings = [
 
 	.packet {
 		fill: var(--color-accent);
+	}
+
+	/* Without JS the first run is a plain list: show all of it. The script sets
+	   aria-hidden when it takes over and types into this fixed window. */
+	.log:not([aria-hidden]) {
+		height: auto !important;
 	}
 
 	.log {

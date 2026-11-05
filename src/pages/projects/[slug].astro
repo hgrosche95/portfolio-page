@@ -108,7 +108,14 @@ const sheet = [
 								href={entry.data.liveUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="inline-flex items-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85"
+								class:list={[
+									'inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors',
+									// A health-check endpoint is proof of a running service, not a demo:
+									// secondary style, so it doesn't pose as the main thing to try.
+									entry.data.liveKind === 'endpoint'
+										? 'border border-[var(--color-border-strong)] text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
+										: 'bg-[var(--color-accent)] text-[var(--color-bg)] transition-opacity hover:opacity-85',
+								]}
 							>
 								{entry.data.liveLabel ?? 'Live ansehen'}
 								<span class="sr-only">(öffnet in neuem Tab)</span>
