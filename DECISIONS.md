@@ -138,7 +138,7 @@ but doing it well for the MVP would slow the initial ship.
 ## Visual identity
 
 Follows the system colour scheme, with a toggle that remembers an explicit choice, in a "Schaltplan" (circuit diagram) aesthetic:
-cool slate neutrals on a faint 24px grid, copper as the single accent, solder-pad markers on
+in light mode a muted solder-mask green with a 24px grid of via dots (in dark mode cool slate), copper as the single accent, solder-pad markers on
 section headings and a trace in the left margin that fills with scroll progress. Type is
 Bricolage Grotesque for headings, IBM Plex Sans for text and IBM Plex Mono for data.
 
@@ -162,6 +162,12 @@ a reading line as the page scrolls, and every project row and every career entry
 with its own node on it, so the list and the timeline read as parts of the same circuit. Without
 JavaScript it simply stays copper. The hero's stretch of the trace stays lit throughout, since
 the branch to the agent console starts on it.
+
+The light mode was later moved from near-white slate to the circuit-board green: background and
+surfaces had been almost the same lightness, so the page read flat and white. Green solder mask
+under copper is the literal image of the motif, gives the light surfaces (console, schematics,
+form) something to sit on, and keeps the copper the only accent. The copper is a shade darker in
+light mode to stay above 4.5:1 on the green.
 
 Uses an actual personal photo rather than an icon/initials treatment, for the same reason a face
 usually helps in recruiting contexts: it builds trust faster than an abstraction.
