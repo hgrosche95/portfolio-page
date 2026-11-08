@@ -16,9 +16,16 @@ interface Props {
 	compact?: boolean;
 	/** Text in front of the scenario buttons. */
 	scenarioLabel?: string;
+	/**
+	 * Play the first scenario exactly once, when the diagram first scrolls
+	 * into view: the wires draw in, a packet runs the flow, and the route
+	 * stays lit. No buttons, no loop. For the homepage project rows, where a
+	 * looping animation per row would be noise.
+	 */
+	once?: boolean;
 }
 
-const { architecture, width, compact = false, scenarioLabel = 'Ablauf:' } = Astro.props;
+const { architecture, width, compact = false, scenarioLabel = 'Ablauf:', once = false } = Astro.props;
 // The schema guarantees lane + row on every node once `lanes` is set, and
 // the page only renders this component when it is.
 const lanes = architecture.lanes ?? [];
@@ -84,9 +91,10 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 <figure
 	class:list={['schematic', { compact }]}
 	data-schematic
+	data-once={once ? '' : undefined}
 >
 	{
-		scenarios.length > 0 && (
+		scenarios.length > 0 && !once && (
 			<div class="head" data-scenario-buttons hidden>
 				<span>{scenarioLabel}</span>
 				{scenarios.map((scenario, i) => (
@@ -128,7 +136,7 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 						))
 					}
 					{layout.dividers.map((x) => <line class="divider" x1={x} y1={-24} x2={x} y2={layout.height + 8} />)}
-					{layout.wires.map((wire) => <path class="wire" data-wire={wire.key} d={wire.d} />)}
+					{layout.wires.map((wire) => <path class="wire" data-wire={wire.key} d={wire.d} pathLength="1" />)}
 					{layout.wires.flatMap((wire) => wire.vias.map((via) => <circle class="via" cx={via.x} cy={via.y} r="2.4" />))}
 					{
 						architecture.nodes.map((node) => {
@@ -261,7 +269,8 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 			select(figure.querySelector('[data-first-node]').dataset.firstNode);
 		}
 
-		if (!buttons.length) return;
+		const once = figure.hasAttribute('data-once');
+		if (!buttons.length && !(once && panels.length)) return;
 
 		// --- Scenario playback ---------------------------------------------
 		// Each play() bumps `run`; a loop that notices it is outdated stops
@@ -304,6 +313,9 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 				return;
 			}
 
+			// Once-mode: draw the wires in first, then run the packet through.
+			if (once) figure.classList.add('drawing');
+
 			let k = 0;
 			function next() {
 				if (token !== run) return;
@@ -314,6 +326,8 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 				if (k >= steps.length) {
 					light([]);
 					packet.setAttribute('cx', '-40');
+					// Once-mode ends here: the route stays lit, nothing loops.
+					if (once) return;
 					steps.forEach(function (step) {
 						step.classList.remove('on');
 					});
@@ -351,7 +365,9 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 					else setTimeout(next, 380);
 				})(start);
 			}
-			next();
+			// Once-mode: the packet starts after the wires have drawn in.
+			if (once) setTimeout(next, 700);
+			else next();
 		}
 
 		// Pause while scrolled out of view. If the observer is unavailable the
@@ -360,6 +376,27 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 			new IntersectionObserver(function (entries) {
 				visible = entries[0].isIntersecting;
 			}).observe(figure);
+		}
+
+		if (once) {
+			// Start the first time the drawing is actually on screen: a closed
+			// row (or the stacked phone layout) has no box, so it waits until
+			// the row is opened or the viewport grows.
+			const svg = figure.querySelector('svg');
+			if (!('IntersectionObserver' in window)) {
+				play(0);
+				return;
+			}
+			const starter = new IntersectionObserver(
+				function (entries) {
+					if (!entries[0].isIntersecting || !svg.getClientRects().length) return;
+					starter.disconnect();
+					play(0);
+				},
+				{ threshold: 0.35 },
+			);
+			starter.observe(svg);
+			return;
 		}
 
 		figure.querySelector('[data-scenario-buttons]').hidden = false;
@@ -462,6 +499,21 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 		stroke: var(--color-border-strong);
 		stroke-width: 1.4;
 		transition: stroke 0.25s;
+	}
+
+	/* Once-mode draw-in: every wire traces itself from its start. */
+	.drawing .wire {
+		stroke-dasharray: 1;
+		animation: wire-draw 0.7s cubic-bezier(0.6, 0.1, 0.3, 1) both;
+	}
+
+	@keyframes wire-draw {
+		from {
+			stroke-dashoffset: 1;
+		}
+		to {
+			stroke-dashoffset: 0;
+		}
 	}
 
 	.wire.hot {
@@ -806,6 +858,10 @@ const viewBox = `-6 ${top} ${layout.width + 12} ${layout.height - top + 8}`;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.drawing .wire {
+			animation: none;
+		}
+
 		.wire,
 		.node rect,
 		.steps li {

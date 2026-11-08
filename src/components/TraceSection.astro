@@ -34,7 +34,9 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 	<div class="ts-wrap" style={nodeY ? `--node-y: ${nodeY}` : undefined}>
 		<div class="ts-rail" aria-hidden="true">
 			{variant === 'start' && <span class="ts-lead" />}
-			<span class="ts-line" data-trace-line />
+			<span class="ts-line" data-trace-line>
+				<span class="ts-signal" />
+			</span>
 			<span class="ts-node" data-trace-node data-trace-stop />
 		</div>
 		<div class="ts-content">
@@ -113,6 +115,29 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 		transform: none;
 	}
 
+	/*
+	 * The signal: a packet riding the tip of the copper fill, like the one in
+	 * the hero console. Shown only on the stretch the reader is in (the
+	 * script sets data-signal there), and only with motion allowed.
+	 */
+	.ts-signal {
+		display: none;
+	}
+
+	:global(html.trace-live) .ts-line[data-signal] .ts-signal {
+		position: absolute;
+		z-index: 1;
+		top: calc(var(--fill, 0) * 100%);
+		left: 50%;
+		display: block;
+		width: 8px;
+		height: 8px;
+		translate: -50% -50%;
+		border-radius: 50%;
+		background-color: var(--ink);
+		box-shadow: 0 0 0 3px var(--bg);
+	}
+
 	[data-variant='start'] .ts-line {
 		top: var(--node-y);
 	}
@@ -168,10 +193,28 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 		background-color: var(--color-border-strong);
 	}
 
+	/* A node the signal has just reached flashes once (class set by the script). */
+	.ts-node:global(.flash) {
+		animation: node-flash 0.7s ease-out;
+	}
+
+	@keyframes node-flash {
+		from {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+		}
+		to {
+			box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent);
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.ts-lead,
 		.ts-node {
 			transition: none;
+		}
+
+		.ts-signal {
+			display: none !important;
 		}
 	}
 </style>
@@ -181,7 +224,25 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 	const READING_LINE = 0.55;
 	const root = document.documentElement;
 	const lines = Array.from(document.querySelectorAll<HTMLElement>('[data-trace-line]'));
+	// The hero's stretch is always lit (see the CSS), so no signal rides it.
+	const rideable = new Set(lines.filter((el) => !el.closest('[data-variant="start"]')));
 	const stops = Array.from(document.querySelectorAll<HTMLElement>('[data-trace-stop]'));
+	const motion = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+	// The first pass only records what is already reached on load; flashes
+	// and the heading light-up are for nodes the reader scrolls past.
+	let settled = false;
+
+	/** A node the signal just reached: flash it, and light its section's title once. */
+	function arrive(stop: HTMLElement) {
+		if (!motion) return;
+		stop.classList.remove('flash');
+		void stop.offsetWidth; // restart the animation if it is still running
+		stop.classList.add('flash');
+		stop.addEventListener('animationend', () => stop.classList.remove('flash'), { once: true });
+		if (!stop.hasAttribute('data-trace-node')) return;
+		const title = stop.closest('.trace-section')?.querySelector<HTMLElement>('[data-letters]');
+		if (title && !title.classList.contains('lit')) title.classList.add('lit');
+	}
 
 	if (lines.length) {
 		root.classList.add('trace-live');
@@ -197,14 +258,19 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 				const box = el.getBoundingClientRect();
 				const fill = atEnd ? 1 : Math.max(0, Math.min(1, (line - box.top) / box.height));
 				el.style.setProperty('--fill', fill.toFixed(4));
+				// The signal rides the stretch the reading line is currently on.
+				el.toggleAttribute('data-signal', motion && rideable.has(el) && fill > 0 && fill < 1);
 			}
 			for (const stop of stops) {
 				// Hidden stations (filtered-out projects) have no box; skip them.
 				if (!stop.getClientRects().length) continue;
 				const rect = stop.getBoundingClientRect();
 				const y = rect.top + Math.min(rect.height / 2, 24);
-				stop.classList.toggle('reached', atEnd || y <= line);
+				const reached = atEnd || y <= line;
+				if (reached && settled && !stop.classList.contains('reached')) arrive(stop);
+				stop.classList.toggle('reached', reached);
 			}
+			settled = true;
 		};
 
 		const schedule = () => {

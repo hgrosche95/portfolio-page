@@ -13,7 +13,12 @@ const { title, subtitle, desktopHint, id } = Astro.props;
 
 <div data-reveal>
 	{/* The node on the homepage trace (TraceSection) marks this heading, so it needs no pad of its own. */}
-	<h2 id={id} class="section-title">{title}</h2>
+	{/* One span per letter so the trace signal can light them in turn (see
+	    TraceSection); screen readers get the plain title instead. */}
+	<h2 id={id} class="section-title" data-letters>
+		<span aria-hidden="true">{[...title].map((c, i) => (c === ' ' ? ' ' : <span class="ch" style={`--i: ${i}`}>{c}</span>))}</span>
+		<span class="sr-only">{title}</span>
+	</h2>
 	{
 		subtitle && (
 			<p class="mt-4 max-w-[62ch] text-base leading-relaxed text-[var(--muted)]">
@@ -34,5 +39,28 @@ const { title, subtitle, desktopHint, id } = Astro.props;
 		letter-spacing: -0.03em;
 		color: var(--ink);
 		text-wrap: balance;
+	}
+
+	/* Lit by the trace signal on its way down: copper for a moment, letter by
+	   letter, then back to ink. Same gesture as the hero name on load. */
+	.section-title.lit .ch {
+		animation: ch-lit 0.9s ease-out both;
+		animation-delay: calc(var(--i) * 28ms);
+	}
+
+	@keyframes ch-lit {
+		0%,
+		100% {
+			color: var(--ink);
+		}
+		25% {
+			color: var(--accent);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.section-title.lit .ch {
+			animation: none;
+		}
 	}
 </style>

@@ -267,6 +267,20 @@ body {
     background-color 0.3s;
 }
 
+/* Flashes once when the trace signal reaches it (class set by TraceSection). */
+.ts-content .trace-station.flash::after {
+  animation: station-flash 0.7s ease-out;
+}
+
+@keyframes station-flash {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
 html.trace-live .ts-content .trace-station:not(.reached)::after {
   border-color: var(--color-border-strong);
 }
