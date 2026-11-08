@@ -250,7 +250,7 @@ body {
   transition: transform 0.3s ease;
 }
 
-.ts-content .trace-station:has(> details[open])::before {
+.ts-content .trace-station:has(> details[open], > .timeline-static)::before {
   transform: scaleX(1);
 }
 
@@ -285,7 +285,7 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
   border-color: var(--color-border-strong);
 }
 
-.ts-content .trace-station:has(> details[open])::after {
+.ts-content .trace-station:has(> details[open], > .timeline-static)::after {
   border-color: var(--accent);
   background-color: var(--accent);
 }

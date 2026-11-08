@@ -1,6 +1,14 @@
 ---
 // Kept in step with the CV (public/cv-henrik-grosche.pdf).
-const entries = [
+// An entry without details renders as a plain row instead of a collapsible
+// one: there is nothing to open. Add details and it becomes collapsible.
+const entries: { role: string; company: string; period: string; details: string[] }[] = [
+	{
+		role: 'Softwareentwickler für KI-Produkte',
+		company: 'opta data',
+		period: '11/2026 - heute',
+		details: [],
+	},
 	{
 		role: 'KI-Engineering: eigene Projekte',
 		company: 'Auswahl, weitere Projekte auf github.com/hgrosche95',
@@ -65,15 +73,29 @@ const entries = [
 		details: ['Implementierung und Pflege von Datenbanken mit PHP und SQL'],
 	},
 ];
+
+// The two most recent stations with details start open: they hold what a reader scans for.
+const withDetails = entries.filter((entry) => entry.details.length > 0);
 ---
 
 <div class="mt-4 space-y-2 text-sm">
 	{
-		// The two most recent stations start open: they hold what a reader scans for.
-		entries.map((entry, i) => (
+		entries.map((entry) => (
 			// Each entry is a station on the homepage trace (see .trace-station in global.css).
 			<div class="trace-station" style="--station-y: 1.4rem" data-trace-stop>
-			<details open={i < 2} class="group rounded-md border border-[var(--color-border)] px-4 open:border-[var(--color-accent)]">
+			{entry.details.length === 0 ? (
+				<div class="timeline-static flex min-h-11 flex-col-reverse gap-1 rounded-md border border-[var(--color-accent)] px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+					<span class="min-w-0">
+						<span class="font-medium text-[var(--color-text)] hyphens-auto [overflow-wrap:anywhere]">{entry.role}</span>
+						<span class="block text-[var(--color-text-muted)] sm:inline">
+							<span class="hidden sm:inline" aria-hidden="true"> · </span>
+							{entry.company}
+						</span>
+					</span>
+					<span class="shrink-0 pt-0.5 font-mono text-xs text-[var(--color-accent)] tabular-nums">{entry.period}</span>
+				</div>
+			) : (
+			<details open={withDetails.indexOf(entry) < 2} class="group rounded-md border border-[var(--color-border)] px-4 open:border-[var(--color-accent)]">
 				<summary class="flex min-h-11 cursor-pointer list-none flex-col-reverse gap-1 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 					<span class="min-w-0">
 						<span class="font-medium text-[var(--color-text)] hyphens-auto [overflow-wrap:anywhere]">{entry.role}</span>
@@ -94,6 +116,7 @@ const entries = [
 					))}
 				</ul>
 			</details>
+			)}
 			</div>
 		))
 	}
