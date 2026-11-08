@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, useReactFlow, type Node, type Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import StageNode, { type StageNodeData } from './graph/StageNode';
@@ -83,6 +83,7 @@ export default function DeployPipeline() {
   const [activeStage, setActiveStage] = useState(-1);
   const [stacked, setStacked] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const rootRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -110,8 +111,30 @@ export default function DeployPipeline() {
       setActiveStage(stages.length - 1);
       return;
     }
-    const timers = stages.map((_, index) => setTimeout(() => setActiveStage(index), index * 500));
-    return () => timers.forEach(clearTimeout);
+    let timers: ReturnType<typeof setTimeout>[] = [];
+    const run = () => {
+      timers = stages.map((_, index) => setTimeout(() => setActiveStage(index), index * 500));
+    };
+
+    // On the homepage the pipeline is a station on the trace: the stages
+    // light up once the scroll signal reaches it (TraceSection dispatches
+    // "trace:arrive"). Already reached, or no trace on the page: start now.
+    const station = rootRef.current?.closest<HTMLElement>('[data-trace-stop]');
+    const traceLive = document.documentElement.classList.contains('trace-live');
+    if (!station || !traceLive || station.classList.contains('reached')) {
+      run();
+      return () => timers.forEach(clearTimeout);
+    }
+    const onArrive = (event: Event) => {
+      if ((event as CustomEvent<HTMLElement>).detail !== station) return;
+      document.removeEventListener('trace:arrive', onArrive);
+      run();
+    };
+    document.addEventListener('trace:arrive', onArrive);
+    return () => {
+      document.removeEventListener('trace:arrive', onArrive);
+      timers.forEach(clearTimeout);
+    };
   }, [reduceMotion]);
 
   const nodes: Node<StageNodeData>[] = stages.map((stage, index) => ({
@@ -133,7 +156,13 @@ export default function DeployPipeline() {
   // diagram: fitView would scale five stacked boxes down to unreadable text.
   if (stacked) {
     return (
-      <ol className="pipeline-list" aria-label="Deployment-Pipeline dieser Seite">
+      <ol
+        ref={(el) => {
+          rootRef.current = el;
+        }}
+        className="pipeline-list"
+        aria-label="Deployment-Pipeline dieser Seite"
+      >
         {stages.map((stage, index) => (
           <li key={stage.id} data-active={index <= activeStage ? '' : undefined}>
             <span className="stage">{stage.label}</span>
@@ -146,6 +175,9 @@ export default function DeployPipeline() {
 
   return (
     <div
+      ref={(el) => {
+        rootRef.current = el;
+      }}
       className="static-flow"
       role="group"
       aria-label="Deployment-Pipeline dieser Seite: Commit, Test, Build, Deploy, Live"

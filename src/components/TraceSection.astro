@@ -38,6 +38,10 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 				<span class="ts-signal" />
 			</span>
 			<span class="ts-node" data-trace-node data-trace-stop />
+			{/* End variant only: where the trace terminates when the section has a
+			    [data-trace-terminal] (the contact form's send row), placed by the script. */}
+			{variant === 'end' && <span class="ts-end-branch" />}
+			{variant === 'end' && <span class="ts-end" data-trace-stop />}
 		</div>
 		<div class="ts-content">
 			<slot />
@@ -193,6 +197,100 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 		background-color: var(--color-border-strong);
 	}
 
+	/*
+	 * Terminal: in an end section with a [data-trace-terminal] the script sets
+	 * --end-y and data-terminal, and the trace runs on past the title down to
+	 * that row (the contact form's send button), ending in the filled node
+	 * there with a short branch to the form. Without the script it stops at
+	 * the title as before.
+	 */
+	.ts-end,
+	.ts-end-branch {
+		display: none;
+	}
+
+	[data-variant='end'] .ts-wrap[data-terminal] .ts-line {
+		height: var(--end-y);
+	}
+
+	[data-variant='end'] .ts-wrap[data-terminal] .ts-node {
+		width: 10px;
+		height: 10px;
+		background-color: var(--bg);
+	}
+
+	:global(html.trace-live) [data-variant='end'] .ts-wrap[data-terminal] .ts-node:not(.reached) {
+		background-color: var(--bg);
+	}
+
+	.ts-wrap[data-terminal] .ts-end {
+		position: absolute;
+		z-index: 1;
+		top: var(--end-y);
+		left: 50%;
+		display: block;
+		width: 14px;
+		height: 14px;
+		translate: -50% -50%;
+		border: 2px solid var(--accent);
+		border-radius: 50%;
+		background-color: var(--accent);
+		transition: background-color 0.3s;
+	}
+
+	:global(html.trace-live) .ts-wrap[data-terminal] .ts-end:not(.reached) {
+		background-color: var(--color-border-strong);
+		border-color: var(--color-border-strong);
+	}
+
+	.ts-wrap[data-terminal] .ts-end-branch {
+		position: absolute;
+		top: var(--end-y);
+		left: 50%;
+		display: block;
+		width: calc(var(--rail-w) / 2);
+		height: 2px;
+		translate: 0 -50%;
+		background-color: var(--accent);
+	}
+
+	/* On a sent message a packet runs from the form along the branch to the end node. */
+	.ts-end-branch::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 100%;
+		width: 8px;
+		height: 8px;
+		translate: -50% -50%;
+		border-radius: 50%;
+		background-color: var(--ink);
+		box-shadow: 0 0 0 3px var(--bg);
+		opacity: 0;
+	}
+
+	.ts-wrap:global(.sending) .ts-end-branch::after {
+		animation: send-packet 0.6s ease-in forwards;
+	}
+
+	@keyframes send-packet {
+		from {
+			left: 100%;
+			opacity: 1;
+		}
+		90% {
+			opacity: 1;
+		}
+		to {
+			left: 0;
+			opacity: 0;
+		}
+	}
+
+	.ts-end:global(.flash) {
+		animation: node-flash 0.7s ease-out;
+	}
+
 	/* A node the signal has just reached flashes once (class set by the script). */
 	.ts-node:global(.flash) {
 		animation: node-flash 0.7s ease-out;
@@ -232,17 +330,48 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 	// and the heading light-up are for nodes the reader scrolls past.
 	let settled = false;
 
-	/** A node the signal just reached: flash it, and light its section's title once. */
-	function arrive(stop: HTMLElement) {
+	function flash(el: HTMLElement) {
 		if (!motion) return;
-		stop.classList.remove('flash');
-		void stop.offsetWidth; // restart the animation if it is still running
-		stop.classList.add('flash');
-		stop.addEventListener('animationend', () => stop.classList.remove('flash'), { once: true });
-		if (!stop.hasAttribute('data-trace-node')) return;
+		el.classList.remove('flash');
+		void el.offsetWidth; // restart the animation if it is still running
+		el.classList.add('flash');
+		el.addEventListener('animationend', () => el.classList.remove('flash'), { once: true });
+	}
+
+	/**
+	 * A node the signal just reached: flash it, light its section's title once,
+	 * and tell the page (the deploy pipeline starts when the signal gets there).
+	 */
+	function arrive(stop: HTMLElement) {
+		document.dispatchEvent(new CustomEvent('trace:arrive', { detail: stop }));
+		flash(stop);
+		if (!motion || !stop.hasAttribute('data-trace-node')) return;
 		const title = stop.closest('.trace-section')?.querySelector<HTMLElement>('[data-letters]');
 		if (title && !title.classList.contains('lit')) title.classList.add('lit');
 	}
+
+	// End sections whose trace runs on to a terminal row (see the CSS).
+	const ends = Array.from(document.querySelectorAll<HTMLElement>('[data-variant="end"]'))
+		.map((section) => ({
+			wrap: section.querySelector<HTMLElement>('.ts-wrap'),
+			terminal: section.querySelector<HTMLElement>('[data-trace-terminal]'),
+			node: section.querySelector<HTMLElement>('.ts-end'),
+		}))
+		.filter((end) => end.wrap && end.terminal && end.node);
+
+	// A message was sent (ContactForm): a packet runs from the form to the end node.
+	document.addEventListener('trace:sent', () => {
+		for (const { wrap, node } of ends) {
+			if (!motion) continue;
+			wrap!.classList.remove('sending');
+			void wrap!.offsetWidth;
+			wrap!.classList.add('sending');
+			setTimeout(() => {
+				wrap!.classList.remove('sending');
+				flash(node!);
+			}, 600);
+		}
+	});
 
 	if (lines.length) {
 		root.classList.add('trace-live');
@@ -250,6 +379,13 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 
 		const update = () => {
 			queued = false;
+			for (const { wrap, terminal } of ends) {
+				const t = terminal!.getBoundingClientRect();
+				if (!t.height) continue;
+				const top = wrap!.getBoundingClientRect().top;
+				wrap!.style.setProperty('--end-y', `${(t.top + t.height / 2 - top).toFixed(1)}px`);
+				wrap!.setAttribute('data-terminal', '');
+			}
 			const line = window.innerHeight * READING_LINE;
 			// At the very bottom the last nodes may never cross the reading
 			// line, so the end of the page counts as fully read.
@@ -281,8 +417,13 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 
 		addEventListener('scroll', schedule, { passive: true });
 		addEventListener('resize', schedule);
-		// Opening a project or timeline entry moves everything below it.
+		// Opening a project or timeline entry moves everything below it, and
+		// form errors move the terminal row; any change in page height reflows.
 		document.addEventListener('toggle', schedule, true);
+		if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(document.body);
+		// Scroll reveals slide content up by a few pixels; re-measure the
+		// terminal once they have settled.
+		document.addEventListener('transitionend', schedule, true);
 		update();
 	}
 </script>
