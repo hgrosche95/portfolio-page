@@ -30,8 +30,14 @@ interface Props {
 const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 ---
 
-<section id={id} class:list={['trace-section', className]} data-variant={variant} aria-labelledby={id ? `${id}-title` : undefined}>
-	<div class="ts-wrap" style={nodeY ? `--node-y: ${nodeY}` : undefined}>
+<section
+	id={id}
+	class:list={['trace-section', className]}
+	data-variant={variant}
+	aria-labelledby={id ? `${id}-title` : undefined}
+	style={nodeY ? `--node-y: ${nodeY}` : undefined}
+>
+	<div class="ts-wrap">
 		<div class="ts-rail" aria-hidden="true">
 			{variant === 'start' && <span class="ts-lead" />}
 			<span class="ts-line" data-trace-line>
@@ -51,14 +57,61 @@ const { id, variant = 'middle', nodeY, class: className } = Astro.props;
 
 <style>
 	.trace-section {
+		/* Centre of the first line of a section title (h2, line-height 0.95). */
+		--node-y: calc(var(--text-section) * 0.475);
+		/* Positioned for the glow below; the hero's boot graphic measures
+		   itself, so it is unaffected by which ancestor it is placed in. */
+		position: relative;
 		/* The start lead reaches out to the viewport edge; never let it, or
 		   anything else, cause sideways scrolling. */
 		overflow-x: clip;
 	}
 
+	/*
+	 * Light mode: copper light glowing out of the section node, as if the
+	 * trace carried current. Behind the content (z-index -1 in the page's own
+	 * stacking context), reaching up past the section edge so no hard cut
+	 * shows. The hero also glows where the trace branches into the console.
+	 * Strong on large screens, toned down on phones where the hero is
+	 * mostly text.
+	 */
+	:global(html:not(.dark)) .trace-section::before {
+		--glow-x: calc(max(0px, (100% - var(--content-max) - 2 * var(--gutter)) / 2) + var(--gutter) + var(--rail-w) / 2);
+		--glow-a: 0.3;
+		content: '';
+		position: absolute;
+		z-index: -1;
+		top: -320px;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		pointer-events: none;
+		background: radial-gradient(
+			620px 440px at var(--glow-x) calc(var(--node-y) + 320px),
+			rgb(214 112 40 / var(--glow-a)),
+			transparent 70%
+		);
+	}
+
+	:global(html:not(.dark)) [data-variant='start']::before {
+		--glow-a: 0.42;
+		background:
+			radial-gradient(640px 440px at var(--glow-x) calc(var(--node-y) + 320px), rgb(214 112 40 / var(--glow-a)), transparent 70%),
+			radial-gradient(700px 520px at 62% calc(var(--node-y) + 520px), rgb(214 112 40 / calc(var(--glow-a) * 0.62)), transparent 72%);
+	}
+
+	@media (max-width: 640px) {
+		:global(html:not(.dark)) .trace-section::before {
+			--glow-a: 0.16;
+		}
+
+		:global(html:not(.dark)) [data-variant='start']::before {
+			--glow-a: 0.24;
+		}
+	}
+
 	.ts-wrap {
 		/* Centre of the first line of a section title (h2, line-height 0.95). */
-		--node-y: calc(var(--text-section) * 0.475);
 		display: flex;
 		max-width: calc(var(--content-max) + 2 * var(--gutter));
 		margin-inline: auto;
