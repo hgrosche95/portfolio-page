@@ -99,9 +99,17 @@ const MAX_TAGS = 4;
 						</summary>
 
 					<div class="detail">
-						{/* Scenarios dropped on purpose: seven animated diagrams on one
-						    page would be noise. The project page plays them. */}
-						{data.architecture?.lanes && <Schematic architecture={{ ...data.architecture, scenarios: [] }} compact />}
+						{/* Only the first scenario, played once when the row comes into view
+						    (Schematic `once`): the route draws itself and stays lit. Looping
+						    animations in every row would be noise; the project page has all
+						    scenarios with controls. */}
+						{data.architecture?.lanes && (
+							<Schematic
+								architecture={{ ...data.architecture, scenarios: data.architecture.scenarios?.slice(0, 1) ?? [] }}
+								compact
+								once
+							/>
+						)}
 						<div class="aside">
 							{decision && (
 								<p class="decision">
