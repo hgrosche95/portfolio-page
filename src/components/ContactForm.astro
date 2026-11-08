@@ -74,8 +74,10 @@ const errorClass = 'mt-1 hidden text-sm text-[var(--color-danger)]';
 	</div>
 
 	<div class="mt-5 flex flex-wrap items-center gap-4">
+		{/* data-trace-terminal: the homepage trace ends at this button (TraceSection). */}
 		<button
 			id="contact-submit"
+			data-trace-terminal
 			type="submit"
 			class="min-h-11 rounded-md bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-[var(--color-bg)] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
 		>
@@ -182,6 +184,8 @@ const errorClass = 'mt-1 hidden text-sm text-[var(--color-danger)]';
 				if (response.ok) {
 					form.reset();
 					status.textContent = 'Danke, die Nachricht ist angekommen.';
+					// The trace's end node receives it (homepage only; nothing listens elsewhere).
+					document.dispatchEvent(new CustomEvent('trace:sent'));
 					return;
 				}
 

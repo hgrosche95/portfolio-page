@@ -68,7 +68,11 @@ const MAX_TAGS = 4;
 									<span class="metric-list" role="list">
 										{metrics.items.map((m) => (
 											<span class="metric" role="listitem">
-												<span class="value">{m.value}</span>
+												<span class="value">
+													{/* The visible figure counts up (script below); readers get the final value. */}
+													<span aria-hidden="true" data-count={m.value}>{m.value}</span>
+													<span class="sr-only">{m.value}</span>
+												</span>
 												<span class="mlabel">{m.label}</span>
 											</span>
 										))}
@@ -146,6 +150,55 @@ const MAX_TAGS = 4;
 </div>
 
 <script is:inline>
+	(function () {
+		// Metrics count up from zero once when they scroll into view: every
+		// number inside a value ("310", "0,95 / 0,67", "3,6 s / 1,1 s") counts
+		// to itself, keeping its decimals and the text around it. What is
+		// already on screen at load stays as it is (no flicker), and with
+		// reduced motion nothing moves.
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+		const NUMBER = /\d+(?:,\d+)?/g;
+		const DURATION = 700;
+		const format = function (value, decimals) {
+			return value.toFixed(decimals).replace('.', ',');
+		};
+		const groups = Array.prototype.slice.call(document.querySelectorAll('.index .metric-list'));
+		const observer = new IntersectionObserver(
+			function (entries) {
+				entries.forEach(function (entry) {
+					if (!entry.isIntersecting) return;
+					observer.unobserve(entry.target);
+					const figures = Array.prototype.slice.call(entry.target.querySelectorAll('[data-count]'));
+					const start = performance.now();
+					(function frame(now) {
+						const t = Math.min(1, (now - start) / DURATION);
+						const eased = 1 - Math.pow(1 - t, 3);
+						figures.forEach(function (el) {
+							el.textContent = el.dataset.count.replace(NUMBER, function (match) {
+								const decimals = (match.split(',')[1] || '').length;
+								return format(parseFloat(match.replace(',', '.')) * eased, decimals);
+							});
+						});
+						if (t < 1) requestAnimationFrame(frame);
+					})(start);
+				});
+			},
+			{ threshold: 0.6 },
+		);
+		groups.forEach(function (group) {
+			const rect = group.getBoundingClientRect();
+			// Already visible (or inside a closed row, no box yet): leave it alone
+			// unless it is below the fold, where it can count up on arrival.
+			if (!rect.height || rect.top < window.innerHeight) return;
+			group.querySelectorAll('[data-count]').forEach(function (el) {
+				el.textContent = el.dataset.count.replace(NUMBER, function (match) {
+					return format(0, (match.split(',')[1] || '').length);
+				});
+			});
+			observer.observe(group);
+		});
+	})();
+
 	(function () {
 		// A click anywhere on a row's head opens or closes its details, like the
 		// "+" does. Links inside (title, live button) keep navigating, and without

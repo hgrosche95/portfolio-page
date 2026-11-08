@@ -63,7 +63,9 @@ const filterKinds = [...kindCounts.entries()]
 			subtitle="Echte Daten vom letzten Deployment dieser Seite (Stand: letztes Deployment, kein Live-Ticker)."
 			desktopHint="Jeder Push läuft erst durch Tests, jeder Pull Request bekommt automatisch eine eigene Vorschau-Umgebung."
 		/>
-		<div data-reveal class="mt-6">
+		{/* A station on the trace with a permanent branch: the stages light up
+		    when the scroll signal gets here (see DeployPipeline). */}
+		<div data-reveal class="pipeline-station trace-station trace-wired mt-6" data-trace-stop>
 			<DeployPipeline client:visible />
 		</div>
 		{
@@ -104,6 +106,18 @@ const filterKinds = [...kindCounts.entries()]
 		text-decoration: underline;
 		text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
 		text-underline-offset: 3px;
+	}
+
+	/* Where the branch meets the pipeline: the middle of the diagram row,
+	   or the first stage of the vertical list below 1024px. */
+	.pipeline-station {
+		--station-y: 60px;
+	}
+
+	@media (max-width: 1023px) {
+		.pipeline-station {
+			--station-y: 0.8rem;
+		}
 	}
 
 	.run-link:hover {
