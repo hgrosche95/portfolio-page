@@ -9,9 +9,9 @@
 /*
  * "Schaltplan" look: the site reads like a circuit diagram, because what it
  * shows is systems wired together. Copper is the one accent (traces, active
- * states). Light mode is glass in a lit lab: cool steel-grey with a deep
- * blue counter-tone, copper light glowing where the trace runs (each section
- * node, see TraceSection), and the content panels as frosted glass over it.
+ * states). Light mode is glass in a lit room: cool steel-grey with two large,
+ * soft lights, copper top left and steel blue on the right, that stay put
+ * while the page scrolls, and the content panels as frosted glass over them.
  * Dark mode stays cool slate. Either way the copper has something to stand
  * out against.
  */
@@ -22,28 +22,28 @@
      display face reads as a deliberate accent, not a second body font. */
   --font-display: "Bricolage Grotesque Variable", "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
-  --color-bg: #e3e9ef;
+  --color-bg: #e7ecf1;
   --color-surface: #f8fafc;
   /* Raised surface for cards that sit on top of --color-surface. */
   --color-surface-raised: #e6ebf0;
-  --color-border: #c5ced8;
+  --color-border: #c9d2db;
   --color-border-strong: #9aa7b4;
   /* Frosted panels over the copper light (light mode only, see below). */
-  --color-glass: rgb(255 255 255 / 0.56);
+  --color-glass: rgb(255 255 255 / 0.62);
   --color-text: #121a24;
-  /* ~6.5:1 on --color-bg, still ~5.1:1 where the copper light is strongest. */
+  /* ~6.7:1 on --color-bg, still above 5:1 inside the copper light. */
   --color-text-muted: #475260;
   /*
    * Contrast kept at WCAG AA for the normal-size text the accent is used as
    * (eyebrows, chip labels, links): a shade darker than plain copper, so it
-   * still holds ~5.0:1 where it sits on the copper light (hero kicker and
-   * intro), ~6.3:1 on --color-bg and ~6.2:1 on --color-accent-soft.
+   * still holds ~5:1 where it sits in the copper light (hero kicker and
+   * intro), ~6.5:1 on --color-bg and ~6.2:1 on --color-accent-soft.
    * The dark-mode copper sits at ~6.8:1.
    */
   --color-accent: #853f12;
   --color-accent-soft: #f3e4d9;
   /* Backdrop for the sticky header, so content blurs through it. */
-  --color-bg-translucent: rgb(227 233 239 / 0.72);
+  --color-bg-translucent: rgb(231 236 241 / 0.7);
   /*
    * Status, not decoration: "running / reachable". Kept apart from the
    * accent so a live signal never blends into the copper around it.
@@ -108,14 +108,16 @@
 }
 
 /*
- * Light mode only: the room the glass sits in. A deep blue counter-tone
- * top right and bottom left; the copper light itself comes from the trace
- * nodes (TraceSection), so it is wherever the circuit is, not random.
+ * Light mode only: the room the glass sits in. Two large soft lights, copper
+ * top left and steel blue on the right, plus a faint blue floor; fixed to the
+ * viewport, so they stay put while the content scrolls over them.
  */
 html:not(.dark) body {
   background-image:
-    radial-gradient(1200px 1000px at 105% -5%, rgb(22 52 96 / 0.26), transparent 62%),
-    radial-gradient(1000px 800px at -5% 100%, rgb(22 52 96 / 0.14), transparent 62%);
+    radial-gradient(900px 620px at 12% 8%, rgb(164 83 31 / 0.2), transparent 62%),
+    radial-gradient(820px 720px at 88% 26%, rgb(52 104 158 / 0.2), transparent 62%),
+    radial-gradient(900px 700px at 50% 100%, rgb(52 104 158 / 0.1), transparent 60%);
+  background-attachment: fixed;
 }
 
 /*
@@ -128,8 +130,8 @@ html:not(.dark) body {
 html:not(.dark) :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group, #erfahrung details, #erfahrung .timeline-static) {
   --color-surface: var(--color-glass);
   background-color: var(--color-glass);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.75),
     0 20px 44px -26px rgb(25 45 70 / 0.4);
