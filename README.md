@@ -78,19 +78,23 @@ Komponente muss dafür angefasst werden.
 | Testing | Vitest | Für Frontend (`schematic.test.ts`) und API (`contact.test.ts`, `live-status.test.ts`) getrennt. |
 | Hosting | Azure Static Web Apps, Free-Tier | Kostenlos für statischen Astro-Output; liefert außerdem die echten Deploy-Daten für die CI/CD-Visualisierung. |
 
-## Entwicklung
+## Lokal starten
 
-Voraussetzung: Node.js ≥ 23.6.
+Voraussetzung: Node.js ≥ 24 (siehe `engines` in `package.json`).
 
 ```bash
-npm install
-npm run dev      # Astro-Dev-Server, meist http://localhost:4321
-npm test         # Vitest
+npm install       # Abhängigkeiten installieren
+npm run dev       # Astro-Dev-Server, meist http://localhost:4321
+npm run build     # Produktions-Build nach dist/
+npm run preview   # gebauten Stand aus dist/ lokal ausliefern
+npm test          # Vitest (vitest run)
 ```
 
 `npm run dev`/`npm run build` holen vorher automatisch (via `predev`/`prebuild`)
-frische GitHub-Stats, generieren die Deploy-Info-Daten und rendern die
-OG-Bilder — kein manueller Zwischenschritt nötig.
+frische GitHub-Stats und Eval-Stats, generieren die Deploy-Info-Daten und
+rendern die OG-Bilder — kein manueller Zwischenschritt nötig.
+
+## Entwicklung
 
 Die API liegt als eigenständiges Node-Projekt in `api/` und braucht die
 [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local):
