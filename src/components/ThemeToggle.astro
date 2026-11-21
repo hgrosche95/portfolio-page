@@ -55,11 +55,6 @@
 			sync();
 		});
 
-		// The page may follow a system theme change (see BaseLayout); keep the label in step.
-		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-			setTimeout(sync);
-		});
-
 		sync();
 	})();
 </script>

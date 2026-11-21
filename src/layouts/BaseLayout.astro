@@ -34,25 +34,15 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 	<head>
 		<script is:inline>
 			(function () {
-				// An explicit choice from the toggle wins; otherwise follow the system
-				// setting, and keep following it if it changes while the page is open.
+				// Dark is the default look (copper on near-black); an explicit choice
+				// from the toggle wins and is remembered.
 				let stored = null;
 				try {
 					stored = localStorage.getItem('theme');
 				} catch (e) {
-					// Storage blocked: fall back to the system setting.
+					// Storage blocked: fall back to the default.
 				}
-				const media = window.matchMedia('(prefers-color-scheme: dark)');
-				document.documentElement.classList.toggle('dark', stored ? stored === 'dark' : media.matches);
-				if (!stored) {
-					media.addEventListener('change', function (event) {
-						let chosen = null;
-						try {
-							chosen = localStorage.getItem('theme');
-						} catch (e) {}
-						if (!chosen) document.documentElement.classList.toggle('dark', event.matches);
-					});
-				}
+				document.documentElement.classList.toggle('dark', stored !== 'light');
 			})();
 		</script>
 		<script is:inline>
@@ -138,6 +128,36 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toStri
 				window.addEventListener('scroll', schedule, { passive: true });
 				window.addEventListener('resize', schedule);
 				update();
+			})();
+		</script>
+
+		<script is:inline>
+			(function () {
+				// The light cone on the glass panels (see [data-spot] in global.css):
+				// one listener for the whole page moves the spot of the panel under
+				// the pointer. Off for touch screens and reduced motion.
+				if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+				const PANELS = '.console, .schematic, .reel .stage, #contact-form, #kontakt a.group';
+				let current = null;
+				let queued = null;
+				function apply() {
+					const event = queued;
+					queued = null;
+					const panel = event.target instanceof Element ? event.target.closest(PANELS) : null;
+					// The panel just left keeps its spot parked above it, out of sight.
+					if (current && current !== panel) current.style.setProperty('--spot-y', '-30rem');
+					current = panel;
+					if (!panel) return;
+					panel.setAttribute('data-spot', '');
+					const box = panel.getBoundingClientRect();
+					panel.style.setProperty('--spot-x', Math.round(event.clientX - box.left) + 'px');
+					panel.style.setProperty('--spot-y', Math.round(event.clientY - box.top) + 'px');
+				}
+				document.addEventListener('pointermove', function (event) {
+					if (!queued) window.requestAnimationFrame(apply);
+					queued = event;
+				}, { passive: true });
 			})();
 		</script>
 

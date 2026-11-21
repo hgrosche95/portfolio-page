@@ -74,50 +74,246 @@ const entries: { role: string; company: string; period: string; details: string[
 	},
 ];
 
-// The two most recent stations with details start open: they hold what a reader scans for.
-const withDetails = entries.filter((entry) => entry.details.length > 0);
+// The year a station starts in: the big number on the trace. Shown only
+// where it changes from the row above, so the column reads as a time axis.
+const startYear = (period: string) => period.match(/\d{4}/)?.[0] ?? '';
+const rows = entries.map((entry, i) => {
+	const year = startYear(entry.period);
+	return { ...entry, year, newYear: i === 0 || year !== startYear(entries[i - 1].period) };
+});
 ---
 
-<div class="mt-4 space-y-2 text-sm">
+{/*
+	One line per station, hung off the homepage trace (see .trace-station in
+	global.css): the year as a large figure beside the node, role and company,
+	the period in monospace. Every station is closed at first; its details
+	open on the line itself (plain <details>, so no script is needed). A
+	station without details is a plain line with nothing to open.
+*/}
+<ol class="timeline" role="list">
 	{
-		entries.map((entry) => (
-			// Each entry is a station on the homepage trace (see .trace-station in global.css).
-			<div class="trace-station" style="--station-y: 1.4rem" data-trace-stop>
-			{entry.details.length === 0 ? (
-				<div class="timeline-static flex min-h-11 flex-col-reverse gap-1 rounded-md border border-[var(--color-accent)] px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-					<span class="min-w-0">
-						<span class="font-medium text-[var(--color-text)] hyphens-auto [overflow-wrap:anywhere]">{entry.role}</span>
-						<span class="block text-[var(--color-text-muted)] sm:inline">
-							<span class="hidden sm:inline" aria-hidden="true"> · </span>
-							{entry.company}
-						</span>
+		rows.map((entry) => {
+			const line = (
+				<>
+					<span class:list={['year', { repeat: !entry.newYear }]}>
+						{entry.year}
 					</span>
-					<span class="shrink-0 pt-0.5 font-mono text-xs text-[var(--color-accent)] tabular-nums">{entry.period}</span>
-				</div>
-			) : (
-			<details open={withDetails.indexOf(entry) < 2} class="group rounded-md border border-[var(--color-border)] px-4 open:border-[var(--color-accent)]">
-				<summary class="flex min-h-11 cursor-pointer list-none flex-col-reverse gap-1 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-					<span class="min-w-0">
-						<span class="font-medium text-[var(--color-text)] hyphens-auto [overflow-wrap:anywhere]">{entry.role}</span>
-						<span class="block text-[var(--color-text-muted)] sm:inline">
-							<span class="hidden sm:inline" aria-hidden="true"> · </span>
-							{entry.company}
-						</span>
+					<span class="who">
+						<span class="role">{entry.role}</span>
+						<span class="company">{entry.company}</span>
 					</span>
-					{/* Dates stay monospace: they are data, and the columns line up. */}
-					<span class="flex shrink-0 items-center justify-between gap-2 pt-0.5 font-mono text-xs tabular-nums sm:justify-start">
-						<span class="text-[var(--color-accent)]">{entry.period}</span>
-						<span class="text-[var(--color-text-muted)] transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
-					</span>
-				</summary>
-				<ul class="pb-3 list-inside list-disc space-y-1 leading-relaxed text-[var(--color-text-muted)]">
-					{entry.details.map((detail) => (
-						<li>{detail}</li>
-					))}
-				</ul>
-			</details>
-			)}
-			</div>
-		))
+					<span class="period">{entry.period}</span>
+				</>
+			);
+			return (
+				<li class="station trace-station" data-trace-stop>
+					{entry.details.length === 0 ? (
+						<div class="line timeline-static">
+							{line}
+							<span class="toggle" aria-hidden="true" />
+						</div>
+					) : (
+						<details>
+							<summary class="line">
+								{line}
+								<span class="toggle" aria-hidden="true">
+									+
+								</span>
+							</summary>
+							<ul class="details">
+								{entry.details.map((detail) => (
+									<li>{detail}</li>
+								))}
+							</ul>
+						</details>
+					)}
+				</li>
+			);
+		})
 	}
-</div>
+</ol>
+
+<style>
+	.timeline {
+		margin: 1.75rem 0 0;
+		padding: 0;
+		list-style: none;
+		border-top: 1px solid var(--ink);
+	}
+
+	.station {
+		/* Where the branch from the trace meets the line: the year's middle. */
+		--station-y: 2.1rem;
+		border-bottom: 1px solid var(--line);
+	}
+
+	/* The line: year | role and company | period | toggle. */
+	.line {
+		display: grid;
+		grid-template-columns: 7.5rem minmax(0, 1fr) auto 2.75rem;
+		align-items: center;
+		gap: 0 1.5rem;
+		min-height: 4.2rem;
+		padding: 0.5rem 0;
+		list-style: none;
+	}
+
+	summary.line {
+		cursor: pointer;
+	}
+
+	summary.line::-webkit-details-marker {
+		display: none;
+	}
+
+	.year {
+		font-family: var(--font-display);
+		font-size: clamp(1.75rem, 2.6vw, 2.75rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.03em;
+		font-variant-numeric: tabular-nums;
+		color: var(--accent);
+	}
+
+	/* Same year as the line above: kept for the layout, not shown. */
+	.year.repeat {
+		visibility: hidden;
+	}
+
+	.who {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.1rem 0.75rem;
+		min-width: 0;
+	}
+
+	.role {
+		font-size: var(--text-body);
+		font-weight: 600;
+		color: var(--ink);
+		hyphens: auto;
+		overflow-wrap: anywhere;
+		transition: color 0.2s;
+	}
+
+	.company {
+		font-size: var(--text-small);
+		color: var(--muted);
+	}
+
+	.period {
+		font: 0.8125rem var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		color: var(--muted);
+		white-space: nowrap;
+	}
+
+	.toggle {
+		display: grid;
+		place-items: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		font: 1.1rem var(--font-mono);
+		color: var(--muted);
+		transition:
+			transform 0.25s,
+			color 0.2s;
+	}
+
+	summary.line:hover .role,
+	summary.line:hover .toggle,
+	details[open] .toggle {
+		color: var(--accent);
+	}
+
+	details[open] .toggle {
+		transform: rotate(45deg);
+	}
+
+	/* Details sit under role and company, past the year column. */
+	.details {
+		display: grid;
+		gap: 0.45rem;
+		margin: 0;
+		padding: 0 4.25rem 1.25rem calc(7.5rem + 1.5rem + 1.1rem);
+		list-style: none;
+		font-size: var(--text-small);
+		line-height: 1.6;
+		color: var(--muted);
+	}
+
+	.details li {
+		position: relative;
+		max-width: 72ch;
+	}
+
+	/* A small copper pad as the bullet, as in the project write-ups. */
+	.details li::before {
+		content: '';
+		position: absolute;
+		top: 0.65em;
+		left: -1.05rem;
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 50%;
+		background-color: var(--accent);
+	}
+
+	/* Phones: the year shrinks to a narrow column, period under the company. */
+	@media (max-width: 40rem) {
+		.station {
+			--station-y: 1.45rem;
+		}
+
+		.line {
+			/* The whole line is the toggle, so the "+" needs no 44px column here. */
+			grid-template-columns: 3rem minmax(0, 1fr) 1.25rem;
+			align-items: start;
+			gap: 0 0.75rem;
+			min-height: 0;
+			padding: 0.65rem 0;
+		}
+
+		.year {
+			padding-top: 0.1rem;
+			font-size: 1.15rem;
+		}
+
+		.role {
+			font-size: 1rem;
+			overflow-wrap: break-word;
+		}
+
+		.who {
+			display: grid;
+			gap: 0.1rem;
+		}
+
+		.period {
+			grid-column: 2;
+			grid-row: 2;
+			margin-top: 0.15rem;
+			font-size: 0.75rem;
+		}
+
+		.toggle {
+			grid-column: 3;
+			grid-row: 1 / span 2;
+			width: auto;
+			height: 1.5rem;
+		}
+
+		.details {
+			padding: 0 0.5rem 1rem calc(3rem + 0.75rem + 1.1rem);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.toggle,
+		.role {
+			transition: none;
+		}
+	}
+</style>

@@ -20,7 +20,7 @@ import AgentConsole from './AgentConsole.astro';
 		})();
 	</script>
 	<svg class="boot" data-boot-svg aria-hidden="true"></svg>
-	<div class="relative z-[1] grid items-center gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14">
+	<div class="relative z-[1] grid items-center gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14 xl:grid-cols-[minmax(0,11fr)_minmax(0,9fr)]">
 		<div>
 			<p class="kicker text-[var(--accent)]">
 				Full-Stack-Entwickler in Düsseldorf
@@ -70,8 +70,12 @@ import AgentConsole from './AgentConsole.astro';
 		</div>
 
 		<figure class="m-0" data-boot-target data-boot-step style="--boot-delay: 460ms">
-			<AgentConsole />
-			<figcaption class="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
+			{/* The stage: from 1280px the console tilts back a little and runs
+			    past the right edge of the page (see .stage below). */}
+			<div class="stage">
+				<AgentConsole />
+			</div>
+			<figcaption class="mt-3 text-[length:var(--text-small)] leading-relaxed text-[var(--color-text-muted)]">
 				Ein echter Ablauf aus dem{' '}
 				<a href="/projects/ai-trip-planer" class="text-[var(--color-accent)] hover:underline">AI Trip Planner</a>: Jede Zeile im Log schickt ein Paket durch den Aufbau darüber.
 			</figcaption>
@@ -270,5 +274,54 @@ import AgentConsole from './AgentConsole.astro';
 	.hero-intro strong {
 		font-weight: 500;
 		color: var(--accent);
+	}
+
+	/*
+	 * The console as a stage (from 1280px): wider than its column, so its frame
+	 * runs past the right edge of the viewport (the TraceSection clips it, no
+	 * sideways scroll), and tilted back a little in 3D. Only the frame is cut:
+	 * the console's content keeps --cut of room on the right, so no box of the
+	 * diagram and no log line ever disappears behind the edge.
+	 */
+	@media (min-width: 80rem) {
+		.stage {
+			--cut: 7rem;
+			--to-edge: max(var(--gutter), (100vw - var(--content-max)) / 2);
+			width: calc(100% + var(--to-edge) + var(--cut));
+			perspective: 1800px;
+			perspective-origin: 0 40%;
+		}
+
+		.stage :global(.console) {
+			transform-origin: left center;
+			transform: rotateY(11deg) rotateX(3deg);
+			box-shadow:
+				-30px 40px 80px -40px rgb(0 0 0 / 0.55),
+				0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+			transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+		}
+
+		/* Comes forward a little when the reader goes for it. */
+		.stage:hover :global(.console) {
+			transform: rotateY(6deg) rotateX(1.5deg);
+		}
+
+		.stage :global(.console > *) {
+			padding-right: calc(var(--cut) + 3rem);
+		}
+
+		.stage :global(.console .log) {
+			height: 16rem;
+		}
+	}
+
+	@media (min-width: 80rem) and (prefers-reduced-motion: reduce) {
+		.stage :global(.console) {
+			transition: none;
+		}
+
+		.stage:hover :global(.console) {
+			transform: rotateY(11deg) rotateX(3deg);
+		}
 	}
 </style>
