@@ -1,0 +1,96 @@
+---
+/*
+ * Real numbers from the qwen-pipeline run log, condensed by
+ * scripts/snapshot-qwen-runs.ts. A snapshot rather than a build step because
+ * the log only exists on the machine the pipeline runs on.
+ */
+import qwenRuns from '../data/qwen-runs.json';
+
+const num = (value: number, digits = 1) =>
+	value.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const usd = (value: number) => `${num(value, 2)} $`;
+const day = (date: string) =>
+	new Date(date.replace(' ', 'T')).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' });
+
+const { pipeline, bench } = qwenRuns;
+const stats = [
+	['Läufe', `${qwenRuns.totalRuns}`, `${day(qwenRuns.firstRun)}–${day(qwenRuns.lastRun)}`],
+	['grün', `${pipeline.green}/${pipeline.runs}`, `${pipeline.aborted} abgebrochen`],
+	['Dauer', `${num(pipeline.medianMinutes)} min`, 'Median, grüne Läufe'],
+	['Claude-Kosten', usd(pipeline.medianCostUsd), `Median, max. ${usd(pipeline.maxCostUsd)}`],
+];
+const harnesses = [
+	['claude', 'Claude Code'],
+	['opencode', 'OpenCode'],
+] as const;
+---
+
+<div
+	class="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 font-mono text-sm"
+	data-xray="QwenRuns.astro · statisch, Datenquelle: qwen-runs.jsonl-Snapshot"
+	data-xray-kind="static"
+>
+	<dl class="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4">
+		{
+			stats.map(([term, value, note]) => (
+				<div>
+					<dt class="text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase">{term}</dt>
+					<dd class="mt-1 text-lg text-[var(--color-text)] tabular-nums">{value}</dd>
+					<dd class="text-xs text-[var(--color-text-muted)]">{note}</dd>
+				</div>
+			))
+		}
+	</dl>
+
+	<p class="mt-6 text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase">
+		Benchmark · gleicher Plan, gleiche Tests, Minuten pro Lauf
+	</p>
+	<div class="mt-2 overflow-x-auto">
+		<table class="w-full min-w-[30rem] border-collapse text-left text-xs">
+			<thead class="text-[var(--color-text-muted)]">
+				<tr class="border-b border-[var(--color-border)]">
+					<th scope="col" class="py-2 pr-4 font-normal">Aufgabe</th>
+					{harnesses.map(([, name]) => <th scope="col" class="py-2 pr-4 font-normal">{name}</th>)}
+					<th scope="col" class="py-2 text-right font-normal">Plan + Tests</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					bench.map((task) => (
+						<tr class="border-b border-[var(--color-border)] last:border-b-0">
+							<th scope="row" class="py-2 pr-4 font-normal">
+								<span class="block text-[var(--color-text)]">{task.label}</span>
+								<span class="text-[var(--color-text-muted)]">{task.project}</span>
+							</th>
+							{harnesses.map(([key]) => (
+								<td class="py-2 pr-4 tabular-nums">
+									{task[key].length === 0 ? (
+										<span class="text-[var(--color-text-muted)]">läuft noch</span>
+									) : (
+										task[key].map((run) => (
+											<span class="mr-3 inline-flex items-baseline gap-1 whitespace-nowrap text-[var(--color-text)]">
+												<span
+													class={run.green ? 'text-[var(--color-live)]' : 'text-[var(--color-text-muted)]'}
+													aria-label={run.green ? 'grün' : 'rot'}
+												>
+													{run.green ? '●' : '○'}
+												</span>
+												{num(run.minutes)}
+											</span>
+										))
+									)}
+								</td>
+							))}
+							<td class="py-2 text-right text-[var(--color-text-muted)] tabular-nums">{usd(task.prepareCostUsd)}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+	<p class="mt-3 text-xs text-[var(--color-text-muted)]">
+		Die Implementierung selbst kostet 0 $, sie läuft lokal. Stand: {
+			new Date(qwenRuns.updatedAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })
+		}
+	</p>
+</div>

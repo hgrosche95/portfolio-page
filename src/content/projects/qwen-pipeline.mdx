@@ -1,0 +1,165 @@
+---
+title: "Qwen-Pipeline"
+summary: "Claude-Code-Befehle, mit denen ein lokales Qwen-Modell die eigentliche Implementierung schreibt, während Claude nur plant, Tests vorgibt und reviewt. Die meisten Tokens laufen kostenlos auf dem eigenen Rechner, die bezahlten Modelle sehen nur kurze, gezielte Prompts."
+githubRepo: "qwen-pipeline"
+techStack: ["Bash", "Node.js", "Claude Code", "Qwen", "Strata", "OpenCode", "Git", "GitHub CLI"]
+order: 8
+kind: orchestration
+hosting: "lokal · eigener Rechner"
+decisions:
+  - topic: "Rollen"
+    rejected: ["alles mit Opus", "alles lokal"]
+    chosen: "Opus plant und prüft, Qwen schreibt"
+    reason: "Planen und Prüfen brauchen wenige Tokens, aber viel Urteil. Implementieren ist das Gegenteil, und genau das läuft lokal."
+  - topic: "Tests"
+    rejected: ["Qwen testet selbst"]
+    chosen: "Tests vorher, von Sonnet"
+    reason: "Wer den Code schreibt, legt nicht auch fest, wann er fertig ist. Nur im Lite-Modus schreibt Qwen sie selbst."
+  - topic: "Ergebnis"
+    rejected: ["direkt auf den Arbeitszweig"]
+    chosen: "eigener qwen/*-Branch"
+    reason: "Ein lokales Modell darf sich irren. Übernommen wird nur per bewusstem Squash-Merge, gemergt oder gepusht wird nie automatisch."
+  - topic: "Harness"
+    rejected: ["Bauchgefühl"]
+    chosen: "Benchmark mit identischem Plan"
+    reason: "Plan und Tests werden einmal bezahlt, dann bauen Claude Code und OpenCode abwechselnd gegen denselben Commit."
+architecture:
+  lanes: ["Claude (bezahlt)", "Pipeline", "Lokal (kostenlos)", "Projekt"]
+  nodes:
+    - id: pipeline
+      label: "Pipeline-Skripte"
+      kind: backend
+      sub: "qwen-first.sh · Bash"
+      lane: 1
+      row: 0.65
+      description: "Steuert den ganzen Lauf: holt Plan und Tests, startet pro Schritt eine frische Worker-Session, führt Tests und CI-Check aus und entscheidet über Fix-Runden. Bricht schon vor dem Start ab, wenn es uncommittete Änderungen gibt oder die Tests bereits rot sind."
+    - id: opus
+      label: "Opus"
+      kind: external
+      sub: "Plan · Final-Review"
+      lane: 0
+      row: 0
+      description: "Schreibt den Plan in 2 bis 8 kleinen Schritten, mit Testbefehl (TEST:) und vollem CI-Check (CHECK:). Am Ende reviewt Opus den Diff. Bei kleinen Diffs übernimmt Sonnet."
+    - id: sonnet
+      label: "Sonnet"
+      kind: external
+      sub: "Tests · Recheck"
+      lane: 0
+      row: 1.3
+      description: "Schreibt die Tests, bevor eine Zeile Code entsteht, und meldet als PLAN-DEVIATIONS, wo der Code dem Plan widerspricht. Der Planer sieht den Code nie, diese Fakten gehen deshalb in jeden späteren Prompt."
+    - id: runlog
+      label: "Run-Log"
+      kind: data
+      sub: "qwen-runs.jsonl"
+      lane: 1
+      row: 2.3
+      description: "Eine Zeile pro Lauf: Dauer je Stufe, Ergebnis, Fix-Versuche, Review-Punkte, geänderte Zeilen, Kosten. Daraus stammen die Zahlen weiter unten."
+    - id: worker
+      label: "Qwen-Worker"
+      kind: backend
+      sub: "Claude Code/OpenCode"
+      lane: 2
+      row: 0
+      description: "Läuft mit eigenem Config-Verzeichnis, ohne Hooks, MCP-Server und Auto-Memory des normalen Setups. Harte Grenzen: 20 Minuten und 40 Schritte pro Session, 5 Minuten pro Shell-Befehl, keine Server und keine Warteschleifen."
+    - id: strata
+      label: "Strata"
+      kind: external
+      sub: "Qwen lokal · :8080"
+      lane: 2
+      row: 1.3
+      description: "Lokaler Modell-Server mit Anthropic- und OpenAI-kompatibler API. Darauf läuft ein stark quantisiertes Qwen-Modell (IQ3_XXS)."
+    - id: repo
+      label: "Git-Repo"
+      kind: data
+      sub: "Branch qwen/<datum>"
+      lane: 3
+      row: 0
+      description: "Jeder Lauf arbeitet auf einem neuen Branch, ein Commit pro Planschritt. Am Ende steht ein fertiger git merge --squash-Befehl, übernommen wird nur von Hand."
+    - id: checks
+      label: "Tests · CI-Check"
+      kind: backend
+      sub: "TEST: · CHECK:"
+      lane: 3
+      row: 1.3
+      description: "Die Befehle aus dem Plan, mit Zeitlimit. Rot heißt: bis zu drei Fix-Versuche, danach Abbruch statt Weiterraten."
+  edges:
+    - [pipeline, opus]
+    - [pipeline, sonnet]
+    - [pipeline, worker]
+    - [pipeline, repo]
+    - [pipeline, checks]
+    - [pipeline, runlog]
+    - [worker, strata]
+    - [worker, repo]
+  scenarios:
+    - name: "/qwen"
+      steps:
+        - { from: pipeline, to: repo, label: "Kontext", detail: "Dateiliste, Manifeste, CI-Workflows" }
+        - { from: pipeline, to: opus, label: "Aufgabe" }
+        - { from: opus, to: pipeline, label: "Plan", detail: "2–8 Schritte, TEST: und CHECK:" }
+        - { from: pipeline, to: sonnet, label: "Tests anfordern" }
+        - { from: sonnet, to: pipeline, label: "Tests + PLAN-DEVIATIONS", detail: "wo der Code dem Plan widerspricht" }
+        - { from: pipeline, to: worker, label: "Schritt 1 von n", detail: "frische Session pro Schritt" }
+        - { from: worker, to: strata, label: "Inferenz", detail: "lokal, 0 $" }
+        - { from: worker, to: repo, label: "Commit", detail: "einer pro Schritt" }
+        - { from: pipeline, to: checks, label: "Tests laufen" }
+        - { from: checks, to: pipeline, label: "grün", detail: "rot: bis zu 3 Fix-Versuche" }
+        - { from: pipeline, to: opus, label: "Final-Review", detail: "Sonnet bei kleinen Diffs" }
+        - { from: opus, to: pipeline, label: "Review-Punkte" }
+        - { from: pipeline, to: worker, label: "Punkte beheben" }
+        - { from: worker, to: repo, label: "Fix-Commit" }
+        - { from: pipeline, to: sonnet, label: "Recheck", detail: "Offenes bleibt als offen markiert" }
+        - { from: pipeline, to: runlog, label: "Lauf protokollieren", detail: "Dauer, Ergebnis, Kosten" }
+    - name: "/q"
+      steps:
+        - { from: pipeline, to: worker, label: "Aufgabe direkt", detail: "kein Claude-Modell beteiligt" }
+        - { from: worker, to: strata, label: "Inferenz", detail: "lokal, 0 $" }
+        - { from: worker, to: repo, label: "Änderung", detail: "nicht committet, nicht geprüft" }
+        - { from: pipeline, to: runlog, label: "Dauer + Zeilen" }
+    - name: "Benchmark"
+      steps:
+        - { from: pipeline, to: opus, label: "Plan, einmal" }
+        - { from: pipeline, to: sonnet, label: "Tests, einmal" }
+        - { from: pipeline, to: worker, label: "Lauf A: Claude Code", detail: "gleicher Commit, gleiche Tests" }
+        - { from: worker, to: strata, label: "Inferenz" }
+        - { from: pipeline, to: checks, label: "grün?" }
+        - { from: pipeline, to: worker, label: "Lauf B: OpenCode", detail: "abwechselnd, je zweimal" }
+        - { from: worker, to: strata, label: "Inferenz" }
+        - { from: pipeline, to: checks, label: "grün?" }
+        - { from: pipeline, to: runlog, label: "Vergleich", detail: "Dauer, Limits, Fixes, Zeilen" }
+---
+
+import QwenRuns from '../../components/QwenRuns.astro';
+
+Die Idee: Ein Coding-Agent verbraucht die meisten Tokens nicht beim Denken, sondern beim Lesen und Schreiben von Code, Runde um Runde, mit dem ganzen Verlauf im Kontext. Genau diesen Teil übernimmt hier ein lokales Qwen-Modell, das nichts kostet. Claude bleibt für das, was Urteil braucht: einen guten Plan schreiben, vorher festlegen, wann die Aufgabe fertig ist, und am Ende den Diff prüfen.
+
+Gebaut ist das als Slash-Befehle für Claude Code, dahinter steckt Bash. `/qwen` ist der volle Ablauf oben im Schaltplan. `/qwen-lite` ist die billige Variante für kleine Aufgaben und stoppt nach dem Plan, wenn mehr als 150 Zeilen zu erwarten sind. `/q` lässt Qwen ganz allein arbeiten, für eine Zeile oder eine Farbe. Dazu kommen eine Warteschlange für mehrere aufeinander aufbauende Aufgaben und ein Modus mit Guard-Hook, der gefährliche Befehle und Zugriffe auf Secret-Dateien protokolliert oder blockiert.
+
+**Nichts passiert ungefragt:** Jeder Lauf arbeitet auf einem eigenen `qwen/*`-Branch und endet mit einem fertigen Merge-Befehl. Gemergt, auf den Arbeitszweig committet oder gepusht wird nur, wenn man es ausdrücklich will.
+
+## Was bisher probiert wurde
+
+Jeder Lauf schreibt eine Zeile ins Run-Log. Die Zahlen unten kommen direkt daraus, über ein Snapshot-Skript, weil das Log nur auf meinem Rechner liegt.
+
+<QwenRuns />
+
+**Erste Woche, echte Aufgaben:** Die Pipeline lief von Anfang an auf Features meiner anderen Projekte, vor allem `agentic-rogue-like` und `Cocktail-Orders`, nicht auf Spielzeugbeispielen. Die ersten Läufe waren lang: Gegner-Sprites ohne Tests dauerten über zwei Stunden, mit drei Zeitüberschreitungen und acht Review-Punkten. Zwei größere Frontend-Aufgaben brachen ab, eine Validierungsaufgabe für Cocktail-Orders erst im dritten Anlauf grün.
+
+**Was das Log gezeigt hat:** Der Worker nahm Notizen aus früheren Sessions mit, wiederholte veraltete Pläne, startete End-to-End-Tests samt Server und las `.env`. Seitdem läuft er ohne Auto-Memory, mit hartem Limit pro Shell-Befehl und ausdrücklichem Verbot von Servern und Warteschleifen. Der Planer sieht den Code nie, deshalb meldet das Testmodell jetzt Widersprüche zwischen Plan und Code, und diese Fakten stehen in jedem späteren Prompt. Scheitert Qwen beim Beheben der Review-Punkte, fällt der Lauf auf den letzten grünen Stand zurück und meldet die Punkte als offen statt als erledigt.
+
+**Lernende Review-Regeln:** Was im Review wiederholt auffällt, landet als Regel in einer Datei, die jeder Worker liest. Inzwischen sind es rund zwanzig, von „keine veränderlichen Default-Argumente“ bis „neue Animationen immer mit ihrem Reduced-Motion-Ausschalter“.
+
+**Claude Code oder OpenCode als Harness?** Ob der Worker besser in Claude Code oder in OpenCode läuft, sollte nicht aus dem Bauch entschieden werden. Der Benchmark lässt Opus und Sonnet Plan und Tests deshalb nur einmal schreiben. Danach bauen beide Harnesses abwechselnd gegen exakt denselben Stand, je zweimal. Zwischenstand vom 21.11.: Alle Läufe sind grün, OpenCode war im Median bei jeder abgeschlossenen Aufgabe etwas schneller. Die Spannen überschneiden sich aber, und zwei Läufe pro Seite reichen nicht für ein Urteil. Der Benchmark läuft weiter.
+
+<details class="more">
+<summary>Ausführlich lesen: Ablauf eines /qwen-Laufs, Startprüfungen, Kosten</summary>
+
+**Ablauf im Detail:** Zuerst sammelt die Pipeline Kontext, also Dateiliste, Manifeste und die Befehle aus den CI-Workflows. Bei Projekten mit mehr als 40 Dateien erkundet Qwen zusätzlich nur lesend. Opus schreibt daraus einen Plan mit 2 bis 8 kleinen Schritten, einem Testbefehl und einem vollen CI-Check. Sonnet schreibt die Tests und meldet Plan-Abweichungen. Qwen implementiert jeden Schritt in einer frischen Session, damit der Kontext klein bleibt, mit einem Commit pro Schritt. Große Pläne bekommen zur Halbzeit ein Zwischen-Review. Ist danach noch etwas rot, kontrolliert Qwen sich zuerst selbst. Dann folgt das Final-Review, Qwen behebt die Punkte, und ein günstiger Recheck prüft die Fixes. Findet der Recheck noch etwas, gibt es genau eine weitere Runde. Was dann noch offen ist, wird als offen gemeldet.
+
+**Startprüfungen:** Der Lauf beginnt gar nicht erst, wenn es uncommittete Änderungen gibt, die Tests schon vor dem Start rot sind oder der aktuelle Branch detached, ein alter `qwen/*`-Branch, ohne Upstream oder schon gemergt ist. So kann ein Fehler im Projekt nicht als Fehler von Qwen durchgehen.
+
+**Kosten:** Bezahlt werden nur Plan, Tests und Reviews. Die größte Position war das Testmodell, weil jede Runde den ganzen Verlauf erneut liest. Es bekommt deshalb den Projektkontext direkt mit und höchstens 12 statt 20 Runden. Statt 200 Zeilen YAML pro Workflow sieht der Planer nur noch Namen, Arbeitsverzeichnisse und Befehle. Mit `run-log.js show` sieht man pro Lauf Dauer, Ergebnis und Kosten und damit auch, welcher Modus sich für welche Art Aufgabe lohnt.
+
+**Herkunft:** Die Skripte entstanden zuerst auf Deutsch direkt in meinem `~/.claude`-Ordner. Für das öffentliche Repo wurden sie übersetzt, mit `install.sh`, das bestehende Dateien vor dem Überschreiben sichert.
+
+</details>

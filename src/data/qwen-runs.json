@@ -1,0 +1,118 @@
+{
+  "updatedAt": "2026-11-21T22:11:59.413Z",
+  "firstRun": "2026-11-15 17:24",
+  "lastRun": "2026-11-21 23:02",
+  "totalRuns": 42,
+  "quickRuns": 2,
+  "pipeline": {
+    "runs": 21,
+    "green": 17,
+    "aborted": 4,
+    "medianMinutes": 18.4,
+    "medianCostUsd": 0.39,
+    "maxCostUsd": 0.59,
+    "medianLines": 235
+  },
+  "bench": [
+    {
+      "label": "Schwierigkeitsstufen 0–5",
+      "project": "agentic-rogue-like",
+      "prepareCostUsd": 0.34,
+      "claude": [
+        {
+          "minutes": 16.5,
+          "green": true,
+          "lines": 150
+        },
+        {
+          "minutes": 14.4,
+          "green": true,
+          "lines": 121
+        }
+      ],
+      "opencode": [
+        {
+          "minutes": 11.4,
+          "green": true,
+          "lines": 106
+        },
+        {
+          "minutes": 11.5,
+          "green": true,
+          "lines": 116
+        }
+      ]
+    },
+    {
+      "label": "Verbrauchsgegenstände",
+      "project": "agentic-rogue-like",
+      "prepareCostUsd": 0.61,
+      "claude": [
+        {
+          "minutes": 31.6,
+          "green": true,
+          "lines": 283
+        },
+        {
+          "minutes": 38.2,
+          "green": true,
+          "lines": 273
+        }
+      ],
+      "opencode": [
+        {
+          "minutes": 33.6,
+          "green": true,
+          "lines": 322
+        },
+        {
+          "minutes": 26.8,
+          "green": true,
+          "lines": 348
+        }
+      ]
+    },
+    {
+      "label": "Rate-Limit fürs Bestellen",
+      "project": "Cocktail-Orders",
+      "prepareCostUsd": 0.67,
+      "claude": [
+        {
+          "minutes": 14.3,
+          "green": true,
+          "lines": 38
+        },
+        {
+          "minutes": 9.8,
+          "green": true,
+          "lines": 29
+        }
+      ],
+      "opencode": [
+        {
+          "minutes": 7.3,
+          "green": true,
+          "lines": 19
+        },
+        {
+          "minutes": 10.2,
+          "green": true,
+          "lines": 24
+        }
+      ]
+    },
+    {
+      "label": "Rückweg für „Erledigt“",
+      "project": "Cocktail-Orders",
+      "prepareCostUsd": 0.54,
+      "claude": [
+        {
+          "minutes": 38.7,
+          "green": true,
+          "lines": 221
+        }
+      ],
+      "opencode": []
+    }
+  ]
+}
