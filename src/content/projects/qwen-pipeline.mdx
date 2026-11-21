@@ -24,109 +24,55 @@ decisions:
     chosen: "Benchmark mit identischem Plan"
     reason: "Plan und Tests werden einmal bezahlt, dann bauen Claude Code und OpenCode abwechselnd gegen denselben Commit."
 architecture:
-  lanes: ["Claude (bezahlt)", "Pipeline", "Lokal (kostenlos)", "Projekt"]
+  lanes: ["Claude (bezahlt)", "Pipeline", "Lokal (kostenlos)"]
   nodes:
     - id: pipeline
-      label: "Pipeline-Skripte"
+      label: "Pipeline"
       kind: backend
-      sub: "qwen-first.sh · Bash"
+      sub: "Bash-Skripte"
       lane: 1
-      row: 0.65
-      description: "Steuert den ganzen Lauf: holt Plan und Tests, startet pro Schritt eine frische Worker-Session, führt Tests und CI-Check aus und entscheidet über Fix-Runden. Bricht schon vor dem Start ab, wenn es uncommittete Änderungen gibt oder die Tests bereits rot sind."
-    - id: opus
-      label: "Opus"
+      row: 0
+      description: "Steuert den Lauf: holt Plan und Tests von Claude, lässt Qwen Schritt für Schritt umsetzen, führt die Tests aus und gibt das Ergebnis zum Review."
+    - id: claude
+      label: "Claude"
       kind: external
-      sub: "Plan · Final-Review"
+      sub: "Opus · Sonnet"
       lane: 0
       row: 0
-      description: "Schreibt den Plan in 2 bis 8 kleinen Schritten, mit Testbefehl (TEST:) und vollem CI-Check (CHECK:). Am Ende reviewt Opus den Diff. Bei kleinen Diffs übernimmt Sonnet."
-    - id: sonnet
-      label: "Sonnet"
-      kind: external
-      sub: "Tests · Recheck"
-      lane: 0
-      row: 1.3
-      description: "Schreibt die Tests, bevor eine Zeile Code entsteht, und meldet als PLAN-DEVIATIONS, wo der Code dem Plan widerspricht. Der Planer sieht den Code nie, diese Fakten gehen deshalb in jeden späteren Prompt."
-    - id: runlog
-      label: "Run-Log"
-      kind: data
-      sub: "qwen-runs.jsonl"
-      lane: 1
-      row: 2.3
-      description: "Eine Zeile pro Lauf: Dauer je Stufe, Ergebnis, Fix-Versuche, Review-Punkte, geänderte Zeilen, Kosten. Daraus stammen die Zahlen weiter unten."
-    - id: worker
-      label: "Qwen-Worker"
+      description: "Opus schreibt den Plan und reviewt am Ende den Diff, Sonnet schreibt vorher die Tests. Das sind wenige, aber teure Tokens."
+    - id: qwen
+      label: "Qwen lokal"
       kind: backend
-      sub: "Claude Code/OpenCode"
+      sub: "kostenlos"
       lane: 2
       row: 0
-      description: "Läuft mit eigenem Config-Verzeichnis, ohne Hooks, MCP-Server und Auto-Memory des normalen Setups. Harte Grenzen: 20 Minuten und 40 Schritte pro Session, 5 Minuten pro Shell-Befehl, keine Server und keine Warteschleifen."
-    - id: strata
-      label: "Strata"
-      kind: external
-      sub: "Qwen lokal · :8080"
-      lane: 2
-      row: 1.3
-      description: "Lokaler Modell-Server mit Anthropic- und OpenAI-kompatibler API. Darauf läuft ein stark quantisiertes Qwen-Modell (IQ3_XXS)."
+      description: "Ein lokales Qwen-Modell schreibt den eigentlichen Code, in einer frischen Session pro Planschritt und mit festen Zeit- und Schrittlimits."
     - id: repo
       label: "Git-Repo"
       kind: data
       sub: "Branch qwen/<datum>"
-      lane: 3
-      row: 0
-      description: "Jeder Lauf arbeitet auf einem neuen Branch, ein Commit pro Planschritt. Am Ende steht ein fertiger git merge --squash-Befehl, übernommen wird nur von Hand."
-    - id: checks
-      label: "Tests · CI-Check"
-      kind: backend
-      sub: "TEST: · CHECK:"
-      lane: 3
+      lane: 1
       row: 1.3
-      description: "Die Befehle aus dem Plan, mit Zeitlimit. Rot heißt: bis zu drei Fix-Versuche, danach Abbruch statt Weiterraten."
+      description: "Jeder Lauf bekommt einen eigenen Branch. Übernommen wird nur von Hand per Squash-Merge."
   edges:
-    - [pipeline, opus]
-    - [pipeline, sonnet]
-    - [pipeline, worker]
+    - [pipeline, claude]
+    - [pipeline, qwen]
     - [pipeline, repo]
-    - [pipeline, checks]
-    - [pipeline, runlog]
-    - [worker, strata]
-    - [worker, repo]
+    - [qwen, repo]
   scenarios:
     - name: "/qwen"
       steps:
-        - { from: pipeline, to: repo, label: "Kontext", detail: "Dateiliste, Manifeste, CI-Workflows" }
-        - { from: pipeline, to: opus, label: "Aufgabe" }
-        - { from: opus, to: pipeline, label: "Plan", detail: "2–8 Schritte, TEST: und CHECK:" }
-        - { from: pipeline, to: sonnet, label: "Tests anfordern" }
-        - { from: sonnet, to: pipeline, label: "Tests + PLAN-DEVIATIONS", detail: "wo der Code dem Plan widerspricht" }
-        - { from: pipeline, to: worker, label: "Schritt 1 von n", detail: "frische Session pro Schritt" }
-        - { from: worker, to: strata, label: "Inferenz", detail: "lokal, 0 $" }
-        - { from: worker, to: repo, label: "Commit", detail: "einer pro Schritt" }
-        - { from: pipeline, to: checks, label: "Tests laufen" }
-        - { from: checks, to: pipeline, label: "grün", detail: "rot: bis zu 3 Fix-Versuche" }
-        - { from: pipeline, to: opus, label: "Final-Review", detail: "Sonnet bei kleinen Diffs" }
-        - { from: opus, to: pipeline, label: "Review-Punkte" }
-        - { from: pipeline, to: worker, label: "Punkte beheben" }
-        - { from: worker, to: repo, label: "Fix-Commit" }
-        - { from: pipeline, to: sonnet, label: "Recheck", detail: "Offenes bleibt als offen markiert" }
-        - { from: pipeline, to: runlog, label: "Lauf protokollieren", detail: "Dauer, Ergebnis, Kosten" }
+        - { from: pipeline, to: claude, label: "Aufgabe" }
+        - { from: claude, to: pipeline, label: "Plan + Tests" }
+        - { from: pipeline, to: qwen, label: "Schritte umsetzen", detail: "lokal, 0 $" }
+        - { from: qwen, to: repo, label: "Commits" }
+        - { from: pipeline, to: repo, label: "Tests laufen", detail: "rot: bis zu 3 Fix-Versuche" }
+        - { from: pipeline, to: claude, label: "Review" }
+        - { from: claude, to: pipeline, label: "Freigabe", detail: "offene Punkte behebt Qwen" }
     - name: "/q"
       steps:
-        - { from: pipeline, to: worker, label: "Aufgabe direkt", detail: "kein Claude-Modell beteiligt" }
-        - { from: worker, to: strata, label: "Inferenz", detail: "lokal, 0 $" }
-        - { from: worker, to: repo, label: "Änderung", detail: "nicht committet, nicht geprüft" }
-        - { from: pipeline, to: runlog, label: "Dauer + Zeilen" }
-    - name: "Benchmark"
-      steps:
-        - { from: pipeline, to: opus, label: "Plan, einmal" }
-        - { from: pipeline, to: sonnet, label: "Tests, einmal" }
-        - { from: pipeline, to: worker, label: "Lauf A: Claude Code", detail: "gleicher Commit, gleiche Tests" }
-        - { from: worker, to: strata, label: "Inferenz" }
-        - { from: pipeline, to: checks, label: "grün?" }
-        - { from: pipeline, to: worker, label: "Lauf B: OpenCode", detail: "abwechselnd, je zweimal" }
-        - { from: worker, to: strata, label: "Inferenz" }
-        - { from: pipeline, to: checks, label: "grün?" }
-        - { from: pipeline, to: runlog, label: "Vergleich", detail: "Dauer, Limits, Fixes, Zeilen" }
+        - { from: pipeline, to: qwen, label: "Aufgabe direkt", detail: "ohne Claude" }
+        - { from: qwen, to: repo, label: "Änderung", detail: "ungeprüft" }
 ---
 
 import QwenRuns from '../../components/QwenRuns.astro';
