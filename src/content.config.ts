@@ -142,6 +142,13 @@ const projects = defineCollection({
     /** Optional screen recording for the homepage reel. Needs liveUrl, since it shows the live demo. */
     demo: demo.optional(),
     /**
+     * Still image of the running app for the project list. Without a `demo`
+     * recording it is the only preview; with one it replaces the clip's
+     * poster as the still (for trailers whose poster is a title card).
+     * A site path under public/projects/<slug>/.
+     */
+    preview: z.string().startsWith('/projects/').optional(),
+    /**
      * Architecture decisions shown beside the write-up: what was chosen, what
      * was considered and dropped, and why. Structured rather than prose so
      * the rejected options can be shown as such, not buried in a sentence.

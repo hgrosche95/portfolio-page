@@ -57,16 +57,19 @@
 }
 
 .dark {
-  --color-bg: #0f151b;
-  --color-surface: #151d25;
-  --color-surface-raised: #1b252f;
-  --color-border: #24303b;
-  --color-border-strong: #3b4855;
-  --color-text: #e4e9ee;
-  --color-text-muted: #8f9ba7;
+  /* Copper on near-black: the default theme (see BaseLayout). Muted text
+     ~7.4:1 and copper ~7.6:1 on --color-bg. */
+  --color-bg: #0a0c0f;
+  --color-surface: #111419;
+  --color-surface-raised: #171b21;
+  --color-border: #222831;
+  --color-border-strong: #3a424d;
+  --color-glass: rgb(19 23 28 / 0.66);
+  --color-text: #e8ebee;
+  --color-text-muted: #98a2ad;
   --color-accent: #e08a4f;
-  --color-accent-soft: #2a1e16;
-  --color-bg-translucent: rgb(15 21 27 / 0.82);
+  --color-accent-soft: #28190f;
+  --color-bg-translucent: rgb(10 12 15 / 0.8);
   --color-live: #5cc98f;
   --color-danger: #f97066;
 }
@@ -84,7 +87,10 @@
   --line: var(--color-border);
   --accent: var(--color-accent);
 
-  /* Type scale (design handoff, section 2). */
+  /* Type scale (design handoff, section 2). Body copy never under 16px,
+     monospace labels never under 12px (0.75rem). */
+  --text-body: 1.0625rem;
+  --text-small: 0.9375rem;
   --text-hero: clamp(56px, 9.5vw, 136px);
   --text-section: clamp(36px, 4.6vw, 64px);
   --text-project: clamp(24px, 2.6vw, 34px);
@@ -100,8 +106,12 @@
   --radius-frame: 0.75rem;
   --radius-control: 0.375rem;
 
-  /* Layout: content width, side gutter and the trace column. */
-  --content-max: 1240px;
+  /*
+   * Layout: content width, side gutter and the trace column. In rem, so the
+   * column grows with the root size on large monitors (see html below):
+   * 1440px at the default 16px, ~1620px on a 2560px screen.
+   */
+  --content-max: 90rem;
   --gutter: 20px;
   --rail-w: clamp(20px, 3vw, 40px);
   --section-gap: clamp(72px, 9vw, 120px);
@@ -128,7 +138,7 @@ html:not(.dark) body {
  * touching their rules; the blur and the soft edge light are added here.
  * Opaque again where transparency is reduced.
  */
-html:not(.dark) :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group, #erfahrung details, #erfahrung .timeline-static) {
+html:not(.dark) :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group) {
   --color-surface: var(--color-glass);
   background-color: var(--color-glass);
   backdrop-filter: blur(14px) saturate(140%);
@@ -138,13 +148,85 @@ html:not(.dark) :is(.console, .schematic, .reel .stage, .reel [role='tab'], #con
     0 20px 44px -26px rgb(25 45 70 / 0.4);
 }
 
+/*
+ * Dark mode: the same panels as smoked glass over the solder grid, with a
+ * hairline of light on the top edge instead of the white rim.
+ */
+html.dark :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group) {
+  --color-surface: var(--color-glass);
+  background-color: var(--color-glass);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 24px 48px -28px rgb(0 0 0 / 0.8);
+}
+
+/*
+ * The light cone: a soft spot that follows the pointer across a glass panel
+ * (--spot-x/--spot-y are set per panel by the pointer script in BaseLayout).
+ * Only for a real hover pointer and with motion allowed; otherwise the
+ * panels simply have no spot.
+ */
+:root {
+  --spot-color: rgb(255 255 255 / 0.55);
+}
+
+.dark {
+  --spot-color: rgb(224 138 79 / 0.1);
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group)[data-spot] {
+    background-image: radial-gradient(
+      26rem circle at var(--spot-x, 50%) var(--spot-y, -30rem),
+      var(--spot-color),
+      transparent 70%
+    );
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
-  html:not(.dark) :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group, #erfahrung details, #erfahrung .timeline-static) {
+  html:not(.dark) :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group) {
     --color-surface: #f8fafc;
     background-color: #f8fafc;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+
+  html.dark :is(.console, .schematic, .reel .stage, .reel [role='tab'], #contact-form, #kontakt a.group) {
+    --color-surface: #111419;
+    background-color: #111419;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/*
+ * The root size grows a little on large monitors (16px up to 1800px, 18px at
+ * 2560px), so every rem-based size, the column width included, scales with
+ * it instead of leaving a small page in a large window. Built on 100%, so a
+ * larger default font size set in the browser still wins.
+ */
+html {
+  font-size: clamp(100%, 0.3125vw + 62.5%, 112.5%);
+}
+
+/*
+ * Dark mode: a board under the glass. A faint grid of solder points, a soft
+ * copper glow top left and a cooler one bottom right; fixed to the viewport
+ * like the lights in light mode.
+ */
+html.dark body {
+  background-image:
+    radial-gradient(900px 640px at 6% 4%, rgb(224 138 79 / 0.13), transparent 65%),
+    radial-gradient(900px 760px at 96% 92%, rgb(70 110 160 / 0.1), transparent 65%),
+    radial-gradient(circle at center, rgb(224 138 79 / 0.16) 0 1px, transparent 1.6px);
+  background-size:
+    auto,
+    auto,
+    28px 28px;
+  background-attachment: fixed;
 }
 
 body {
@@ -259,7 +341,7 @@ body {
 /* Small monospace label above or beside content (hero kicker, project kind). */
 .kicker {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.35;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -432,7 +514,7 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
   border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
   border-radius: 0.375rem;
   background-color: transparent;
-  font: 500 13px var(--font-sans);
+  font: 500 0.8125rem var(--font-sans);
   color: var(--color-accent);
   text-decoration: none;
   white-space: nowrap;
@@ -619,12 +701,12 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
 }
 
 .pipeline-list .stage {
-  font: 500 15px/1.4 var(--font-mono);
+  font: 500 1rem/1.4 var(--font-mono);
   color: var(--color-accent);
 }
 
 .pipeline-list .detail {
-  font: 14px/1.5 var(--font-mono);
+  font: 0.9375rem/1.5 var(--font-mono);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
@@ -754,6 +836,7 @@ html.trace-live .ts-content .trace-station:not(.reached)::after {
 .boot-packet {
   /* Text colour, so it stays visible on the copper line it runs along. */
   fill: var(--color-text);
+  filter: drop-shadow(0 0 4px var(--color-accent)) drop-shadow(0 0 10px var(--color-accent));
 }
 
 [data-boot-name] .ch {
