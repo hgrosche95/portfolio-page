@@ -213,20 +213,35 @@ html {
 }
 
 /*
- * Dark mode: a board under the glass. A faint grid of solder points, a soft
- * copper glow top left and a cooler one bottom right; fixed to the viewport
- * like the lights in light mode.
+ * Dark mode: no pattern, only light. A soft copper glow top left and a cooler
+ * one bottom right, fixed to the viewport like the lights in light mode.
  */
 html.dark body {
   background-image:
-    radial-gradient(900px 640px at 6% 4%, rgb(224 138 79 / 0.13), transparent 65%),
-    radial-gradient(900px 760px at 96% 92%, rgb(70 110 160 / 0.1), transparent 65%),
-    radial-gradient(circle at center, rgb(224 138 79 / 0.16) 0 1px, transparent 1.6px);
-  background-size:
-    auto,
-    auto,
-    28px 28px;
+    radial-gradient(1100px 760px at 6% 4%, rgb(224 138 79 / 0.18), transparent 65%),
+    radial-gradient(1000px 820px at 96% 92%, rgb(70 110 160 / 0.13), transparent 65%);
   background-attachment: fixed;
+}
+
+/*
+ * A whisper of grain over the lights, both themes: it keeps the large soft
+ * gradients from showing bands and gives the flat areas some material.
+ * One fixed layer, rasterised once; it never moves.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+
+html.dark body::before {
+  opacity: 0.06;
 }
 
 body {
