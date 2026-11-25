@@ -25,7 +25,7 @@
     "@tailwindcss/vite": "^4.3.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@xyflow/react": "^12.12.1",
+    "@xyflow/react": "^13.0.2",
     "astro": "^7.4.12",
     "gray-matter": "^4.0.3",
     "react": "^19.3.1",
